@@ -5,6 +5,7 @@ import { AppointmentsModule } from '../appointments/appointments.module';
 import { ClinicModule } from '../clinic/clinic.module';
 import { DoctorsModule } from '../doctors/doctors.module';
 import { Doctor, DoctorSchema } from '../doctors/schemas/doctor.schema';
+import { ExamsModule } from '../exams/exams.module';
 import { MedicalRecordsModule } from '../medical-records/medical-records.module';
 import { MidwivesModule } from '../midwives/midwives.module';
 import { NursesModule } from '../nurses/nurses.module';
@@ -35,6 +36,7 @@ import { SeedService } from './seed.service';
     AppointmentsModule,
     AlertsModule,
     ClinicModule,
+    ExamsModule,
   ],
   controllers: [DatabaseController],
   providers: [SeedService],

@@ -10,6 +10,8 @@ import { AlertsService } from '../alerts/alerts.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { AlertLevel } from '../common/enums/alert-level.enum';
 import { Role } from '../common/enums/role.enum';
+import { Doctor, DoctorDocument } from '../doctors/schemas/doctor.schema';
+import { Technician, TechnicianDocument } from '../technicians/schemas/technician.schema';
 import {
   AssignExamDto,
   CompleteExamDto,
@@ -33,17 +35,42 @@ const TECH_POP = { path: 'assignedTechnicianId', populate: { path: 'userId', sel
 export class ExamsService {
   constructor(
     @InjectModel(Exam.name) private examModel: Model<ExamDocument>,
+    @InjectModel(Doctor.name) private doctorModel: Model<DoctorDocument>,
+    @InjectModel(Technician.name) private technicianModel: Model<TechnicianDocument>,
     @Optional() private alertsService?: AlertsService,
     @Optional() private auditLogsService?: AuditLogsService,
   ) {}
 
   async create(dto: CreateExamDto): Promise<ExamDocument> {
-    const cleanDto = {
+    let requestingDoctorObjId: Types.ObjectId | null = null;
+    if (dto.requestingDoctorId && Types.ObjectId.isValid(dto.requestingDoctorId)) {
+      const doc = await this.doctorModel.findOne({
+        $or: [
+          { _id: new Types.ObjectId(dto.requestingDoctorId) },
+          { userId: new Types.ObjectId(dto.requestingDoctorId) },
+        ],
+      });
+      if (doc) requestingDoctorObjId = doc._id;
+    }
+
+    let assignedTechnicianObjId: Types.ObjectId | null = null;
+    if (dto.assignedTechnicianId && Types.ObjectId.isValid(dto.assignedTechnicianId)) {
+      const tech = await this.technicianModel.findOne({
+        $or: [
+          { _id: new Types.ObjectId(dto.assignedTechnicianId) },
+          { userId: new Types.ObjectId(dto.assignedTechnicianId) },
+        ],
+      });
+      if (tech) assignedTechnicianObjId = tech._id;
+    }
+
+    const exam = new this.examModel({
       ...dto,
-      requestingDoctorId: dto.requestingDoctorId && Types.ObjectId.isValid(dto.requestingDoctorId) ? dto.requestingDoctorId : undefined,
-      assignedTechnicianId: dto.assignedTechnicianId && Types.ObjectId.isValid(dto.assignedTechnicianId) ? dto.assignedTechnicianId : undefined,
-    };
-    const exam = new this.examModel(cleanDto);
+      patientId: new Types.ObjectId(dto.patientId),
+      requestingDoctorId: requestingDoctorObjId,
+      assignedTechnicianId: assignedTechnicianObjId,
+    });
+
     const saved = await exam.save();
     const populated = await saved
       .populate(DOCTOR_POP)
@@ -264,10 +291,22 @@ export class ExamsService {
     return exam;
   }
 
-  async remove(id: string): Promise<{ message: string }> {
-    const exam = await this.examModel.findByIdAndDelete(id).exec();
-    if (!exam) throw new NotFoundException(`Examen introuvable avec l'ID : ${id}`);
-    return { message: 'Demande d\'examen supprimée avec succès' };
+  async remove(id: string, userId?: string, userRole?: string): Promise<{ message: string }> {
+    if (userRole === Role.ADMIN) {
+      const exam = await this.examModel.findByIdAndDelete(id).exec();
+      if (!exam) throw new NotFoundException(`Examen introuvable avec l'ID : ${id}`);
+      return { message: 'Examen supprimé définitivement de la base de données' };
+    }
+
+    if (userId) {
+      const exam = await this.examModel.findByIdAndUpdate(
+        id,
+        { $addToSet: { softDeletedByUserIds: userId } },
+        { new: true },
+      );
+      if (!exam) throw new NotFoundException(`Examen introuvable avec l'ID : ${id}`);
+    }
+    return { message: 'Examen masqué de votre espace personnel' };
   }
 
   async count(filter: Record<string, any> = {}): Promise<number> {

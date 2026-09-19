@@ -13,7 +13,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
-import { CallSignalDto, SendMessageDto } from './dto/message.dto';
+import { ArchiveConversationDto, BlockUserDto, CallSignalDto, CreateGroupDto, SendMessageDto } from './dto/message.dto';
 import { MessagesService } from './messages.service';
 
 @ApiTags('Messagerie Staff')
@@ -61,5 +61,45 @@ export class MessagesController {
     @Body() dto: CallSignalDto,
   ) {
     return this.messagesService.handleCallSignal(userId, dto);
+  }
+
+  @Post('groups/create')
+  @Roles(Role.DOCTOR, Role.NURSE, Role.TECHNICIAN, Role.MIDWIFE, Role.ADMIN)
+  @ApiOperation({ summary: 'Créer un groupe de discussion personnalisé' })
+  createCustomGroup(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: CreateGroupDto,
+  ) {
+    return this.messagesService.createCustomGroup(userId, dto);
+  }
+
+  @Post('groups/:groupId/leave')
+  @Roles(Role.DOCTOR, Role.NURSE, Role.TECHNICIAN, Role.MIDWIFE, Role.ADMIN)
+  @ApiOperation({ summary: 'Quitter un groupe de discussion' })
+  leaveGroup(
+    @CurrentUser('sub') userId: string,
+    @Param('groupId') groupId: string,
+  ) {
+    return this.messagesService.leaveGroup(userId, groupId);
+  }
+
+  @Post('users/block')
+  @Roles(Role.DOCTOR, Role.NURSE, Role.TECHNICIAN, Role.MIDWIFE, Role.ADMIN)
+  @ApiOperation({ summary: 'Bloquer ou débloquer un contact' })
+  blockUser(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: BlockUserDto,
+  ) {
+    return this.messagesService.blockUser(userId, dto.targetUserId);
+  }
+
+  @Post('conversations/archive')
+  @Roles(Role.DOCTOR, Role.NURSE, Role.TECHNICIAN, Role.MIDWIFE, Role.ADMIN)
+  @ApiOperation({ summary: 'Archiver ou désarchiver une discussion' })
+  archiveConversation(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: ArchiveConversationDto,
+  ) {
+    return this.messagesService.archiveConversation(userId, dto.targetId);
   }
 }

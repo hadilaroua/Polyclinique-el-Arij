@@ -71,12 +71,12 @@ export class Exam {
   @Prop({ type: Date, default: null })
   completedAt?: Date;
 
-  @Prop({ default: false })
-  isValidated: boolean;
+  // --- Suppression & Archivage ---
+  @Prop({ type: [String], default: [] })
+  softDeletedByUserIds: string[];
 
-  // Annulation
-  @Prop({ default: '' })
-  cancellationReason: string;
+  @Prop({ default: false })
+  isSoftDeleted: boolean;
 }
 
 export const ExamSchema = SchemaFactory.createForClass(Exam);

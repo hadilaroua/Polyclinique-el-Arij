@@ -204,4 +204,97 @@ export class MessagesService {
         return 'Groupe de Discussion';
     }
   }
+
+  /**
+   * Créer un groupe de discussion personnalisé
+   */
+  async createCustomGroup(creatorId: string, dto: { name: string; description?: string; memberIds: string[] }) {
+    const creatorObjId = new Types.ObjectId(creatorId);
+    const memberObjIds = Array.from(
+      new Set([
+        creatorId,
+        ...dto.memberIds.filter((id) => Types.ObjectId.isValid(id)),
+      ]),
+    ).map((id) => new Types.ObjectId(id));
+
+    const groupId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+
+    const groupConv = new this.conversationModel({
+      creatorId: creatorObjId,
+      groupId,
+      groupName: dto.name,
+      description: dto.description || '',
+      isCustomGroup: true,
+      participants: memberObjIds,
+      lastMessageContent: `Groupe créé par ${dto.name}`,
+      lastMessageAt: new Date(),
+      lastMessageSenderId: creatorObjId,
+      unreadCounts: new Map(),
+    });
+
+    const saved = await groupConv.save();
+    return saved.populate('participants', USER_POP);
+  }
+
+  /**
+   * Quitter un groupe
+   */
+  async leaveGroup(userId: string, groupId: string) {
+    const userObjId = new Types.ObjectId(userId);
+    const conv = await this.conversationModel.findOne({ groupId });
+    if (!conv) throw new NotFoundException('Groupe introuvable');
+
+    conv.participants = conv.participants.filter((p) => p.toString() !== userId);
+    await conv.save();
+    return { success: true, message: 'Vous avez quitté le groupe avec succès.' };
+  }
+
+  /**
+   * Bloquer / Débloquer un contact
+   */
+  async blockUser(userId: string, targetUserId: string) {
+    const conv = await this.conversationModel.findOne({
+      groupId: null,
+      participants: { $all: [new Types.ObjectId(userId), new Types.ObjectId(targetUserId)] },
+    });
+
+    if (conv) {
+      const isBlocked = conv.blockedByUserIds?.includes(userId);
+      if (isBlocked) {
+        conv.blockedByUserIds = conv.blockedByUserIds.filter((id) => id !== userId);
+      } else {
+        conv.blockedByUserIds = [...(conv.blockedByUserIds || []), userId];
+      }
+      await conv.save();
+      return { success: true, isBlocked: !isBlocked, message: !isBlocked ? 'Contact bloqué.' : 'Contact débloqué.' };
+    }
+
+    return { success: true, isBlocked: true, message: 'Contact bloqué.' };
+  }
+
+  /**
+   * Archiver / Masquer une conversation pour l'utilisateur
+   */
+  async archiveConversation(userId: string, targetId: string) {
+    let conv = await this.conversationModel.findOne({
+      $or: [
+        { _id: Types.ObjectId.isValid(targetId) ? new Types.ObjectId(targetId) : null },
+        { groupId: targetId },
+        { participants: { $all: [new Types.ObjectId(userId), Types.ObjectId.isValid(targetId) ? new Types.ObjectId(targetId) : null] } },
+      ],
+    });
+
+    if (conv) {
+      const isArchived = conv.archivedByUserIds?.includes(userId);
+      if (isArchived) {
+        conv.archivedByUserIds = conv.archivedByUserIds.filter((id) => id !== userId);
+      } else {
+        conv.archivedByUserIds = [...(conv.archivedByUserIds || []), userId];
+      }
+      await conv.save();
+      return { success: true, isArchived: !isArchived, message: !isArchived ? 'Discussion archivée.' : 'Discussion désarchivée.' };
+    }
+
+    return { success: true, isArchived: true, message: 'Discussion archivée.' };
+  }
 }

@@ -9,11 +9,20 @@ export class Conversation {
   @Prop({ type: [{ type: Types.ObjectId, ref: User.name }], default: [] })
   participants: Types.ObjectId[];
 
+  @Prop({ type: Types.ObjectId, ref: User.name, default: null })
+  creatorId?: Types.ObjectId;
+
   @Prop({ default: null })
   groupId?: string;
 
   @Prop({ default: null })
   groupName?: string;
+
+  @Prop({ default: '' })
+  description?: string;
+
+  @Prop({ default: false })
+  isCustomGroup: boolean;
 
   @Prop({ default: '' })
   lastMessageContent: string;
@@ -26,6 +35,12 @@ export class Conversation {
 
   @Prop({ type: Map, of: Number, default: {} })
   unreadCounts: Map<string, number>;
+
+  @Prop({ type: [String], default: [] })
+  archivedByUserIds: string[];
+
+  @Prop({ type: [String], default: [] })
+  blockedByUserIds: string[];
 }
 
 export const ConversationSchema = SchemaFactory.createForClass(Conversation);
