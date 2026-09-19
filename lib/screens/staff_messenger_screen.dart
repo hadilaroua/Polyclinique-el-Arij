@@ -19,7 +19,8 @@ class StaffMessengerScreen extends StatefulWidget {
 class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
   final api = ApiService();
   String _searchQuery = '';
-  String _selectedRoleFilter = 'ALL';
+
+
 
   List<dynamic> staffList = [];
   List<dynamic> conversations = [];
@@ -209,26 +210,124 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
     );
   }
 
+  void _showSelectContactModal() {
+    String modalQuery = '';
+    String modalRoleFilter = 'ALL';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (modalCtx, setModalState) {
+          final modalFiltered = staffList.where((s) {
+            if (modalRoleFilter != 'ALL' && s['role'] != modalRoleFilter) return false;
+            if (modalQuery.isNotEmpty) {
+              final q = modalQuery.toLowerCase();
+              final fn = (s['firstName'] ?? '').toString().toLowerCase();
+              final ln = (s['lastName'] ?? '').toString().toLowerCase();
+              if (!fn.contains(q) && !ln.contains(q)) return false;
+            }
+            return true;
+          }).toList();
+
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.82,
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('👥 Choisir un Contact / Collègue', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(modalCtx)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher un médecin, soignant, technicien...',
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: const Color(0xFFF1F5F9),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    isDense: true,
+                  ),
+                  onChanged: (val) => setModalState(() => modalQuery = val),
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: ['ALL', 'DOCTOR', 'NURSE', 'TECHNICIAN', 'MIDWIFE'].map((r) {
+                      final isSel = modalRoleFilter == r;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          label: Text(r == 'ALL' ? 'Tous' : AppTheme.getRoleLabel(r)),
+                          selected: isSel,
+                          onSelected: (_) => setModalState(() => modalRoleFilter = r),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: modalFiltered.length,
+                    itemBuilder: (context, idx) {
+                      final s = modalFiltered[idx];
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(modalCtx);
+                          _openChat(s, isGroup: false);
+                        },
+                        child: _buildStaffTile(s, api.currentUser?['id']?.toString()),
+                      );
+
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = api.currentUser?['id'] ?? api.currentUser?['_id'];
 
-    // Filtrage des membres du personnel
-    final filteredStaff = staffList.where((s) {
-      if (_selectedRoleFilter != 'ALL' && s['role'] != _selectedRoleFilter) {
+    final filteredConversations = conversations.where((c) {
+      if (_searchQuery.isEmpty) return true;
+      final q = _searchQuery.toLowerCase();
+      final lastMsg = (c['lastMessageContent'] ?? '').toString().toLowerCase();
+      final participants = (c['participants'] as List?) ?? [];
+      final hasMatch = participants.any((p) {
+        if (p is Map) {
+          final fn = (p['firstName'] ?? '').toString().toLowerCase();
+          final ln = (p['lastName'] ?? '').toString().toLowerCase();
+          return fn.contains(q) || ln.contains(q);
+        }
         return false;
-      }
-      if (_searchQuery.isNotEmpty) {
-        final q = _searchQuery.toLowerCase();
-        final fn = (s['firstName'] ?? '').toString().toLowerCase();
-        final ln = (s['lastName'] ?? '').toString().toLowerCase();
-        final role = (s['role'] ?? '').toString().toLowerCase();
-        if (!fn.contains(q) && !ln.contains(q) && !role.contains(q)) return false;
-      }
-      return true;
+      });
+      return hasMatch || lastMsg.contains(q);
     }).toList();
 
     return Scaffold(
+
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         elevation: 0,
@@ -263,6 +362,13 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF0284C7),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.edit_square),
+        label: const Text('Nouvelle discussion', style: TextStyle(fontWeight: FontWeight.bold)),
+        onPressed: _showSelectContactModal,
+      ),
       drawer: AppDrawer(
         onSelectTab: (_) {},
         onOpenProfile: _openProfile,
@@ -270,51 +376,30 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
       ),
       body: Column(
         children: [
-          // Barre de Recherche & Filtres Rapides
+          // Barre de Recherche
           Container(
             color: const Color(0xFF0F172A),
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-            child: Column(
-              children: [
-                TextField(
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Rechercher un collègue, un médecin, un technicien...',
-                    hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white54, size: 20),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    filled: true,
-                    fillColor: Colors.white12,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    isDense: true,
-                  ),
-                  onChanged: (val) => setState(() => _searchQuery = val),
+            child: TextField(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Rechercher une discussion ou un groupe...',
+                hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54, size: 20),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                filled: true,
+                fillColor: Colors.white12,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildRoleFilterChip('ALL', '🌐 Tous'),
-                      const SizedBox(width: 8),
-                      _buildRoleFilterChip('DOCTOR', '🩺 Médecins'),
-                      const SizedBox(width: 8),
-                      _buildRoleFilterChip('NURSE', '💉 Infirmiers'),
-                      const SizedBox(width: 8),
-                      _buildRoleFilterChip('TECHNICIAN', '🩻 Techniciens'),
-                      const SizedBox(width: 8),
-                      _buildRoleFilterChip('MIDWIFE', '🤰 Sages-femmes'),
-                    ],
-                  ),
-                ),
-              ],
+                isDense: true,
+              ),
+              onChanged: (val) => setState(() => _searchQuery = val),
             ),
           ),
 
-          // Contenu principal
+          // Contenu principal : Discussions & Groupes uniquement
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -324,24 +409,43 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                       padding: const EdgeInsets.all(14),
                       children: [
                         // Section 1: Discussions Récentes
-                        if (conversations.isNotEmpty) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                '💬 Discussions Récentes',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              '💬 Discussions Récentes',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
+                            ),
+                            Text(
+                              '${conversations.length} discussions',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        if (filteredConversations.isEmpty)
+                          Card(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.mark_chat_unread_outlined, size: 42, color: Colors.grey.shade400),
+                                  const SizedBox(height: 10),
+                                  const Text('Aucune discussion récente.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                  const SizedBox(height: 4),
+                                  const Text('Appuyez sur "+ Nouvelle discussion" pour contacter un collègue.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B)), textAlign: TextAlign.center),
+                                ],
                               ),
-                              Text(
-                                '${conversations.length} discussions',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          ...conversations.map((c) => _buildConversationTile(c, currentUserId?.toString())),
-                          const SizedBox(height: 18),
-                        ],
+                            ),
+                          )
+                        else
+                          ...filteredConversations.map((c) => _buildConversationTile(c, currentUserId?.toString())),
+
+
+                        const SizedBox(height: 18),
 
                         // Section 2: Canaux de Garde & Équipes
                         const Text(
@@ -350,34 +454,6 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                         ),
                         const SizedBox(height: 8),
                         ...groups.map((g) => _buildGroupTile(g)),
-
-                        const SizedBox(height: 18),
-
-                        // Section 3: Annuaire du Personnel
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              '👥 Annuaire du Personnel',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
-                            ),
-                            Text(
-                              '${filteredStaff.length} membres',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-
-                        if (filteredStaff.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Center(
-                              child: Text('Aucun membre trouvé.', style: TextStyle(color: Color(0xFF94A3B8))),
-                            ),
-                          )
-                        else
-                          ...filteredStaff.map((staff) => _buildStaffTile(staff, currentUserId?.toString())),
                       ],
                     ),
                   ),
@@ -387,16 +463,8 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
     );
   }
 
-  Widget _buildRoleFilterChip(String key, String label) {
-    final isSelected = _selectedRoleFilter == key;
-    return ChoiceChip(
-      label: Text(label, style: TextStyle(color: isSelected ? Colors.black : Colors.white70, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 12)),
-      selected: isSelected,
-      selectedColor: Colors.cyanAccent,
-      backgroundColor: Colors.white12,
-      onSelected: (_) => setState(() => _selectedRoleFilter = key),
-    );
-  }
+
+
 
   Widget _buildConversationTile(Map<String, dynamic> conv, String? currentUserId) {
     final participants = (conv['participants'] as List<dynamic>?) ?? [];

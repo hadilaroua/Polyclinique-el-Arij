@@ -9,7 +9,7 @@ import '../widgets/app_drawer.dart';
 import '../widgets/avatar_widget.dart';
 import 'patient_dossier_screen.dart';
 import 'profile_screen.dart';
-import 'staff_messenger_screen.dart';
+
 
 class NurseHomeScreen extends StatefulWidget {
   final VoidCallback onLogout;
@@ -1093,32 +1093,8 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Messagerie & Appels Staff',
-            icon: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0284C7), Color(0xFF0F172A)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.forum, color: Colors.white, size: 18),
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => StaffMessengerScreen(onLogout: widget.onLogout)),
-              );
-            },
-          ),
+          // Bouton d'alertes avec compteur
+
           // Bouton d'alertes avec compteur
           Stack(
             alignment: Alignment.center,

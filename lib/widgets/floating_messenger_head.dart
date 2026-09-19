@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../screens/call_overlay_screen.dart';
 import '../screens/staff_messenger_screen.dart';
+import '../services/api_service.dart';
+import 'avatar_widget.dart';
 
 class FloatingMessengerHead extends StatefulWidget {
   final Widget child;
@@ -18,9 +22,132 @@ class FloatingMessengerHead extends StatefulWidget {
 }
 
 class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
+  final api = ApiService();
   double xPos = 20.0;
   double yPos = 120.0;
   bool isDragging = false;
+  bool isCallModalOpen = false;
+  Timer? _callCheckTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCallChecking();
+  }
+
+  @override
+  void dispose() {
+    _callCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCallChecking() {
+    _callCheckTimer?.cancel();
+    _callCheckTimer = Timer.periodic(const Duration(milliseconds: 2000), (_) => _checkPendingCall());
+  }
+
+  Future<void> _checkPendingCall() async {
+    if (isCallModalOpen || !api.isAuthenticated) return;
+    try {
+      final res = await api.getPendingCall();
+      if (!mounted) return;
+
+      if (res['hasPendingCall'] == true && !isCallModalOpen) {
+        isCallModalOpen = true;
+        final call = res['call'];
+        final sender = call['sender'] ?? {};
+        final callType = call['callType'] ?? 'AUDIO';
+        final senderName = '${sender['firstName'] ?? ''} ${sender['lastName'] ?? ''}'.trim();
+        final targetUserId = sender['_id'] ?? sender['id'] ?? call['senderId'];
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: const Color(0xFF0F172A),
+            title: Row(
+              children: [
+                const Icon(Icons.phone_in_talk, color: Colors.greenAccent),
+                const SizedBox(width: 10),
+                Text(
+                  'Appel $callType Entrant...',
+                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AvatarWidget(
+                  avatarUrl: sender['avatarUrl'],
+                  name: senderName.isNotEmpty ? senderName : 'Soignant',
+                  role: sender['role'] ?? 'Médecin',
+                  radius: 36,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  senderName.isNotEmpty ? senderName : 'Personnel Soignant',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  sender['role'] ?? 'Personnel Clinique',
+                  style: TextStyle(color: Colors.cyanAccent.shade100, fontSize: 13),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                icon: const Icon(Icons.call_end),
+                label: const Text('Refuser'),
+                onPressed: () {
+                  api.sendCallSignal(
+                    targetUserId: targetUserId.toString(),
+                    callType: callType,
+                    action: 'REJECT',
+                  );
+                  isCallModalOpen = false;
+                  Navigator.pop(ctx);
+                },
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF16A34A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.call),
+                label: const Text('Décrocher', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  api.sendCallSignal(
+                    targetUserId: targetUserId.toString(),
+                    callType: callType,
+                    action: 'ACCEPT',
+                  );
+                  isCallModalOpen = false;
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CallOverlayScreen(
+                        contact: sender,
+                        callType: callType,
+                        isCaller: false,
+                        onEndCall: () => Navigator.pop(context),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ).then((_) => isCallModalOpen = false);
+      }
+    } catch (_) {}
+  }
+
 
   void _openMessenger() {
     Navigator.push(
