@@ -115,18 +115,42 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     }
   }
 
-  void _startCall(String callType) {
+  void _startCall(String callType) async {
+    final targetId = widget.isGroup ? widget.target['id'] : (widget.target['_id'] ?? widget.target['id']);
+
+    await api.sendCallSignal(
+      targetUserId: targetId.toString(),
+      callType: callType,
+      action: 'OFFER',
+    );
+
+    await _sendMessage(
+      content: '📞 Appel ${callType == "VIDEO" ? "Vidéo" : "Audio"} en cours...',
+      type: 'CALL_OFFER',
+    );
+
+    if (!mounted) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => CallOverlayScreen(
           contact: widget.target,
           callType: callType,
-          onEndCall: () => Navigator.pop(context),
+          isCaller: true,
+          onEndCall: () {
+            api.sendCallSignal(
+              targetUserId: targetId.toString(),
+              callType: callType,
+              action: 'HANGUP',
+            );
+            Navigator.pop(context);
+          },
         ),
       ),
     );
   }
+
 
   void _handleMenuAction(String action) async {
     final targetId = widget.isGroup ? widget.target['id'] : (widget.target['_id'] ?? widget.target['id']);
@@ -486,8 +510,68 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Type spécifique (Badge Ordonnance / Labo)
+                // Type spécifique (Badge Ordonnance / Labo / Appel)
+                if (type == 'CALL_OFFER')
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(bottom: 6),
+                    decoration: BoxDecoration(
+                      color: isMe ? Colors.white24 : const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: isMe ? Colors.white30 : const Color(0xFFBFDBFE)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.phone_in_talk, size: 18, color: isMe ? Colors.white : const Color(0xFF0284C7)),
+                            const SizedBox(width: 6),
+                            Text(
+                              isMe ? 'Appel émis' : 'Appel entrant...',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isMe ? Colors.white : const Color(0xFF0369A1)),
+                            ),
+                          ],
+                        ),
+                        if (!isMe) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF16A34A),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  elevation: 0,
+                                ),
+                                icon: const Icon(Icons.call, size: 16),
+                                label: const Text('Décrocher', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                onPressed: () {
+                                  final isVideo = content.toLowerCase().contains('vidéo');
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => CallOverlayScreen(
+                                        contact: widget.target,
+                                        callType: isVideo ? 'VIDEO' : 'AUDIO',
+                                        isCaller: false,
+                                        onEndCall: () => Navigator.pop(context),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
                 if (type == 'PRESCRIPTION')
+
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     margin: const EdgeInsets.only(bottom: 6),

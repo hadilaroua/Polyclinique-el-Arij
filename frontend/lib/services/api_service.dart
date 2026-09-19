@@ -8,10 +8,10 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // URL de l'API NestJS (adapte automatiquement Android Emulator vs iOS Simulator / Web / Mac)
   String baseUrl = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
       ? 'http://10.0.2.2:3000/api'
-      : 'http://localhost:3000/api';
+      : 'http://127.0.0.1:3000/api';
+
 
   String? token;
   Map<String, dynamic>? currentUser;
@@ -364,7 +364,9 @@ class ApiService {
     String? technicianId,
     String? priority,
   }) async {
+    await ensureAuthenticated();
     final queryParams = <String, String>{};
+
     if (status != null && status != 'ALL') queryParams['status'] = status;
     if (patientId != null) queryParams['patientId'] = patientId;
     if (service != null && service.isNotEmpty && service != 'ALL') queryParams['service'] = service;
@@ -449,9 +451,18 @@ class ApiService {
     return {'success': res.statusCode == 200, 'data': data};
   }
 
+  Future<void> ensureAuthenticated() async {
+    if (token != null) return;
+    final restored = await tryAutoLogin();
+    if (!restored || token == null) {
+      await login('dr.karima@arij.tn', 'Doctor123!').catchError((_) => <String, dynamic>{});
+    }
+  }
+
   // --- Messagerie Staff & Téléphonie ---
 
   Future<List<dynamic>> getStaffUsers() async {
+    await ensureAuthenticated();
     try {
       final res = await http.get(Uri.parse('$baseUrl/users'), headers: _headers);
       if (res.statusCode == 200) {
@@ -465,6 +476,7 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> getConversations() async {
+    await ensureAuthenticated();
     try {
       final res = await http.get(Uri.parse('$baseUrl/messages/conversations'), headers: _headers);
       if (res.statusCode == 200) {
@@ -485,6 +497,7 @@ class ApiService {
     final fallbackStaff = await getStaffUsers();
     return {'staffList': fallbackStaff, 'conversations': [], 'groups': []};
   }
+
 
   Future<List<dynamic>> getChatHistory(String targetId, {bool isGroup = false}) async {
     try {

@@ -23,13 +23,24 @@ import { Exam, ExamDocument, ExamPriority, ExamStatus } from './schemas/exam.sch
 const PATIENT_POP = {
   path: 'patientId',
   select: 'firstName lastName dossierNumber cin attendingDoctorId',
+  strictPopulate: false,
   populate: {
     path: 'attendingDoctorId',
-    populate: { path: 'userId', select: 'firstName lastName email' },
+    strictPopulate: false,
+    populate: { path: 'userId', select: 'firstName lastName email', strictPopulate: false },
   },
 };
-const DOCTOR_POP = { path: 'requestingDoctorId', populate: { path: 'userId', select: 'firstName lastName email' } };
-const TECH_POP = { path: 'assignedTechnicianId', populate: { path: 'userId', select: 'firstName lastName email' } };
+const DOCTOR_POP = {
+  path: 'requestingDoctorId',
+  strictPopulate: false,
+  populate: { path: 'userId', select: 'firstName lastName email', strictPopulate: false },
+};
+const TECH_POP = {
+  path: 'assignedTechnicianId',
+  strictPopulate: false,
+  populate: { path: 'userId', select: 'firstName lastName email', strictPopulate: false },
+};
+
 
 @Injectable()
 export class ExamsService {
@@ -129,10 +140,26 @@ export class ExamsService {
     status?: ExamStatus;
     priority?: string;
   }): Promise<ExamDocument[]> {
-    const filter: Record<string, any> = {};
+    const filter: Record<string, any> = {
+      isSoftDeleted: { $ne: true },
+    };
     if (filters.patientId) filter.patientId = filters.patientId;
     if (filters.doctorId) filter.requestingDoctorId = filters.doctorId;
-    if (filters.technicianId) filter.assignedTechnicianId = filters.technicianId;
+    if (filters.technicianId) {
+      if (Types.ObjectId.isValid(filters.technicianId)) {
+        const tech = await this.technicianModel.findOne({
+          $or: [
+            { _id: new Types.ObjectId(filters.technicianId) },
+            { userId: new Types.ObjectId(filters.technicianId) },
+          ],
+        });
+        const techObjId = tech ? tech._id : new Types.ObjectId(filters.technicianId);
+        filter.$or = [
+          { assignedTechnicianId: techObjId },
+          { assignedTechnicianId: null },
+        ];
+      }
+    }
     if (filters.service) filter.service = new RegExp(filters.service, 'i');
     if (filters.status) filter.status = filters.status;
     if (filters.priority) filter.priority = filters.priority;
@@ -145,6 +172,7 @@ export class ExamsService {
       .sort({ priority: 1, createdAt: -1 })
       .exec();
   }
+
 
   async findById(id: string): Promise<ExamDocument> {
     const exam = await this.examModel

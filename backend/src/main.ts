@@ -89,7 +89,8 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
+
 
   logger.log(`🚀 Serveur NestJS démarré avec succès sur : http://localhost:${port}/api`);
   logger.log(`📚 Documentation interactive Swagger disponible sur : http://localhost:${port}/api/docs`);

@@ -5,12 +5,14 @@ import '../widgets/avatar_widget.dart';
 class CallOverlayScreen extends StatefulWidget {
   final Map<String, dynamic> contact;
   final String callType; // 'AUDIO' ou 'VIDEO'
+  final bool isCaller;
   final VoidCallback onEndCall;
 
   const CallOverlayScreen({
     super.key,
     required this.contact,
     required this.callType,
+    this.isCaller = true,
     required this.onEndCall,
   });
 
@@ -32,16 +34,21 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
     super.initState();
     isVideoEnabled = widget.callType == 'VIDEO';
 
-    // Simulation de décrochage après 2.5 secondes
-    Timer(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        setState(() {
-          isConnected = true;
-        });
-        _startTimer();
-      }
-    });
+    if (!widget.isCaller) {
+      isConnected = true;
+      _startTimer();
+    } else {
+      Timer(const Duration(milliseconds: 1800), () {
+        if (mounted) {
+          setState(() {
+            isConnected = true;
+          });
+          _startTimer();
+        }
+      });
+    }
   }
+
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
