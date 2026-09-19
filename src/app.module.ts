@@ -8,7 +8,7 @@ import { AppService } from './app.service';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { AuthModule } from './auth/auth.module';
-import { ChatbotModule } from './chatbot/chatbot.module';
+import { MessagesModule } from './messages/messages.module';
 import { ClinicModule } from './clinic/clinic.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -65,7 +65,7 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
     AlertsModule,
     AuditLogsModule,
     NotificationsModule,
-    ChatbotModule,
+    MessagesModule,
     DatabaseModule,
     AiAssistantModule,
   ],
