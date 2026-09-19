@@ -451,16 +451,39 @@ class ApiService {
 
   // --- Messagerie Staff & Téléphonie ---
 
+  Future<List<dynamic>> getStaffUsers() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/users'), headers: _headers);
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List<dynamic>;
+        return list.where((u) => u['role'] != 'PATIENT').toList();
+      }
+    } catch (e) {
+      debugPrint('Erreur getStaffUsers: $e');
+    }
+    return [];
+  }
+
   Future<Map<String, dynamic>> getConversations() async {
     try {
       final res = await http.get(Uri.parse('$baseUrl/messages/conversations'), headers: _headers);
       if (res.statusCode == 200) {
-        return jsonDecode(res.body) as Map<String, dynamic>;
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        var staff = (data['staffList'] as List<dynamic>?) ?? [];
+        if (staff.isEmpty) {
+          staff = await getStaffUsers();
+        }
+        return {
+          'staffList': staff,
+          'conversations': data['conversations'] ?? [],
+          'groups': data['groups'] ?? [],
+        };
       }
     } catch (e) {
       debugPrint('Erreur getConversations: $e');
     }
-    return {'staffList': [], 'conversations': [], 'groups': []};
+    final fallbackStaff = await getStaffUsers();
+    return {'staffList': fallbackStaff, 'conversations': [], 'groups': []};
   }
 
   Future<List<dynamic>> getChatHistory(String targetId, {bool isGroup = false}) async {
@@ -498,7 +521,7 @@ class ApiService {
         body: jsonEncode(payload),
       );
       final data = jsonDecode(res.body);
-      return {'success': res.statusCode == 201, 'data': data};
+      return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': data};
     } catch (e) {
       debugPrint('Erreur sendMessage: $e');
       return {'success': false, 'error': e.toString()};
