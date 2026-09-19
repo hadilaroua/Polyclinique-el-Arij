@@ -1,6 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../screens/arij_assistant_screen.dart';
+import '../screens/staff_messenger_screen.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
@@ -116,16 +116,13 @@ class _PatientDossierScreenState extends State<PatientDossierScreen> with Single
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.psychology, color: Colors.purple),
-            tooltip: 'Résumer avec Arij Assistant',
+            icon: const Icon(Icons.forum_outlined, color: AppTheme.primary),
+            tooltip: 'Messagerie & Discuter du cas avec le staff',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ArijAssistantScreen(
-                    initialPatientId: pat['_id']?.toString() ?? pat['dossierNumber']?.toString(),
-                    initialPatientName: fullName,
-                  ),
+                  builder: (_) => StaffMessengerScreen(onLogout: () {}),
                 ),
               );
             },

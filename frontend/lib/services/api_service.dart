@@ -449,6 +449,87 @@ class ApiService {
     return {'success': res.statusCode == 200, 'data': data};
   }
 
+  // --- Messagerie Staff & Téléphonie ---
+
+  Future<Map<String, dynamic>> getConversations() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/messages/conversations'), headers: _headers);
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Erreur getConversations: $e');
+    }
+    return {'staffList': [], 'conversations': [], 'groups': []};
+  }
+
+  Future<List<dynamic>> getChatHistory(String targetId, {bool isGroup = false}) async {
+    try {
+      final uri = Uri.parse('$baseUrl/messages/history/$targetId?isGroup=$isGroup');
+      final res = await http.get(uri, headers: _headers);
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as List<dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Erreur getChatHistory: $e');
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> sendMessage({
+    String? recipientId,
+    String? groupId,
+    required String content,
+    String messageType = 'TEXT',
+    List<Map<String, dynamic>>? attachments,
+  }) async {
+    final payload = {
+      if (recipientId != null && recipientId.isNotEmpty) 'recipientId': recipientId,
+      if (groupId != null && groupId.isNotEmpty) 'groupId': groupId,
+      'content': content,
+      'messageType': messageType,
+      if (attachments != null && attachments.isNotEmpty) 'attachments': attachments,
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/messages/send'),
+        headers: _headers,
+        body: jsonEncode(payload),
+      );
+      final data = jsonDecode(res.body);
+      return {'success': res.statusCode == 201, 'data': data};
+    } catch (e) {
+      debugPrint('Erreur sendMessage: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> sendCallSignal({
+    required String targetUserId,
+    required String callType,
+    required String action,
+  }) async {
+    final payload = {
+      'targetUserId': targetUserId,
+      'callType': callType,
+      'action': action,
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/messages/call/signal'),
+        headers: _headers,
+        body: jsonEncode(payload),
+      );
+      final data = jsonDecode(res.body);
+      return {'success': res.statusCode == 201 || res.statusCode == 200, 'data': data};
+    } catch (e) {
+      debugPrint('Erreur sendCallSignal: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> completeExam(
     String examId,
     String result, {
