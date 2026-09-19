@@ -566,6 +566,19 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getPendingCall() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/messages/call/pending'), headers: _headers);
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Erreur getPendingCall: $e');
+    }
+    return {'hasPendingCall': false};
+  }
+
+
   Future<Map<String, dynamic>> createCustomGroup({
     required String name,
     String? description,

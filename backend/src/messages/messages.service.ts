@@ -172,14 +172,47 @@ export class MessagesService {
       .exec();
   }
 
+  private activeCallsMap = new Map<string, {
+    callId: string;
+    senderId: string;
+    targetUserId: string;
+    sender: any;
+    callType: string;
+    action: string;
+    createdAt: Date;
+  }>();
+
   /**
-   * Signalisation d'appels voix/vidéo (Simulé)
+   * Signalisation d'appels voix/vidéo en direct
    */
   async handleCallSignal(senderId: string, dto: CallSignalDto) {
     const sender = await this.userModel.findById(senderId).select(USER_POP).exec();
     const target = await this.userModel.findById(dto.targetUserId).select(USER_POP).exec();
 
     if (!sender || !target) throw new NotFoundException('Utilisateur introuvable');
+
+    if (dto.action === 'OFFER') {
+      this.activeCallsMap.set(dto.targetUserId, {
+        callId: `call_${Date.now()}`,
+        senderId,
+        targetUserId: dto.targetUserId,
+        sender,
+        callType: dto.callType || 'AUDIO',
+        action: 'OFFER',
+        createdAt: new Date(),
+      });
+
+      // Créer un message système d'appel dans le fil de discussion
+      await this.sendMessage(senderId, {
+        recipientId: dto.targetUserId,
+        content: `📞 Appel ${dto.callType === 'VIDEO' ? 'Vidéo' : 'Audio'} en cours...`,
+        messageType: MessageType.CALL_OFFER as any,
+
+      }).catch(() => {});
+    } else if (dto.action === 'ACCEPT' || dto.action === 'HANGUP' || dto.action === 'REJECT') {
+      this.activeCallsMap.delete(dto.targetUserId);
+      this.activeCallsMap.delete(senderId);
+    }
 
     return {
       success: true,
@@ -191,6 +224,23 @@ export class MessagesService {
       roomChannelId: `call_${[senderId, dto.targetUserId].sort().join('_')}`,
     };
   }
+
+  async getPendingCall(userId: string) {
+    const pending = this.activeCallsMap.get(userId);
+    if (!pending) return { hasPendingCall: false };
+
+    // Expiration automatique après 45 secondes si pas de réponse
+    if (Date.now() - pending.createdAt.getTime() > 45000) {
+      this.activeCallsMap.delete(userId);
+      return { hasPendingCall: false };
+    }
+
+    return {
+      hasPendingCall: true,
+      call: pending,
+    };
+  }
+
 
   private getGroupName(groupId: string): string {
     switch (groupId) {

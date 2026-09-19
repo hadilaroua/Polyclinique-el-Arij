@@ -63,6 +63,14 @@ export class MessagesController {
     return this.messagesService.handleCallSignal(userId, dto);
   }
 
+  @Get('call/pending')
+  @Roles(Role.DOCTOR, Role.NURSE, Role.TECHNICIAN, Role.MIDWIFE, Role.ADMIN)
+  @ApiOperation({ summary: 'Vérifier s\'il y a un appel entrant en attente' })
+  getPendingCall(@CurrentUser('sub') userId: string) {
+    return this.messagesService.getPendingCall(userId);
+  }
+
+
   @Post('groups/create')
   @Roles(Role.DOCTOR, Role.NURSE, Role.TECHNICIAN, Role.MIDWIFE, Role.ADMIN)
   @ApiOperation({ summary: 'Créer un groupe de discussion personnalisé' })

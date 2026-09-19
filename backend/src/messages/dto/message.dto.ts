@@ -74,11 +74,12 @@ export class CallSignalDto {
   @IsNotEmpty()
   callType: 'AUDIO' | 'VIDEO';
 
-  @ApiProperty({ example: 'INITIATE', description: 'Action: INITIATE, ANSWER, REJECT, END' })
+  @ApiProperty({ example: 'OFFER', description: 'Action: OFFER, ACCEPT, HANGUP, INITIATE, ANSWER, REJECT, END' })
   @IsString()
   @IsNotEmpty()
-  action: 'INITIATE' | 'ANSWER' | 'REJECT' | 'END';
+  action: 'OFFER' | 'ACCEPT' | 'HANGUP' | 'INITIATE' | 'ANSWER' | 'REJECT' | 'END';
 }
+
 
 export class CreateGroupDto {
   @ApiProperty({ example: 'Équipe Garde Samedi', description: 'Nom du groupe personnalisable' })
