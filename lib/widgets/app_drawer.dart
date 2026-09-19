@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/arij_assistant_screen.dart';
+import '../screens/staff_messenger_screen.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import 'avatar_widget.dart';
@@ -291,31 +291,31 @@ class AppDrawer extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Colors.purple, Colors.indigo],
+                        colors: [Color(0xFF0284C7), Color(0xFF0F172A)],
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.psychology, color: Colors.amberAccent, size: 20),
+                    child: const Icon(Icons.forum_rounded, color: Colors.white, size: 20),
                   ),
                   title: const Row(
                     children: [
                       Text(
-                        'Arij Assistant IA',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.purple),
+                        'Messagerie & Appels',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0284C7)),
                       ),
                       SizedBox(width: 6),
-                      Icon(Icons.auto_awesome, color: Colors.amber, size: 14),
+                      Icon(Icons.chat_bubble_outline, color: Color(0xFF0284C7), size: 14),
                     ],
                   ),
                   subtitle: const Text(
-                    'Intelligence Clinique & Briefing',
+                    'Chat direct, groupes & appels HD staff',
                     style: TextStyle(fontSize: 11, color: Colors.black54),
                   ),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ArijAssistantScreen()),
+                      MaterialPageRoute(builder: (_) => StaffMessengerScreen(onLogout: onLogout)),
                     );
                   },
                 ),
