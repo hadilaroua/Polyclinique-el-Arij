@@ -19,6 +19,11 @@ export class CreateExamDto {
   @IsMongoId()
   requestingDoctorId?: string;
 
+  @ApiPropertyOptional({ example: '60c72b2f9b1d8b2bad8e9a14', description: 'ID du technicien ciblé (optionnel)' })
+  @IsOptional()
+  @IsMongoId()
+  assignedTechnicianId?: string;
+
   @ApiProperty({ example: 'Scanner thoracique sans injection', description: 'Type d\'examen demandé' })
   @IsString()
   @IsNotEmpty()
