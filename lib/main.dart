@@ -7,6 +7,8 @@ import 'screens/technician_home_screen.dart';
 import 'services/api_service.dart';
 import 'services/notification_service.dart';
 import 'utils/theme.dart';
+import 'widgets/floating_messenger_head.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -131,24 +133,37 @@ class _ArijAppState extends State<ArijApp> {
   }
 
   Widget _resolveRootScreen() {
+
     if (!api.isAuthenticated) {
       return LoginScreen(onLoginSuccess: _handleLoginSuccess);
     }
 
     final role = api.currentUser?['role']?.toString().toUpperCase() ?? 'DOCTOR';
+    Widget screen;
 
     switch (role) {
       case 'DOCTOR':
-        return DoctorHomeScreen(onLogout: _handleLogout);
+        screen = DoctorHomeScreen(onLogout: _handleLogout);
+        break;
       case 'NURSE':
-        return NurseHomeScreen(onLogout: _handleLogout);
+        screen = NurseHomeScreen(onLogout: _handleLogout);
+        break;
       case 'MIDWIFE':
-        return MidwifeHomeScreen(onLogout: _handleLogout);
+        screen = MidwifeHomeScreen(onLogout: _handleLogout);
+        break;
       case 'TECHNICIAN':
-        return TechnicianHomeScreen(onLogout: _handleLogout);
+        screen = TechnicianHomeScreen(onLogout: _handleLogout);
+        break;
       case 'ADMIN':
       default:
-        return DoctorHomeScreen(onLogout: _handleLogout);
+        screen = DoctorHomeScreen(onLogout: _handleLogout);
+        break;
     }
+
+    return FloatingMessengerHead(
+      onLogout: _handleLogout,
+      child: screen,
+    );
   }
+
 }
