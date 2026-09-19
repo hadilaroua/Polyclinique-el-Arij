@@ -1,0 +1,41 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and outputs
+*.log
+logs/
+test_out.txt
+
+# Node / JS dependencies and build
+node_modules/
+dist/
+dist-ssr/
+build/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDEs
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.iml
+
+# Storage & Temp
+*.tmp
+*.bak
