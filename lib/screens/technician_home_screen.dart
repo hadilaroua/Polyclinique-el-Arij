@@ -1258,6 +1258,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     final dln = docUser is Map ? (docUser['lastName'] ?? '') : (doctorObj is Map ? (doctorObj['lastName'] ?? '') : '');
     final docName = '$dfn $dln'.trim().isNotEmpty ? 'Dr. $dfn $dln'.trim() : 'Dr. Prescripteur / Traitant';
 
+    final assignedTechObj = exam['assignedTechnicianId'];
+    final techUser = assignedTechObj is Map ? (assignedTechObj['userId'] is Map ? assignedTechObj['userId'] : assignedTechObj['user']) : null;
+    final tfn = techUser is Map ? (techUser['firstName'] ?? '') : (assignedTechObj is Map ? (assignedTechObj['firstName'] ?? '') : '');
+    final tln = techUser is Map ? (techUser['lastName'] ?? '') : (assignedTechObj is Map ? (assignedTechObj['lastName'] ?? '') : '');
+    final assignedTechName = '$tfn $tln'.trim().isNotEmpty ? 'Tech. $tfn $tln'.trim() : null;
+
+    final serviceName = exam['service'] ?? 'Plateau Technique';
+
     final reqNotes = exam['requestNotes'];
     final result = exam['result'];
     final docUrl = exam['resultDocumentUrl'];
@@ -1307,7 +1315,38 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
             const SizedBox(height: 6),
 
-            // Ligne 2 : Infos patient & Prescripteur
+            // Ligne 2 : Service / Département & Technicien ciblé
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    serviceName,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    assignedTechName != null ? '🎯 $assignedTechName' : '👥 Tout le service',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: assignedTechName != null ? FontWeight.bold : FontWeight.normal,
+                      color: assignedTechName != null ? const Color(0xFF059669) : const Color(0xFF64748B),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            // Ligne 3 : Infos patient & Prescripteur
             Row(
               children: [
                 const Icon(Icons.person, size: 15, color: Color(0xFF64748B)),

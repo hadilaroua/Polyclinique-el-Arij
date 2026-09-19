@@ -31,6 +31,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
   List<dynamic> consultations = [];
   List<dynamic> exams = [];
   List<dynamic> alerts = [];
+  List<dynamic> technicians = [];
   final Set<String> _readAlertIds = {};
   bool isLoading = true;
   String patientSearchQuery = '';
@@ -216,6 +217,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       api.getConsultations(),
       api.getExams(),
       api.getAlerts(),
+      api.getTechnicians(),
     ]);
     if (mounted) {
       setState(() {
@@ -223,6 +225,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
         consultations = results[1];
         exams = results[2];
         alerts = results[3];
+        technicians = results[4];
         isLoading = false;
       });
     }
@@ -1278,7 +1281,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
   void _showNewExamModal() {
     if (patients.isEmpty) return;
     String selectedPatientId = patients.first['_id'];
-    String examType = 'Électrocardiogramme (ECG)';
+    String selectedService = 'Laboratoire / Biologie';
+    String? selectedTechId;
+    String examType = 'Bilan sanguin complet';
     String priority = 'NORMAL';
     final notesCtrl = TextEditingController();
 
@@ -1298,110 +1303,170 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFCBD5E1),
-                    borderRadius: BorderRadius.circular(2),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                '🔬 Prescrire un Examen Complémentaire',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 14),
-
-              DropdownButtonFormField<String>(
-                initialValue: selectedPatientId,
-                decoration: const InputDecoration(labelText: 'Patient *', border: OutlineInputBorder()),
-                items: patients.map<DropdownMenuItem<String>>((p) {
-                  return DropdownMenuItem<String>(
-                    value: p['_id'],
-                    child: Text('${p['firstName']} ${p['lastName']} (${p['cin']})'),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) setModalState(() => selectedPatientId = val);
-                },
-              ),
-
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: examType,
-                decoration: const InputDecoration(labelText: 'Type d\'examen *', border: OutlineInputBorder()),
-                items: [
-                  'Électrocardiogramme (ECG)',
-                  'Bilan sanguin complet',
-                  'Scanner thoracique sans injection',
-                  'Échographie abdominale',
-                  'Radiographie pulmonaire',
-                ].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-                onChanged: (val) {
-                  if (val != null) setModalState(() => examType = val);
-                },
-              ),
-
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Text('Priorité : ', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ChoiceChip(
-                    label: const Text('Normale'),
-                    selected: priority == 'NORMAL',
-                    onSelected: (s) => setModalState(() => priority = 'NORMAL'),
-                  ),
-                  const SizedBox(width: 10),
-                  ChoiceChip(
-                    label: const Text('🚨 Urgente'),
-                    selected: priority == 'URGENT',
-                    selectedColor: const Color(0xFFFEE2E2),
-                    onSelected: (s) => setModalState(() => priority = 'URGENT'),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-              TextField(
-                controller: notesCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Renseignements cliniques pour le technicien',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 14),
+                const Text(
+                  '🔬 Prescrire un Examen Complémentaire',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
-              ),
+                const SizedBox(height: 14),
 
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF059669),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    final docUserId = api.currentUser?['id'] ?? api.currentUser?['_id'];
-                    await api.createExam(
-                      patientId: selectedPatientId,
-                      requestingDoctorId: docUserId,
-                      examType: examType,
-                      priority: priority,
-                      requestNotes: notesCtrl.text.trim(),
+                // Sélection du Patient
+                DropdownButtonFormField<String>(
+                  initialValue: selectedPatientId,
+                  decoration: const InputDecoration(labelText: 'Patient *', border: OutlineInputBorder()),
+                  items: patients.map<DropdownMenuItem<String>>((p) {
+                    return DropdownMenuItem<String>(
+                      value: p['_id'],
+                      child: Text('${p['firstName']} ${p['lastName']} (${p['cin']})'),
                     );
-                    _loadData();
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedPatientId = val);
                   },
-                  child: const Text('Envoyer l\'ordre au laboratoire/radio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 12),
+
+                // Département / Service des examens
+                DropdownButtonFormField<String>(
+                  initialValue: selectedService,
+                  decoration: const InputDecoration(labelText: 'Département / Plateau Technique *', border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'Laboratoire / Biologie', child: Text('🧪 Laboratoire / Biologie')),
+                    DropdownMenuItem(value: 'Radiologie / Imagerie', child: Text('🩻 Radiologie / Imagerie')),
+                    DropdownMenuItem(value: 'Cardiologie / ECG', child: Text('🫀 Cardiologie / ECG')),
+                    DropdownMenuItem(value: 'Échographie / Doppler', child: Text('🔊 Échographie / Doppler')),
+                    DropdownMenuItem(value: 'EFR / Pneumologie', child: Text('🫁 EFR / Pneumologie')),
+                    DropdownMenuItem(value: 'Autre Service', child: Text('🏥 Autre Service')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedService = val);
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // Technicien spécifique (Optionnel)
+                DropdownButtonFormField<String?>(
+                  initialValue: selectedTechId,
+                  decoration: const InputDecoration(
+                    labelText: 'Technicien de Santé Ciblé (Optionnel)',
+                    helperText: 'Laissez vide pour adresser la demande à tout le service',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('👥 Tout le personnel du département', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                    ),
+                    ...technicians.map<DropdownMenuItem<String?>>((t) {
+                      final u = t['userId'];
+                      final fn = u is Map ? (u['firstName'] ?? '') : (t['firstName'] ?? '');
+                      final ln = u is Map ? (u['lastName'] ?? '') : (t['lastName'] ?? '');
+                      final name = '$fn $ln'.trim().isNotEmpty ? 'Tech. $fn $ln' : 'Technicien';
+                      final dept = t['department'] ?? t['service'] ?? '';
+                      final label = dept.toString().isNotEmpty ? '$name ($dept)' : name;
+                      return DropdownMenuItem<String?>(
+                        value: t['_id']?.toString(),
+                        child: Text(label),
+                      );
+                    }),
+                  ],
+                  onChanged: (val) {
+                    setModalState(() => selectedTechId = val);
+                  },
+                ),
+
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: examType,
+                  decoration: const InputDecoration(labelText: 'Type d\'examen *', border: OutlineInputBorder()),
+                  items: [
+                    'Bilan sanguin complet',
+                    'Électrocardiogramme (ECG)',
+                    'Scanner thoracique sans injection',
+                    'Échographie abdominale',
+                    'Radiographie pulmonaire',
+                    'Bilan Hémostase / TP-INR',
+                    'Gaz du sang',
+                    'Spermogramme / Bilan PMA',
+                  ].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => examType = val);
+                  },
+                ),
+
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Text('Priorité : ', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ChoiceChip(
+                      label: const Text('Normale'),
+                      selected: priority == 'NORMAL',
+                      onSelected: (s) => setModalState(() => priority = 'NORMAL'),
+                    ),
+                    const SizedBox(width: 10),
+                    ChoiceChip(
+                      label: const Text('🚨 Urgente'),
+                      selected: priority == 'URGENT',
+                      selectedColor: const Color(0xFFFEE2E2),
+                      onSelected: (s) => setModalState(() => priority = 'URGENT'),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Renseignements cliniques pour le technicien',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF059669),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      final docUserId = api.currentUser?['id'] ?? api.currentUser?['_id'];
+                      await api.createExam(
+                        patientId: selectedPatientId,
+                        requestingDoctorId: docUserId,
+                        assignedTechnicianId: selectedTechId,
+                        service: selectedService,
+                        examType: examType,
+                        priority: priority,
+                        requestNotes: notesCtrl.text.trim(),
+                      );
+                      _loadData();
+                    },
+                    child: const Text('Envoyer l\'ordre au laboratoire/radio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

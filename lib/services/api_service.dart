@@ -380,9 +380,22 @@ class ApiService {
     return [];
   }
 
+  Future<List<dynamic>> getTechnicians() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/technicians'), headers: _headers);
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+    } catch (e) {
+      debugPrint('Erreur getTechnicians: $e');
+    }
+    return [];
+  }
+
   Future<Map<String, dynamic>> createExam({
     required String patientId,
     String? requestingDoctorId,
+    String? assignedTechnicianId,
     required String examType,
     String priority = 'MEDIUM',
     String? service,
@@ -391,6 +404,7 @@ class ApiService {
     final payload = {
       'patientId': patientId,
       if (requestingDoctorId != null && requestingDoctorId.isNotEmpty) 'requestingDoctorId': requestingDoctorId,
+      if (assignedTechnicianId != null && assignedTechnicianId.isNotEmpty) 'assignedTechnicianId': assignedTechnicianId,
       'examType': examType,
       'priority': priority,
       if (service != null && service.isNotEmpty) 'service': service,
