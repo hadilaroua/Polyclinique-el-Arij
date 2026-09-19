@@ -12,6 +12,8 @@ import { Doctor, DoctorDocument } from '../doctors/schemas/doctor.schema';
 import { MedicalRecordsService } from '../medical-records/medical-records.service';
 import { MidwivesService } from '../midwives/midwives.service';
 import { NursesService } from '../nurses/nurses.service';
+import { ExamsService } from '../exams/exams.service';
+import { ExamPriority } from '../exams/schemas/exam.schema';
 import { Nurse, NurseDocument } from '../nurses/schemas/nurse.schema';
 import { PatientsService } from '../patients/patients.service';
 import { TechniciansService } from '../technicians/technicians.service';
@@ -45,6 +47,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly appointmentsService: AppointmentsService,
     private readonly alertsService: AlertsService,
     private readonly clinicService: ClinicService,
+    private readonly examsService: ExamsService,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Doctor.name) private readonly doctorModel: Model<DoctorDocument>,
     @InjectModel(Nurse.name) private readonly nurseModel: Model<NurseDocument>,
@@ -656,6 +659,33 @@ export class SeedService implements OnApplicationBootstrap {
       adminUser._id.toString(),
     );
     this.logger.log('1 Alerte clinique créée');
+
+    // 8. Examens de démonstration assignés à Sami Trabelsi
+    try {
+      await this.examsService.create({
+        patientId: patient1._id.toString(),
+        requestingDoctorId: docUser1._id.toString(),
+        assignedTechnicianId: techUser._id.toString(),
+        examType: 'Scanner Thoracique sans Injection',
+        service: 'Imagerie Médicale & Radiologie',
+        priority: ExamPriority.HIGH,
+        requestNotes: 'Evaluation parenchyme pulmonaire et surveillance asthme d\'effort.',
+      });
+
+      await this.examsService.create({
+        patientId: patient2._id.toString(),
+        requestingDoctorId: docUser1._id.toString(),
+        assignedTechnicianId: techUser._id.toString(),
+        examType: 'Radiographie du Rachis Lombaire',
+        service: 'Imagerie Médicale & Radiologie',
+        priority: ExamPriority.MEDIUM,
+        requestNotes: 'Lombalgie aiguë suite à un effort physique.',
+      });
+
+      this.logger.log('2 Examens de démonstration créés pour Sami Trabelsi');
+    } catch (e) {
+      this.logger.warn(`Info seeding examens : ${e}`);
+    }
 
     this.logger.log(
       '--- Données initialisées avec succès pour la Polyclinique Arij ---',

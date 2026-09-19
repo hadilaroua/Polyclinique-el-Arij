@@ -79,3 +79,34 @@ export class CallSignalDto {
   @IsNotEmpty()
   action: 'INITIATE' | 'ANSWER' | 'REJECT' | 'END';
 }
+
+export class CreateGroupDto {
+  @ApiProperty({ example: 'Équipe Garde Samedi', description: 'Nom du groupe personnalisable' })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiPropertyOptional({ example: 'Coordination des gardes de nuit', description: 'Description optionnelle' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ example: ['60c72b2f9b1d8b2bad8e9a12'], description: 'Liste des IDs des membres du groupe' })
+  @IsArray()
+  @IsMongoId({ each: true })
+  memberIds: string[];
+}
+
+export class BlockUserDto {
+  @ApiProperty({ example: '60c72b2f9b1d8b2bad8e9a12', description: 'ID de l\'utilisateur à bloquer/débloquer' })
+  @IsMongoId()
+  @IsNotEmpty()
+  targetUserId: string;
+}
+
+export class ArchiveConversationDto {
+  @ApiProperty({ example: '60c72b2f9b1d8b2bad8e9a12', description: 'ID de la conversation ou du membre' })
+  @IsString()
+  @IsNotEmpty()
+  targetId: string;
+}

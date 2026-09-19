@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -94,9 +95,13 @@ export class ExamsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Supprimer un examen (Admin uniquement)' })
-  remove(@Param('id') id: string) {
-    return this.examsService.remove(id);
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.TECHNICIAN, Role.MIDWIFE)
+  @ApiOperation({ summary: 'Supprimer un examen (Soft-delete personnel / Définitive Admin)' })
+  remove(
+    @Param('id') id: string,
+    @CurrentUser('sub') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    return this.examsService.remove(id, userId, userRole);
   }
 }
