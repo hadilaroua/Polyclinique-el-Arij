@@ -16,11 +16,15 @@ export class AlertsService {
     dto: CreateAlertDto,
     createdById: string,
   ): Promise<AlertDocument> {
+    const validPatientId = dto.patientId && Types.ObjectId.isValid(dto.patientId) ? new Types.ObjectId(dto.patientId) : null;
+    const validTargetDoctorId = dto.targetDoctorId && Types.ObjectId.isValid(dto.targetDoctorId) ? new Types.ObjectId(dto.targetDoctorId) : null;
+    const validCreatedBy = createdById && Types.ObjectId.isValid(createdById) ? new Types.ObjectId(createdById) : null;
+
     const alert = new this.alertModel({
       ...dto,
-      patientId: dto.patientId ? new Types.ObjectId(dto.patientId) : null,
-      targetDoctorId: dto.targetDoctorId ? new Types.ObjectId(dto.targetDoctorId) : null,
-      createdBy: new Types.ObjectId(createdById),
+      patientId: validPatientId,
+      targetDoctorId: validTargetDoctorId,
+      createdBy: validCreatedBy,
       targetRoles: dto.targetRoles || [Role.DOCTOR, Role.NURSE],
     });
 
