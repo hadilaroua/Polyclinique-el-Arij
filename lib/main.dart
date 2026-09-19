@@ -1,0 +1,154 @@
+import 'package:flutter/material.dart';
+import 'screens/doctor_home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/midwife_home_screen.dart';
+import 'screens/nurse_home_screen.dart';
+import 'screens/technician_home_screen.dart';
+import 'services/api_service.dart';
+import 'services/notification_service.dart';
+import 'utils/theme.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ArijApp());
+}
+
+class ArijApp extends StatefulWidget {
+  const ArijApp({super.key});
+
+  @override
+  State<ArijApp> createState() => _ArijAppState();
+}
+
+class _ArijAppState extends State<ArijApp> {
+  final api = ApiService();
+  final notif = NotificationService();
+  bool _checkingSession = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    // 1. Initialiser le service de notification native
+    await notif.init();
+
+    // 2. Tenter la restauration automatique de session
+    final loggedIn = await api.tryAutoLogin();
+    if (loggedIn) {
+      // Démarrer l'écoute continue des alertes médicales
+      notif.startAlertMonitoring(api);
+    }
+
+    if (mounted) {
+      setState(() => _checkingSession = false);
+    }
+  }
+
+  void _handleLogout() {
+    notif.stopAlertMonitoring();
+    api.logout();
+    setState(() {});
+  }
+
+  void _handleLoginSuccess() {
+    notif.startAlertMonitoring(api);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Polyclinique Arij Djerba — Staff',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.theme,
+      home: _checkingSession ? _buildSplashScreen() : _resolveRootScreen(),
+    );
+  }
+
+  Widget _buildSplashScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 90,
+              height: 90,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0284C7).withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/logo-polyclinique-arij.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.local_hospital, size: 40, color: AppTheme.primary),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Polyclinique Arij Djerba',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Connexion sécurisée en cours...',
+              style: TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 28),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _resolveRootScreen() {
+    if (!api.isAuthenticated) {
+      return LoginScreen(onLoginSuccess: _handleLoginSuccess);
+    }
+
+    final role = api.currentUser?['role']?.toString().toUpperCase() ?? 'DOCTOR';
+
+    switch (role) {
+      case 'DOCTOR':
+        return DoctorHomeScreen(onLogout: _handleLogout);
+      case 'NURSE':
+        return NurseHomeScreen(onLogout: _handleLogout);
+      case 'MIDWIFE':
+        return MidwifeHomeScreen(onLogout: _handleLogout);
+      case 'TECHNICIAN':
+        return TechnicianHomeScreen(onLogout: _handleLogout);
+      case 'ADMIN':
+      default:
+        return DoctorHomeScreen(onLogout: _handleLogout);
+    }
+  }
+}
