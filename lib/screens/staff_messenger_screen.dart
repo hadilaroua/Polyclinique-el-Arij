@@ -124,11 +124,14 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
         backgroundColor: const Color(0xFF0F172A),
         title: const Row(
           children: [
-            Icon(Icons.forum, color: Colors.cyanAccent, size: 24),
-            SizedBox(width: 10),
-            Text(
-              'Messagerie Staff Clinique',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            Icon(Icons.forum, color: Colors.cyanAccent, size: 22),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Messagerie Staff Clinique',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -199,7 +202,27 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                     child: ListView(
                       padding: const EdgeInsets.all(14),
                       children: [
-                        // Section Canaux & Groupes de Garde
+                        // Section 1: Discussions Récentes
+                        if (conversations.isNotEmpty) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                '💬 Discussions Récentes',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
+                              ),
+                              Text(
+                                '${conversations.length} discussions',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ...conversations.map((c) => _buildConversationTile(c, currentUserId?.toString())),
+                          const SizedBox(height: 18),
+                        ],
+
+                        // Section 2: Canaux de Garde & Équipes
                         const Text(
                           '📢 Canaux de Garde & Équipes',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
@@ -209,12 +232,12 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
 
                         const SizedBox(height: 18),
 
-                        // Section Discussions Directes
+                        // Section 3: Annuaire du Personnel
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              '💬 Personnel Soignant & Employés',
+                              '👥 Annuaire du Personnel',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
                             ),
                             Text(
@@ -233,7 +256,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                             ),
                           )
                         else
-                          ...filteredStaff.map((staff) => _buildStaffTile(staff, currentUserId)),
+                          ...filteredStaff.map((staff) => _buildStaffTile(staff, currentUserId?.toString())),
                       ],
                     ),
                   ),
@@ -251,6 +274,143 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
       selectedColor: Colors.cyanAccent,
       backgroundColor: Colors.white12,
       onSelected: (_) => setState(() => _selectedRoleFilter = key),
+    );
+  }
+
+  Widget _buildConversationTile(Map<String, dynamic> conv, String? currentUserId) {
+    final participants = (conv['participants'] as List<dynamic>?) ?? [];
+    Map<String, dynamic>? other;
+    for (var p in participants) {
+      if (p is Map<String, dynamic>) {
+        final pid = (p['_id'] ?? p['id'])?.toString();
+        if (pid != null && pid != currentUserId) {
+          other = p;
+          break;
+        }
+      }
+    }
+
+    if (other == null) return const SizedBox.shrink();
+
+    final fn = other['firstName'] ?? '';
+    final ln = other['lastName'] ?? '';
+    final name = '$fn $ln'.trim().isNotEmpty ? '$fn $ln'.trim() : 'Collègue';
+    final role = other['role'] ?? 'STAFF';
+    final avatarUrl = other['avatarUrl'];
+
+    final roleLabel = AppTheme.getRoleLabel(role);
+    final roleColor = AppTheme.getRoleColor(role);
+
+    final lastMsg = conv['lastMessageContent'] ?? '';
+    final lastTimeRaw = conv['lastMessageAt'];
+    String timeStr = '';
+    if (lastTimeRaw != null) {
+      final dt = DateTime.tryParse(lastTimeRaw.toString());
+      if (dt != null) {
+        final local = dt.toLocal();
+        timeStr = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+      }
+    }
+
+    final unreadMap = conv['unreadCounts'] as Map<String, dynamic>?;
+    final unreadCount = currentUserId != null && unreadMap != null ? (unreadMap[currentUserId] ?? 0) : 0;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: unreadCount > 0 ? 3 : 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: unreadCount > 0 ? BorderSide(color: Colors.blue.shade400, width: 1.5) : BorderSide.none,
+      ),
+      child: ListTile(
+        onTap: () => _openChat(other!, isGroup: false),
+        leading: Stack(
+          children: [
+            AvatarWidget(
+              avatarUrl: avatarUrl,
+              name: name,
+              role: role,
+              radius: 22,
+            ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+            ),
+          ],
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w600,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: roleColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                roleLabel,
+                style: TextStyle(color: roleColor, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Expanded(
+              child: Text(
+                lastMsg,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: unreadCount > 0 ? Colors.blue.shade900 : const Color(0xFF64748B),
+                  fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (timeStr.isNotEmpty)
+              Text(
+                timeStr,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: unreadCount > 0 ? Colors.blue.shade700 : const Color(0xFF94A3B8),
+                  fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+          ],
+        ),
+        trailing: unreadCount > 0
+            ? Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$unreadCount',
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              )
+            : const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+      ),
     );
   }
 
