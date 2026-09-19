@@ -5,7 +5,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { AlertsService } from '../alerts/alerts.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { AlertLevel } from '../common/enums/alert-level.enum';
@@ -38,7 +38,12 @@ export class ExamsService {
   ) {}
 
   async create(dto: CreateExamDto): Promise<ExamDocument> {
-    const exam = new this.examModel(dto);
+    const cleanDto = {
+      ...dto,
+      requestingDoctorId: dto.requestingDoctorId && Types.ObjectId.isValid(dto.requestingDoctorId) ? dto.requestingDoctorId : undefined,
+      assignedTechnicianId: dto.assignedTechnicianId && Types.ObjectId.isValid(dto.assignedTechnicianId) ? dto.assignedTechnicianId : undefined,
+    };
+    const exam = new this.examModel(cleanDto);
     const saved = await exam.save();
     const populated = await saved
       .populate(DOCTOR_POP)
