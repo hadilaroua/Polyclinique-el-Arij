@@ -973,6 +973,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         final type = (ex['examType'] ?? '').toString().toLowerCase();
         if (_selectedServiceFilter == 'RADIO' && !serv.contains('radio') && !serv.contains('imag') && !type.contains('scan') && !type.contains('radio') && !type.contains('echo')) return false;
         if (_selectedServiceFilter == 'LABO' && !serv.contains('lab') && !serv.contains('bio') && !type.contains('nfs') && !type.contains('sang') && !type.contains('bio')) return false;
+        if (_selectedServiceFilter == 'CARDIO' && !serv.contains('cardio') && !serv.contains('ecg') && !type.contains('ecg') && !type.contains('cardio')) return false;
         if (_selectedServiceFilter == 'PMA' && !serv.contains('pma') && !serv.contains('reprod') && !type.contains('sperm') && !type.contains('fiv')) return false;
       }
 
@@ -1123,6 +1124,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                   _buildServiceChip('RADIO', '🩻 Radiologie & Scanner'),
                   const SizedBox(width: 8),
                   _buildServiceChip('LABO', '🧪 Laboratoire & Bio'),
+                  const SizedBox(width: 8),
+                  _buildServiceChip('CARDIO', '🫀 Cardiologie & ECG'),
                   const SizedBox(width: 8),
                   _buildServiceChip('PMA', '🧬 PMA & Fécondation'),
                 ],
