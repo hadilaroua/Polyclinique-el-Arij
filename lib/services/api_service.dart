@@ -401,23 +401,42 @@ class ApiService {
     String? service,
     String? requestNotes,
   }) async {
-    final payload = {
-      'patientId': patientId,
-      if (requestingDoctorId != null && requestingDoctorId.isNotEmpty) 'requestingDoctorId': requestingDoctorId,
-      if (assignedTechnicianId != null && assignedTechnicianId.isNotEmpty) 'assignedTechnicianId': assignedTechnicianId,
+    // Conversion de sécurité pour la priorité
+    String validPriority = priority;
+    if (validPriority == 'NORMAL') validPriority = 'MEDIUM';
+    if (!['LOW', 'MEDIUM', 'HIGH', 'URGENT'].contains(validPriority)) {
+      validPriority = 'MEDIUM';
+    }
+
+    final cleanPatId = patientId.trim();
+    final cleanDocId = requestingDoctorId?.trim();
+    final cleanTechId = assignedTechnicianId?.trim();
+
+    final payload = <String, dynamic>{
+      'patientId': cleanPatId,
+      if (cleanDocId != null && cleanDocId.isNotEmpty && cleanDocId.length == 24) 'requestingDoctorId': cleanDocId,
+      if (cleanTechId != null && cleanTechId.isNotEmpty && cleanTechId.length == 24) 'assignedTechnicianId': cleanTechId,
       'examType': examType,
-      'priority': priority,
+      'priority': validPriority,
       if (service != null && service.isNotEmpty) 'service': service,
       if (requestNotes != null && requestNotes.isNotEmpty) 'requestNotes': requestNotes,
     };
 
-    final res = await http.post(
-      Uri.parse('$baseUrl/exams'),
-      headers: _headers,
-      body: jsonEncode(payload),
-    );
-    final data = jsonDecode(res.body);
-    return {'success': res.statusCode == 201, 'data': data};
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/exams'),
+        headers: _headers,
+        body: jsonEncode(payload),
+      );
+      final data = jsonDecode(res.body);
+      if (res.statusCode != 201) {
+        debugPrint('Erreur création examen (${res.statusCode}): ${res.body}');
+      }
+      return {'success': res.statusCode == 201, 'data': data};
+    } catch (e) {
+      debugPrint('Exception createExam: $e');
+      return {'success': false, 'error': e.toString()};
+    }
   }
 
   Future<Map<String, dynamic>> assignExam(String examId, String technicianId) async {

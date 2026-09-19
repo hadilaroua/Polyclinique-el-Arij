@@ -624,8 +624,9 @@ class _PatientDossierScreenState extends State<PatientDossierScreen> with Single
                       }
                       Navigator.pop(ctx);
                       final currentUserId = _api.currentUser?['id'] ?? _api.currentUser?['_id'];
+                      final patId = (widget.patient['_id'] ?? widget.patient['id'])?.toString() ?? '';
                       final res = await _api.createExam(
-                        patientId: widget.patient['_id'],
+                        patientId: patId,
                         examType: typeCtrl.text.trim(),
                         service: serviceCtrl.text.trim(),
                         priority: priority,

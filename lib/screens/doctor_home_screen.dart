@@ -763,7 +763,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     // Demande d'examen concomitante
     bool prescribeExam = false;
     String examType = 'Électrocardiogramme (ECG)';
-    String examPriority = 'NORMAL';
+    String examPriority = 'MEDIUM';
     final examNotesCtrl = TextEditingController();
 
     showModalBottomSheet(
@@ -1153,8 +1153,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             const Text('Priorité : ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             ChoiceChip(
                               label: const Text('Normale', style: TextStyle(fontSize: 12)),
-                              selected: examPriority == 'NORMAL',
-                              onSelected: (s) => setModalState(() => examPriority = 'NORMAL'),
+                              selected: examPriority == 'MEDIUM',
+                              onSelected: (s) => setModalState(() => examPriority = 'MEDIUM'),
                             ),
                             const SizedBox(width: 8),
                             ChoiceChip(
@@ -1417,8 +1417,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     const Text('Priorité : ', style: TextStyle(fontWeight: FontWeight.bold)),
                     ChoiceChip(
                       label: const Text('Normale'),
-                      selected: priority == 'NORMAL',
-                      onSelected: (s) => setModalState(() => priority = 'NORMAL'),
+                      selected: priority == 'MEDIUM',
+                      onSelected: (s) => setModalState(() => priority = 'MEDIUM'),
                     ),
                     const SizedBox(width: 10),
                     ChoiceChip(
@@ -1451,7 +1451,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     onPressed: () async {
                       Navigator.pop(ctx);
                       final docUserId = api.currentUser?['id'] ?? api.currentUser?['_id'];
-                      await api.createExam(
+                      final res = await api.createExam(
                         patientId: selectedPatientId,
                         requestingDoctorId: docUserId,
                         assignedTechnicianId: selectedTechId,
@@ -1461,6 +1461,17 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                         requestNotes: notesCtrl.text.trim(),
                       );
                       _loadData();
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: res['success'] == true ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                          content: Text(
+                            res['success'] == true
+                                ? '✅ Demande d\'examen ($examType) transmise au technicien !'
+                                : '❌ Échec de la transmission : ${res['error'] ?? 'Vérifiez les données.'}',
+                          ),
+                        ),
+                      );
                     },
                     child: const Text('Envoyer l\'ordre au laboratoire/radio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                   ),
