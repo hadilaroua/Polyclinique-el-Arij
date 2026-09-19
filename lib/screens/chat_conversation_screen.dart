@@ -128,6 +128,28 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
+  void _handleMenuAction(String action) async {
+    final targetId = widget.isGroup ? widget.target['id'] : (widget.target['_id'] ?? widget.target['id']);
+    if (action == 'LEAVE_GROUP') {
+      final res = await api.leaveGroup(targetId.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['data']?['message'] ?? 'Vous avez quitté le groupe.')));
+        Navigator.pop(context);
+      }
+    } else if (action == 'BLOCK') {
+      final res = await api.blockUser(targetId.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['data']?['message'] ?? 'Statut du contact mis à jour.')));
+      }
+    } else if (action == 'ARCHIVE') {
+      final res = await api.archiveConversation(targetId.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['data']?['message'] ?? 'Discussion archivée.')));
+        Navigator.pop(context);
+      }
+    }
+  }
+
   void _showAttachmentPicker() {
     showModalBottomSheet(
       context: context,
@@ -293,12 +315,52 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Appel Audio',
             icon: const Icon(Icons.phone, color: Color(0xFF0284C7)),
             onPressed: () => _startCall('AUDIO'),
           ),
           IconButton(
+            tooltip: 'Appel Vidéo',
             icon: const Icon(Icons.videocam, color: Color(0xFF0284C7)),
             onPressed: () => _startCall('VIDEO'),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Color(0xFF0F172A)),
+            onSelected: _handleMenuAction,
+            itemBuilder: (context) => [
+              if (widget.isGroup)
+                const PopupMenuItem(
+                  value: 'LEAVE_GROUP',
+                  child: Row(
+                    children: [
+                      Icon(Icons.exit_to_app, color: Colors.redAccent, size: 20),
+                      SizedBox(width: 8),
+                      Text('Quitter le groupe'),
+                    ],
+                  ),
+                )
+              else
+                const PopupMenuItem(
+                  value: 'BLOCK',
+                  child: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.orange, size: 20),
+                      SizedBox(width: 8),
+                      Text('Bloquer / Débloquer'),
+                    ],
+                  ),
+                ),
+              const PopupMenuItem(
+                value: 'ARCHIVE',
+                child: Row(
+                  children: [
+                    Icon(Icons.archive, color: Colors.grey, size: 20),
+                    SizedBox(width: 8),
+                    Text('Archiver la discussion'),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 6),
         ],

@@ -553,6 +553,93 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> createCustomGroup({
+    required String name,
+    String? description,
+    required List<String> memberIds,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/messages/groups/create'),
+        headers: _headers,
+        body: jsonEncode({
+          'name': name,
+          'description': description ?? '',
+
+          'memberIds': memberIds,
+        }),
+      );
+      return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': jsonDecode(res.body)};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> leaveGroup(String groupId) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/messages/groups/$groupId/leave'),
+        headers: _headers,
+      );
+      return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': jsonDecode(res.body)};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> blockUser(String targetUserId) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/messages/users/block'),
+        headers: _headers,
+        body: jsonEncode({'targetUserId': targetUserId}),
+      );
+      return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': jsonDecode(res.body)};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> archiveConversation(String targetId) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/messages/conversations/archive'),
+        headers: _headers,
+        body: jsonEncode({'targetId': targetId}),
+      );
+      return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': jsonDecode(res.body)};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<bool> deleteExam(String examId) async {
+    try {
+      final res = await http.delete(Uri.parse('$baseUrl/exams/$examId'), headers: _headers);
+      return res.statusCode == 200 || res.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteVitalSign(String id) async {
+    try {
+      final res = await http.delete(Uri.parse('$baseUrl/vital-signs/$id'), headers: _headers);
+      return res.statusCode == 200 || res.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteConsultation(String id) async {
+    try {
+      final res = await http.delete(Uri.parse('$baseUrl/consultations/$id'), headers: _headers);
+      return res.statusCode == 200 || res.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>> completeExam(
     String examId,
     String result, {

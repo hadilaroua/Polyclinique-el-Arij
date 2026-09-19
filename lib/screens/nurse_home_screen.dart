@@ -1655,19 +1655,57 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
     final recAt = v['recordedAt']?.toString() ?? v['createdAt']?.toString();
     final dateStr = recAt != null ? _formatDate(recAt) : '';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      color: isAbnormal ? const Color(0xFFFFF1F2) : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: isAbnormal ? const Color(0xFFFECDD3) : const Color(0xFFE2E8F0)),
+    final id = v['_id']?.toString() ?? '';
+    return Dismissible(
+      key: Key('vital_$id'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDC2626),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Icon(Icons.delete_sweep, color: Colors.white, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Masquer / Supprimer',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ],
+        ),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: patObj != null ? () => _openPatientDossier(patObj!) : null,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
+      onDismissed: (_) async {
+        if (id.isNotEmpty) {
+          await api.deleteVitalSign(id);
+          _loadData();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Constante masquée de votre vue (conservée dans l\'administration).'),
+              ),
+            );
+          }
+        }
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 10),
+        color: isAbnormal ? const Color(0xFFFFF1F2) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: isAbnormal ? const Color(0xFFFECDD3) : const Color(0xFFE2E8F0)),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: patObj != null ? () => _openPatientDossier(patObj!) : null,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // En-tête : Nom du patient + Numéro Dossier + Anomalie / Date
@@ -1779,8 +1817,10 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
           ),
         ),
       ),
+    ),
     );
   }
+
 
   Widget _vitalMetricChip({
     required String label,

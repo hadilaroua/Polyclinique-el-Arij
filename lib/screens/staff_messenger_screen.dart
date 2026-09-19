@@ -98,6 +98,117 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
     ).then((_) => _loadConversations());
   }
 
+  void _showCreateGroupModal() {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final selectedUserIds = <String>{};
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Créer un Groupe de Discussion', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Nom du Groupe (ex: Équipe Garde Nuit)',
+                  prefixIcon: const Icon(Icons.group_add, color: Color(0xFF0284C7)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: descCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Description optionnelle',
+                  prefixIcon: const Icon(Icons.description, color: Color(0xFF0284C7)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text('Sélectionner les Membres :', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: staffList.length,
+                  itemBuilder: (context, i) {
+                    final member = staffList[i];
+                    final id = (member['_id'] ?? member['id'])?.toString();
+                    if (id == null) return const SizedBox.shrink();
+                    final fn = member['firstName'] ?? '';
+                    final ln = member['lastName'] ?? '';
+                    final name = '$fn $ln'.trim().isNotEmpty ? '$fn $ln'.trim() : 'Membre';
+                    final role = member['role'] ?? 'STAFF';
+                    final isChecked = selectedUserIds.contains(id);
+
+                    return CheckboxListTile(
+                      value: isChecked,
+                      onChanged: (val) {
+                        setModalState(() {
+                          if (val == true) {
+                            selectedUserIds.add(id);
+                          } else {
+                            selectedUserIds.remove(id);
+                          }
+                        });
+                      },
+                      title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      subtitle: Text(AppTheme.getRoleLabel(role), style: TextStyle(color: AppTheme.getRoleColor(role), fontSize: 11)),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                  label: const Text('Créer le Groupe', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    if (nameCtrl.text.trim().isEmpty) return;
+                    if (selectedUserIds.isEmpty) return;
+                    Navigator.pop(context);
+                    final res = await api.createCustomGroup(
+                      name: nameCtrl.text.trim(),
+                      description: descCtrl.text.trim(),
+                      memberIds: selectedUserIds.toList(),
+                    );
+                    if (res['success'] == true) {
+                      _loadConversations();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = api.currentUser?['id'] ?? api.currentUser?['_id'];
@@ -122,6 +233,10 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: const Color(0xFF0F172A),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.maybePop(context),
+        ),
         title: const Row(
           children: [
             Icon(Icons.forum, color: Colors.cyanAccent, size: 22),
@@ -137,6 +252,12 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Nouveau Groupe',
+            icon: const Icon(Icons.group_add_outlined, color: Colors.cyanAccent),
+            onPressed: _showCreateGroupModal,
+          ),
+          IconButton(
+            tooltip: 'Actualiser',
             icon: const Icon(Icons.refresh, color: Colors.white70),
             onPressed: _loadConversations,
           ),

@@ -1287,8 +1287,45 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       statusLabel = 'VALIDÉ';
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+    return Dismissible(
+      key: Key('exam_${exam['_id']}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDC2626),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Icon(Icons.delete_sweep, color: Colors.white, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Masquer / Supprimer',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+      onDismissed: (_) async {
+        final id = exam['_id']?.toString();
+        if (id != null) {
+          await api.deleteExam(id);
+          _loadExams();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Élément masqué de votre liste (conservé pour l\'administration).'),
+              ),
+            );
+          }
+        }
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(color: isUrgent ? const Color(0xFFFCA5A5) : const Color(0xFFE2E8F0)),
@@ -1480,6 +1517,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }
+

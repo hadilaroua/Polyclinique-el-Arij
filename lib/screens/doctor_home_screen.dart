@@ -2642,20 +2642,58 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     final items = (c['prescriptionItems'] as List<dynamic>?) ?? [];
     final attachments = (c['attachments'] as List<dynamic>?) ?? [];
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 1,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          if (patient is Map) {
-            _openPatientDossier(patient as Map<String, dynamic>);
+    final id = c['_id']?.toString() ?? '';
+    return Dismissible(
+      key: Key('consultation_$id'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDC2626),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Icon(Icons.delete_sweep, color: Colors.white, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Masquer / Supprimer',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+      onDismissed: (_) async {
+        if (id.isNotEmpty) {
+          await api.deleteConsultation(id);
+          _loadData();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Consultation masquée de votre vue (conservée dans l\'administration).'),
+              ),
+            );
           }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
+        }
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 1,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            if (patient is Map) {
+              _openPatientDossier(patient as Map<String, dynamic>);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -2751,8 +2789,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           ),
         ),
       ),
+    ),
     );
   }
+
 
   Widget _badgeStat(String label, {VoidCallback? onTap}) {
     return InkWell(
