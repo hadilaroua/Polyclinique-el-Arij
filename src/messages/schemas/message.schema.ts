@@ -11,7 +11,9 @@ export enum MessageType {
   PRESCRIPTION = 'PRESCRIPTION',
   RESULT = 'RESULT',
   AUDIO = 'AUDIO',
+  CALL_OFFER = 'CALL_OFFER',
 }
+
 
 @Schema({ _id: false })
 export class MessageAttachment {
