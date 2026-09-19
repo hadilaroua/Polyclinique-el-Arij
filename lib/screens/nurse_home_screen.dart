@@ -1628,6 +1628,33 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
     final isHypox = (v['oxygenSaturation'] ?? 100) < 94;
     final isAbnormal = isFever || isHypox;
 
+    // Récupération dynamique du patient
+    Map<String, dynamic>? patObj;
+    final rawPat = v['patientId'] ?? v['patient'];
+    if (rawPat is Map<String, dynamic>) {
+      patObj = rawPat;
+    } else if (rawPat is Map) {
+      patObj = Map<String, dynamic>.from(rawPat);
+    } else if (rawPat != null && patients.isNotEmpty) {
+      final rawStr = rawPat.toString();
+      final found = patients.firstWhere(
+        (p) => p['_id']?.toString() == rawStr || p['id']?.toString() == rawStr,
+        orElse: () => null,
+      );
+      if (found is Map) {
+        patObj = Map<String, dynamic>.from(found);
+      }
+    }
+
+    final patName = patObj != null
+        ? '${patObj['firstName'] ?? ''} ${patObj['lastName'] ?? ''}'.trim()
+        : 'Patient Inconnu';
+    final dossierNum = patObj?['dossierNumber'] ?? patObj?['cin'];
+
+    // Formatage de la date
+    final recAt = v['recordedAt']?.toString() ?? v['createdAt']?.toString();
+    final dateStr = recAt != null ? _formatDate(recAt) : '';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       color: isAbnormal ? const Color(0xFFFFF1F2) : Colors.white,
@@ -1635,41 +1662,158 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: isAbnormal ? const Color(0xFFFECDD3) : const Color(0xFFE2E8F0)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'T° : ${v['temperature'] ?? '-'} °C',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: isFever ? Colors.red : const Color(0xFF0F172A),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: patObj != null ? () => _openPatientDossier(patObj!) : null,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // En-tête : Nom du patient + Numéro Dossier + Anomalie / Date
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: isAbnormal ? const Color(0xFFFEE2E2) : const Color(0xFFE0F2FE),
+                    child: Icon(
+                      Icons.person,
+                      size: 20,
+                      color: isAbnormal ? const Color(0xFFDC2626) : const Color(0xFF0284C7),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          patName.isNotEmpty ? patName : 'Patient Inconnu',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        if (dossierNum != null && dossierNum.toString().isNotEmpty)
+                          Text(
+                            'N° Dossier : $dossierNum',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (isAbnormal)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          margin: const EdgeInsets.only(bottom: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'ANOMALIE',
+                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      if (dateStr.isNotEmpty)
+                        Text(
+                          dateStr,
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              const Divider(height: 18, thickness: 1, color: Color(0xFFF1F5F9)),
+              // Métriques des constantes vitales
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _vitalMetricChip(
+                    label: 'T°',
+                    value: '${v['temperature'] ?? '-'} °C',
+                    isAlert: isFever,
+                    icon: Icons.thermostat,
+                  ),
+                  _vitalMetricChip(
+                    label: 'Pouls',
+                    value: '${v['heartRate'] ?? '-'} bpm',
+                    isAlert: false,
+                    icon: Icons.favorite,
+                  ),
+                  _vitalMetricChip(
+                    label: 'TA',
+                    value: '${v['bloodPressureSystolic'] ?? '-'}/${v['bloodPressureDiastolic'] ?? '-'}',
+                    isAlert: false,
+                    icon: Icons.speed,
+                  ),
+                  _vitalMetricChip(
+                    label: 'SpO2',
+                    value: '${v['oxygenSaturation'] ?? '-'}%',
+                    isAlert: isHypox,
+                    icon: Icons.air,
+                  ),
+                ],
+              ),
+              if (v['notes'] != null && (v['notes'] as String).isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Obs. : ${v['notes']}',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontStyle: FontStyle.italic),
                   ),
                 ),
-                if (isAbnormal)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
-                    child: const Text('ANOMALIE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  ),
               ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Pouls : ${v['heartRate'] ?? '-'} bpm  |  TA : ${v['bloodPressureSystolic'] ?? '-'}/${v['bloodPressureDiastolic'] ?? '-'}  |  SpO2 : ${v['oxygenSaturation'] ?? '-'}%',
-              style: const TextStyle(fontSize: 13, color: Color(0xFF334155), fontWeight: FontWeight.w500),
-            ),
-            if (v['notes'] != null && (v['notes'] as String).isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text('Note : ${v['notes']}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontStyle: FontStyle.italic)),
             ],
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _vitalMetricChip({
+    required String label,
+    required String value,
+    required bool isAlert,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isAlert ? const Color(0xFFFEE2E2) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: isAlert ? Colors.red : const Color(0xFF64748B)),
+          const SizedBox(width: 4),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 9, color: isAlert ? Colors.red[800] : const Color(0xFF64748B))),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isAlert ? Colors.red[900] : const Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

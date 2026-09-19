@@ -8,9 +8,10 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // URL de l'API NestJS (localhost pour Mac Desktop / iOS Simulator / Web)
-  // Sur Android Emulator, 10.0.2.2 est souvent utilisé.
-  String baseUrl = 'http://localhost:3000/api';
+  // URL de l'API NestJS (adapte automatiquement Android Emulator vs iOS Simulator / Web / Mac)
+  String baseUrl = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+      ? 'http://10.0.2.2:3000/api'
+      : 'http://localhost:3000/api';
 
   String? token;
   Map<String, dynamic>? currentUser;
