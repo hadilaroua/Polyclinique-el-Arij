@@ -42,7 +42,27 @@ export class ExamsService {
     const saved = await exam.save();
     const populated = await saved
       .populate(DOCTOR_POP)
-      .then((e) => e.populate(PATIENT_POP));
+      .then((e) => e.populate(PATIENT_POP))
+      .then((e) => e.populate(TECH_POP));
+
+    // Alerte pour les techniciens
+    if (this.alertsService) {
+      const patient: any = populated.patientId;
+      const patName = patient ? `${patient.firstName || ''} ${patient.lastName || ''}`.trim() : 'Patient';
+      const isUrgent = dto.priority === ExamPriority.URGENT || dto.priority === ExamPriority.HIGH;
+      
+      this.alertsService.create(
+        {
+          patientId: dto.patientId,
+          level: isUrgent ? AlertLevel.CRITICAL : AlertLevel.INFO,
+          title: `Prescription Examen : ${dto.examType}`,
+          description: `Demande d'examen pour ${patName}. Département : ${dto.service || 'Non spécifié'}. ${dto.assignedTechnicianId ? 'Technicien spécifiquement désigné.' : ''}`,
+          category: 'Examen Médical',
+          targetRoles: [Role.TECHNICIAN],
+        },
+        dto.requestingDoctorId || '',
+      ).catch(() => {});
+    }
 
     // Audit Log: Demande d'examen
     if (this.auditLogsService) {

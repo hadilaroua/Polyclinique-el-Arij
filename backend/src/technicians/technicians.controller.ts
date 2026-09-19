@@ -38,7 +38,7 @@ export class TechniciansController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.DOCTOR)
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Lister tous les techniciens avec filtres' })
   @ApiQuery({ name: 'department', required: false, description: 'Filtrer par département technique' })
   @ApiQuery({ name: 'service', required: false })
