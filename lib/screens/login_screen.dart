@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -127,15 +128,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppTheme.isDarkMode(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
+              // Bouton Switch Dark / Light Mode en haut à droite
+              Align(
+                alignment: Alignment.topRight,
+                child: const ThemeToggleButton(),
+              ),
+              const SizedBox(height: 6),
 
               // Header iOS Brand Logo
               Center(
@@ -170,12 +178,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    const Text(
+                    Text(
                       'Polyclinique Arij',
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.chocolatePlum,
+                        color: isDark ? AppTheme.darkTextMain : AppTheme.chocolatePlum,
                         letterSpacing: -0.6,
                       ),
                     ),
@@ -213,12 +221,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Icon(CupertinoIcons.person_crop_circle_fill_badge_checkmark, size: 18, color: AppTheme.burntRose),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Accès Direct Staff (1-Tap)',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.chocolatePlum,
+                      color: isDark ? AppTheme.darkTextMain : AppTheme.chocolatePlum,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -256,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         margin: const EdgeInsets.only(right: 12),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
@@ -266,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                           border: Border.all(
-                            color: isLoggingInThis ? cardColor : Colors.black.withValues(alpha: 0.06),
+                            color: isLoggingInThis ? cardColor : (isDark ? AppTheme.darkBorder : Colors.black.withValues(alpha: 0.06)),
                             width: isLoggingInThis ? 2 : 1,
                           ),
                         ),
@@ -289,10 +297,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               staff['name']!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppTheme.chocolatePlum,
+                                color: isDark ? AppTheme.darkTextMain : AppTheme.chocolatePlum,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -360,23 +368,23 @@ class _LoginScreenState extends State<LoginScreen> {
               // Standard Form Inputs (iOS Style Cards)
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
                   ],
-                  border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+                  border: Border.all(color: isDark ? AppTheme.darkBorder : Colors.black.withValues(alpha: 0.05)),
                 ),
                 child: Column(
                   children: [
                     TextField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(fontSize: 15, color: AppTheme.chocolatePlum),
+                      style: TextStyle(fontSize: 15, color: isDark ? AppTheme.darkTextMain : AppTheme.chocolatePlum),
                       decoration: const InputDecoration(
                         hintText: 'Adresse Email professionnelle',
                         prefixIcon: Icon(CupertinoIcons.mail, size: 20, color: AppTheme.taupeGrey),
@@ -386,11 +394,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       ),
                     ),
-                    Divider(height: 1, thickness: 0.6, color: Colors.grey.withValues(alpha: 0.18)),
+                    Divider(height: 1, thickness: 0.6, color: isDark ? AppTheme.darkBorder : Colors.grey.withValues(alpha: 0.18)),
                     TextField(
                       controller: passwordController,
                       obscureText: obscurePassword,
-                      style: const TextStyle(fontSize: 15, color: AppTheme.chocolatePlum),
+                      style: TextStyle(fontSize: 15, color: isDark ? AppTheme.darkTextMain : AppTheme.chocolatePlum),
                       decoration: InputDecoration(
                         hintText: 'Mot de passe',
                         prefixIcon: const Icon(CupertinoIcons.lock, size: 20, color: AppTheme.taupeGrey),

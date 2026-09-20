@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'call_overlay_screen.dart';
 
 class ChatConversationScreen extends StatefulWidget {
@@ -287,18 +288,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUserId = api.currentUser?['id'] ?? api.currentUser?['_id'];
-    final name = widget.target['name'] ??
-        '${widget.target['firstName'] ?? ''} ${widget.target['lastName'] ?? ''}'.trim();
-    final role = widget.target['role'] ?? (widget.isGroup ? 'Groupe' : 'Staff');
-    final avatarUrl = widget.target['avatarUrl'];
+    final target = widget.target;
+    final name = target['name'] ?? '${target['firstName'] ?? ''} ${target['lastName'] ?? ''}'.trim();
+    final role = target['role'] ?? (widget.isGroup ? 'Groupe' : 'Staff');
+    final avatarUrl = target['avatarUrl'];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        elevation: 1,
-        backgroundColor: Colors.white,
+        elevation: 0,
+        backgroundColor: AppTheme.surfaceColor(context),
+        shadowColor: AppTheme.borderColor(context),
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.chevron_back, color: Color(0xFF0F172A)),
+          icon: Icon(CupertinoIcons.chevron_back, color: AppTheme.textColor(context)),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -317,7 +319,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 children: [
                   Text(
                     name.isNotEmpty ? name : 'Messagerie',
-                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: AppTheme.textColor(context), fontSize: 15, fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Row(
@@ -325,12 +327,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       Container(
                         width: 7,
                         height: 7,
-                        decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: AppTheme.successColor(context),
+                          shape: BoxShape.circle,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         widget.isGroup ? role : 'En ligne',
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                        style: TextStyle(color: AppTheme.subtextColor(context), fontSize: 11),
                       ),
                     ],
                   ),
@@ -340,18 +345,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           ],
         ),
         actions: [
+          const ThemeToggleButton(),
           IconButton(
             tooltip: 'Appel Audio',
-            icon: const Icon(CupertinoIcons.phone_fill, color: AppTheme.accent),
+            icon: Icon(CupertinoIcons.phone_fill, color: AppTheme.accentColor(context)),
             onPressed: () => _startCall('AUDIO'),
           ),
           IconButton(
             tooltip: 'Appel Vidéo',
-            icon: const Icon(CupertinoIcons.videocam_fill, color: AppTheme.accent),
+            icon: Icon(CupertinoIcons.videocam_fill, color: AppTheme.accentColor(context)),
             onPressed: () => _startCall('VIDEO'),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(CupertinoIcons.ellipsis_vertical, color: Color(0xFF0F172A)),
+            icon: Icon(CupertinoIcons.ellipsis_vertical, color: AppTheme.textColor(context)),
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
               if (widget.isGroup)
@@ -427,33 +433,37 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       ),
           ),
 
-          // Barre de saisie style Messenger/WhatsApp
+          // Barre de saisie style iOS natif — fond adaptatif
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -1))],
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor(context),
+              border: Border(top: BorderSide(color: AppTheme.borderColor(context), width: 0.8)),
             ),
             child: SafeArea(
+              top: false,
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(CupertinoIcons.plus_circle_fill, color: AppTheme.accent, size: 26),
+                    icon: Icon(CupertinoIcons.plus_circle_fill, color: AppTheme.accentColor(context), size: 26),
                     onPressed: _showAttachmentPicker,
                   ),
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: AppTheme.elevatedSurface(context),
                         borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppTheme.borderColor(context)),
                       ),
                       child: TextField(
                         controller: messageCtrl,
                         minLines: 1,
                         maxLines: 4,
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: AppTheme.textColor(context), fontSize: 15),
+                        decoration: InputDecoration(
                           hintText: 'Écrire un message...',
+                          hintStyle: TextStyle(color: AppTheme.subtextColor(context)),
                           border: InputBorder.none,
                           isDense: true,
                         ),
@@ -464,7 +474,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   const SizedBox(width: 6),
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: AppTheme.accent,
+                    backgroundColor: AppTheme.turquoise,
                     child: IconButton(
                       icon: const Icon(CupertinoIcons.arrow_up, color: Colors.white, size: 18),
                       onPressed: () => _sendMessage(),
@@ -500,14 +510,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isMe ? const Color(0xFF0284C7) : Colors.white,
+              color: isMe ? AppTheme.turquoise : AppTheme.cardColor(context),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
                 bottomLeft: Radius.circular(isMe ? 16 : 4),
                 bottomRight: Radius.circular(isMe ? 4 : 16),
               ),
-              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
+              boxShadow: [
+                BoxShadow(
+                color: Colors.black.withValues(alpha: AppTheme.isDarkMode(context) ? 0.15 : 0.06),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -636,8 +652,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 Text(
                   content,
                   style: TextStyle(
-                    color: isMe ? Colors.white : const Color(0xFF0F172A),
+                    color: isMe ? Colors.white : AppTheme.textColor(context),
                     fontSize: 14,
+                    height: 1.4,
                   ),
                 ),
                 const SizedBox(height: 4),

@@ -11,6 +11,7 @@ import '../services/notification_service.dart';
 import '../utils/theme.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'patient_dossier_screen.dart';
 import 'profile_screen.dart';
 
@@ -269,9 +270,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (modalCtx, setModalState) => Container(
           height: MediaQuery.of(context).size.height * 0.75,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -591,9 +592,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -787,9 +788,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             20,
             MediaQuery.of(context).viewInsets.bottom + 20,
           ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -1307,9 +1308,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             20,
             MediaQuery.of(context).viewInsets.bottom + 20,
           ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -1546,6 +1547,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           ],
         ),
         actions: [
+          const ThemeToggleButton(),
           // Bouton d'alertes avec compteur
 
           Stack(
@@ -1700,6 +1702,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             children: [
               Expanded(
                 child: _actionButton(
+                  context,
                   icon: Icons.add_circle_outline,
                   label: 'Nouvelle Consultation',
                   color: AppTheme.primary,
@@ -1709,6 +1712,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _actionButton(
+                  context,
                   icon: Icons.science_outlined,
                   label: 'Prescrire Examen',
                   color: const Color(0xFF059669),
@@ -1805,7 +1809,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               filled: true,
-              fillColor: Colors.white,
+            fillColor: Theme.of(context).cardColor,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             onChanged: (val) => setState(() => patientSearchQuery = val),
@@ -2437,9 +2441,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppTheme.border, width: 1.5),
+                      border: Border.all(color: AppTheme.borderColor(context), width: 1.5),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.04),
@@ -2905,7 +2909,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     );
   }
 
-  Widget _actionButton({
+  Widget _actionButton(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required Color color,
@@ -2917,9 +2922,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.cardColor(context),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: AppTheme.borderColor(context)),
         ),
         child: Row(
           children: [
@@ -2928,7 +2933,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF0F172A)),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: AppTheme.textColor(context),
+                ),
               ),
             ),
           ],

@@ -1,8 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/photo_picker_dialog.dart';
+import '../widgets/theme_toggle_button.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback? onProfileUpdated;
@@ -89,6 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppTheme.isDarkMode(context);
     final user = api.currentUser;
     final profile = api.currentProfile;
     final role = user?['role'] ?? 'STAFF';
@@ -118,12 +121,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Mon Profil Professionnel'),
         actions: [
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Actualiser',
             onPressed: () async {
               setState(() => isUpdating = true);
               await api.fetchProfile();
@@ -143,12 +148,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: isDark ? AppTheme.darkBorder : AppTheme.border),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -173,16 +178,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                           ),
                           style: TextButton.styleFrom(
-                            foregroundColor: AppTheme.primary,
+                            foregroundColor: isDark ? AppTheme.darkPrimary : AppTheme.primary,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           fullName.isNotEmpty ? fullName : 'Collaborateur Arij',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.textMain,
+                            color: isDark ? AppTheme.darkTextMain : AppTheme.textMain,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -209,15 +214,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // Section Données d'accréditation clinique
                   _sectionCard(
+                    context,
                     title: 'Accréditation & Exercice',
                     icon: Icons.verified_user_outlined,
                     children: [
-                      _infoRow(label: 'Numéro CIN', value: cin, isCode: true),
+                      _infoRow(context, label: 'Numéro CIN', value: cin, isCode: true),
                       if (licenseNumber != '—')
-                        _infoRow(label: 'N° Ordre / Registre', value: licenseNumber, isCode: true),
-                      _infoRow(label: 'Spécialité / Service', value: serviceOrSpecialty),
+                        _infoRow(context, label: 'N° Ordre / Registre', value: licenseNumber, isCode: true),
+                      _infoRow(context, label: 'Spécialité / Service', value: serviceOrSpecialty),
                       if (shiftOrRoom != '—')
-                        _infoRow(label: 'Affectation / Shift', value: shiftOrRoom),
+                        _infoRow(context, label: 'Affectation / Shift', value: shiftOrRoom),
                     ],
                   ),
 
@@ -225,21 +231,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // Section Coordonnées & Connexion
                   _sectionCard(
+                    context,
                     title: 'Coordonnées professionnelles',
                     icon: Icons.contact_phone_outlined,
                     children: [
-                      _infoRow(label: 'Email de connexion', value: email),
+                      _infoRow(context, label: 'Email de connexion', value: email),
                       _infoRow(
+                        context,
                         label: 'Téléphone de contact',
                         value: phone,
                         action: IconButton(
-                          icon: const Icon(Icons.edit, size: 16, color: AppTheme.primary),
+                          icon: Icon(Icons.edit, size: 16, color: isDark ? AppTheme.darkPrimary : AppTheme.primary),
                           onPressed: _editPhone,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
                       ),
-                      _infoRow(label: 'Établissement', value: 'Polyclinique Arij, Djerba'),
+                      _infoRow(context, label: 'Établissement', value: 'Polyclinique Arij, Djerba'),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Section Préférences & Ambiance Thématique
+                  _sectionCard(
+                    context,
+                    title: 'Ambiance visuelle & Thème',
+                    icon: Icons.palette_outlined,
+                    children: [
+                      const ThemeSettingsRow(),
                     ],
                   ),
 
@@ -253,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.danger,
                         side: const BorderSide(color: Color(0xFFFECACA)),
-                        backgroundColor: const Color(0xFFFEF2F2),
+                        backgroundColor: isDark ? const Color(0xFF451A1A) : const Color(0xFFFEF2F2),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -273,7 +293,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _sectionCard({
+  Widget _sectionCard(
+    BuildContext context, {
     required String title,
     required IconData icon,
     required List<Widget> children,
@@ -282,23 +303,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: AppTheme.primary),
+              Icon(icon, size: 18, color: AppTheme.primaryColor(context)),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textMain,
+                  color: AppTheme.textColor(context),
                 ),
               ),
             ],
@@ -310,7 +331,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _infoRow({
+  Widget _infoRow(
+    BuildContext context, {
     required String label,
     required String value,
     bool isCode = false,
@@ -324,28 +346,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+            style: TextStyle(
+              color: AppTheme.subtextColor(context),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(width: 12),
           Flexible(
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (isCode)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: AppTheme.elevatedSurface(context),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'monospace',
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
-                        color: AppTheme.textMain,
+                        color: AppTheme.textColor(context),
                       ),
                     ),
                   )
@@ -354,10 +378,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Text(
                       value,
                       textAlign: TextAlign.end,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
-                        color: AppTheme.textMain,
+                        color: AppTheme.textColor(context),
                       ),
                     ),
                   ),
