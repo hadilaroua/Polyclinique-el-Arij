@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
@@ -19,8 +20,6 @@ class StaffMessengerScreen extends StatefulWidget {
 class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
   final api = ApiService();
   String _searchQuery = '';
-
-
 
   List<dynamic> staffList = [];
   List<dynamic> conversations = [];
@@ -78,7 +77,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
   void _openProfile() {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (_) => ProfileScreen(
           onProfileUpdated: () => setState(() {}),
           onLogout: widget.onLogout,
@@ -90,7 +89,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
   void _openChat(Map<String, dynamic> target, {bool isGroup = false}) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (_) => ChatConversationScreen(
           target: target,
           isGroup: isGroup,
@@ -113,17 +112,23 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
           height: MediaQuery.of(context).size.height * 0.8,
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+          padding: EdgeInsets.fromLTRB(18, 18, 18, MediaQuery.of(context).viewInsets.bottom + 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Créer un Groupe de Discussion', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  const Text(
+                    'Créer un Groupe de Discussion',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.chocolatePlum),
+                  ),
+                  IconButton(
+                    icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.taupeGrey),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -131,8 +136,8 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 controller: nameCtrl,
                 decoration: InputDecoration(
                   labelText: 'Nom du Groupe (ex: Équipe Garde Nuit)',
-                  prefixIcon: const Icon(Icons.group_add, color: Color(0xFF0284C7)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  prefixIcon: const Icon(CupertinoIcons.group_solid, color: AppTheme.burntRose),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -140,12 +145,15 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 controller: descCtrl,
                 decoration: InputDecoration(
                   labelText: 'Description optionnelle',
-                  prefixIcon: const Icon(Icons.description, color: Color(0xFF0284C7)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  prefixIcon: const Icon(CupertinoIcons.doc_text, color: AppTheme.burntRose),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 14),
-              const Text('Sélectionner les Membres :', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155))),
+              const Text(
+                'Sélectionner les Membres :',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.chocolatePlum),
+              ),
               const SizedBox(height: 6),
               Expanded(
                 child: ListView.builder(
@@ -161,6 +169,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                     final isChecked = selectedUserIds.contains(id);
 
                     return CheckboxListTile(
+                      activeColor: AppTheme.burntRose,
                       value: isChecked,
                       onChanged: (val) {
                         setModalState(() {
@@ -171,8 +180,8 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                           }
                         });
                       },
-                      title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      subtitle: Text(AppTheme.getRoleLabel(role), style: TextStyle(color: AppTheme.getRoleColor(role), fontSize: 11)),
+                      title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.chocolatePlum)),
+                      subtitle: Text(AppTheme.getRoleLabel(role), style: TextStyle(color: AppTheme.getRoleColor(role), fontSize: 11, fontWeight: FontWeight.w600)),
                     );
                   },
                 ),
@@ -180,13 +189,13 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 50,
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                  icon: const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: Colors.white),
                   label: const Text('Créer le Groupe', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: AppTheme.burntRose,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () async {
                     if (nameCtrl.text.trim().isEmpty) return;
@@ -233,7 +242,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
 
           return Container(
             height: MediaQuery.of(context).size.height * 0.82,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -242,24 +251,30 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
-                  child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                  child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.taupeGrey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
                 ),
                 const SizedBox(height: 14),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('👥 Choisir un Contact / Collègue', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(modalCtx)),
+                    const Text(
+                      '👥 Répertoire du Personnel Staff',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.chocolatePlum),
+                    ),
+                    IconButton(
+                      icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.taupeGrey),
+                      onPressed: () => Navigator.pop(modalCtx),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   decoration: InputDecoration(
                     hintText: 'Rechercher un médecin, soignant, technicien...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(CupertinoIcons.search, color: AppTheme.taupeGrey),
                     filled: true,
-                    fillColor: const Color(0xFFF1F5F9),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    fillColor: const Color(0xFFFAF7F7),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                     isDense: true,
                   ),
                   onChanged: (val) => setModalState(() => modalQuery = val),
@@ -273,6 +288,12 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: ChoiceChip(
+                          selectedColor: AppTheme.burntRose,
+                          labelStyle: TextStyle(
+                            color: isSel ? Colors.white : AppTheme.chocolatePlum,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
                           label: Text(r == 'ALL' ? 'Tous' : AppTheme.getRoleLabel(r)),
                           selected: isSel,
                           onSelected: (_) => setModalState(() => modalRoleFilter = r),
@@ -294,7 +315,6 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                         },
                         child: _buildStaffTile(s, api.currentUser?['id']?.toString()),
                       );
-
                     },
                   ),
                 ),
@@ -326,24 +346,26 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
       return hasMatch || lastMsg.contains(q);
     }).toList();
 
-    return Scaffold(
+    final userRole = api.currentUser?['role'];
+    final headerColor = AppTheme.getRoleColor(userRole);
 
-      backgroundColor: const Color(0xFFF8FAFC),
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAF8F8),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: headerColor,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(CupertinoIcons.chevron_back, color: Colors.white),
           onPressed: () => Navigator.maybePop(context),
         ),
         title: const Row(
           children: [
-            Icon(Icons.forum, color: Colors.cyanAccent, size: 22),
+            Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.white, size: 22),
             SizedBox(width: 8),
             Expanded(
               child: Text(
                 'Messagerie Staff Clinique',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -352,21 +374,21 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
         actions: [
           IconButton(
             tooltip: 'Nouveau Groupe',
-            icon: const Icon(Icons.group_add_outlined, color: Colors.cyanAccent),
+            icon: const Icon(CupertinoIcons.person_3_fill, color: AppTheme.pearlAqua),
             onPressed: _showCreateGroupModal,
           ),
           IconButton(
             tooltip: 'Actualiser',
-            icon: const Icon(Icons.refresh, color: Colors.white70),
+            icon: const Icon(CupertinoIcons.refresh_thick, color: Colors.white70, size: 20),
             onPressed: _loadConversations,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF0284C7),
+        backgroundColor: AppTheme.burntRose,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.edit_square),
-        label: const Text('Nouvelle discussion', style: TextStyle(fontWeight: FontWeight.bold)),
+        icon: const Icon(CupertinoIcons.pencil_outline, size: 20),
+        label: const Text('Nouvelle discussion', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         onPressed: _showSelectContactModal,
       ),
       drawer: AppDrawer(
@@ -376,19 +398,19 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
       ),
       body: Column(
         children: [
-          // Barre de Recherche
+          // Search Bar
           Container(
-            color: const Color(0xFF0F172A),
+            color: AppTheme.chocolatePlum,
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
             child: TextField(
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Rechercher une discussion ou un groupe...',
-                hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
-                prefixIcon: const Icon(Icons.search, color: Colors.white54, size: 20),
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+                prefixIcon: Icon(CupertinoIcons.search, color: Colors.white.withValues(alpha: 0.6), size: 18),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 filled: true,
-                fillColor: Colors.white12,
+                fillColor: Colors.white.withValues(alpha: 0.12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -399,11 +421,12 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
             ),
           ),
 
-          // Contenu principal : Discussions & Groupes uniquement
+          // Main Content
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CupertinoActivityIndicator(radius: 14))
                 : RefreshIndicator(
+                    color: AppTheme.burntRose,
                     onRefresh: _loadConversations,
                     child: ListView(
                       padding: const EdgeInsets.all(14),
@@ -414,11 +437,11 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                           children: [
                             const Text(
                               '💬 Discussions Récentes',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.chocolatePlum),
                             ),
                             Text(
                               '${conversations.length} discussions',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              style: const TextStyle(fontSize: 12, color: AppTheme.taupeGrey, fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
@@ -427,16 +450,16 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                         if (filteredConversations.isEmpty)
                           Card(
                             margin: const EdgeInsets.only(bottom: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            child: const Padding(
+                              padding: EdgeInsets.all(20),
                               child: Column(
                                 children: [
-                                  Icon(Icons.mark_chat_unread_outlined, size: 42, color: Colors.grey.shade400),
-                                  const SizedBox(height: 10),
-                                  const Text('Aucune discussion récente.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                  const SizedBox(height: 4),
-                                  const Text('Appuyez sur "+ Nouvelle discussion" pour contacter un collègue.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B)), textAlign: TextAlign.center),
+                                  Icon(CupertinoIcons.chat_bubble_text, size: 42, color: AppTheme.taupeGrey),
+                                  SizedBox(height: 10),
+                                  Text('Aucune discussion récente.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.chocolatePlum)),
+                                  SizedBox(height: 4),
+                                  Text('Appuyez sur "+ Nouvelle discussion" pour contacter un collègue.', style: TextStyle(fontSize: 12, color: AppTheme.taupeGrey), textAlign: TextAlign.center),
                                 ],
                               ),
                             ),
@@ -444,13 +467,12 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                         else
                           ...filteredConversations.map((c) => _buildConversationTile(c, currentUserId?.toString())),
 
-
                         const SizedBox(height: 18),
 
-                        // Section 2: Canaux de Garde & Équipes
+                        // Section 2: Canaux de Garde
                         const Text(
                           '📢 Canaux de Garde & Équipes',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.chocolatePlum),
                         ),
                         const SizedBox(height: 8),
                         ...groups.map((g) => _buildGroupTile(g)),
@@ -462,9 +484,6 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
       ),
     );
   }
-
-
-
 
   Widget _buildConversationTile(Map<String, dynamic> conv, String? currentUserId) {
     final participants = (conv['participants'] as List<dynamic>?) ?? [];
@@ -506,10 +525,12 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      elevation: unreadCount > 0 ? 3 : 1,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: unreadCount > 0 ? BorderSide(color: Colors.blue.shade400, width: 1.5) : BorderSide.none,
+        borderRadius: BorderRadius.circular(16),
+        side: unreadCount > 0
+            ? const BorderSide(color: AppTheme.burntRose, width: 1.5)
+            : BorderSide(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: ListTile(
         onTap: () => _openChat(other!, isGroup: false),
@@ -528,7 +549,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: Colors.green,
+                  color: AppTheme.mutedTeal,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
@@ -544,15 +565,16 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 style: TextStyle(
                   fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w600,
                   fontSize: 14,
+                  color: AppTheme.chocolatePlum,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: roleColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 roleLabel,
@@ -568,7 +590,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 lastMsg,
                 style: TextStyle(
                   fontSize: 12,
-                  color: unreadCount > 0 ? Colors.blue.shade900 : const Color(0xFF64748B),
+                  color: unreadCount > 0 ? AppTheme.burntRose : AppTheme.taupeGrey,
                   fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
                 ),
                 maxLines: 1,
@@ -580,7 +602,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 timeStr,
                 style: TextStyle(
                   fontSize: 10,
-                  color: unreadCount > 0 ? Colors.blue.shade700 : const Color(0xFF94A3B8),
+                  color: unreadCount > 0 ? AppTheme.burntRose : AppTheme.taupeGrey,
                   fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
@@ -590,7 +612,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
             ? Container(
                 padding: const EdgeInsets.all(6),
                 decoration: const BoxDecoration(
-                  color: Colors.blue,
+                  color: AppTheme.burntRose,
                   shape: BoxShape.circle,
                 ),
                 child: Text(
@@ -598,7 +620,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                   style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               )
-            : const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+            : const Icon(CupertinoIcons.chevron_right, size: 16, color: AppTheme.taupeGrey),
       ),
     );
   }
@@ -606,32 +628,35 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
   Widget _buildGroupTile(Map<String, dynamic> group) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+      ),
       child: ListTile(
         onTap: () => _openChat(group, isGroup: true),
         leading: CircleAvatar(
           radius: 22,
-          backgroundColor: const Color(0xFFE0F2FE),
+          backgroundColor: AppTheme.pearlAqua.withValues(alpha: 0.25),
           child: Icon(
             group['id'] == 'GARDE_URGENCES'
-                ? Icons.medical_services
+                ? CupertinoIcons.heart_fill
                 : group['id'] == 'LABO_RADIO'
-                    ? Icons.science
-                    : Icons.groups,
-            color: const Color(0xFF0284C7),
+                    ? CupertinoIcons.lab_flask_solid
+                    : CupertinoIcons.person_3_fill,
+            color: AppTheme.burntRose,
           ),
         ),
         title: Text(
           group['name'] ?? 'Groupe',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.chocolatePlum),
         ),
         subtitle: Text(
           group['description'] ?? '',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          style: const TextStyle(fontSize: 12, color: AppTheme.taupeGrey),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+        trailing: const Icon(CupertinoIcons.chevron_right, size: 16, color: AppTheme.taupeGrey),
       ),
     );
   }
@@ -648,7 +673,10 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+      ),
       child: ListTile(
         onTap: () => _openChat(staff, isGroup: false),
         leading: Stack(
@@ -666,7 +694,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: Colors.green,
+                  color: AppTheme.mutedTeal,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
@@ -679,15 +707,15 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
             Expanded(
               child: Text(
                 name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.chocolatePlum),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: roleColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 roleLabel,
@@ -696,16 +724,16 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
             ),
           ],
         ),
-        subtitle: Text(
+        subtitle: const Text(
           'Appuyer pour démarrer la discussion',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          style: TextStyle(fontSize: 12, color: AppTheme.taupeGrey),
         ),
         trailing: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF0284C7)),
-            SizedBox(width: 4),
-            Icon(Icons.phone_outlined, size: 18, color: Color(0xFF059669)),
+            Icon(CupertinoIcons.chat_bubble_fill, size: 18, color: AppTheme.burntRose),
+            SizedBox(width: 6),
+            Icon(CupertinoIcons.phone_fill, size: 18, color: AppTheme.mutedTeal),
           ],
         ),
       ),

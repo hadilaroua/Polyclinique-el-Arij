@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
@@ -28,6 +29,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   List<dynamic> exams = [];
   List<dynamic> alerts = [];
   final Set<String> _readAlertIds = {};
+  final Set<String> _deletedExamIds = {};
   bool isLoading = true;
 
   Timer? _realtimeTimer;
@@ -58,7 +60,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   Future<void> _loadReadAlertIds() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final list = prefs.getStringList('arij_tech_read_alerts') ?? [];
+      final list = prefs.getStringList('arij_technician_read_alerts') ?? [];
       if (mounted) {
         setState(() {
           _readAlertIds.addAll(list);
@@ -70,7 +72,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   Future<void> _saveReadAlertIds() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('arij_tech_read_alerts', _readAlertIds.toList());
+      await prefs.setStringList('arij_technician_read_alerts', _readAlertIds.toList());
     } catch (_) {}
   }
 
@@ -92,9 +94,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         final newAlerts = await api.getAlerts(isResolved: false);
         if (!mounted) return;
 
-        if (list.length != exams.length || newAlerts.length != alerts.length) {
+        final cleanList = list.where((e) {
+          final id = e['_id']?.toString() ?? e['id']?.toString();
+          return id != null && !_deletedExamIds.contains(id);
+        }).toList();
+
+        if (cleanList.length != exams.length || newAlerts.length != alerts.length) {
           setState(() {
-            exams = list;
+            exams = cleanList;
             alerts = newAlerts;
           });
         }
@@ -109,8 +116,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       api.getAlerts(isResolved: false),
     ]);
     if (mounted) {
+      final list = results[0].where((e) {
+        final id = e['_id']?.toString() ?? e['id']?.toString();
+        return id != null && !_deletedExamIds.contains(id);
+      }).toList();
       setState(() {
-        exams = results[0];
+        exams = list;
         alerts = results[1];
         isLoading = false;
       });
@@ -168,10 +179,20 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       doctors = results[1];
     } catch (_) {}
 
-    Map<String, dynamic>? selectedPatient = patients.isNotEmpty ? patients.first as Map<String, dynamic> : null;
-
-    final defaultDocObj = selectedPatient != null ? selectedPatient['attendingDoctorId'] : null;
-    Map<String, dynamic>? selectedDoctor = defaultDocObj is Map ? defaultDocObj as Map<String, dynamic> : (doctors.isNotEmpty ? doctors.first as Map<String, dynamic> : null);
+    String? selectedPatientId = patients.isNotEmpty ? patients.first['_id']?.toString() : null;
+    String? selectedDoctorId;
+    if (selectedPatientId != null) {
+      final firstPat = patients.first;
+      final defaultDocObj = firstPat['attendingDoctorId'];
+      final targetDocId = defaultDocObj is Map ? defaultDocObj['_id']?.toString() : defaultDocObj?.toString();
+      if (targetDocId != null && doctors.any((d) => d['_id']?.toString() == targetDocId || (d['userId'] is Map && d['userId']['_id']?.toString() == targetDocId))) {
+        final matched = doctors.firstWhere((d) => d['_id']?.toString() == targetDocId || (d['userId'] is Map && d['userId']['_id']?.toString() == targetDocId));
+        selectedDoctorId = matched['_id']?.toString();
+      }
+    }
+    if (selectedDoctorId == null && doctors.isNotEmpty) {
+      selectedDoctorId = doctors.first['_id']?.toString();
+    }
 
     final typeCtrl = TextEditingController();
     final serviceCtrl = TextEditingController(text: 'Laboratoire');
@@ -232,22 +253,29 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 if (patients.isEmpty)
                   const Text('Aucun patient trouvé dans la base clinic.', style: TextStyle(color: Colors.red, fontSize: 12))
                 else
-                  DropdownButtonFormField<Map<String, dynamic>>(
-                    initialValue: selectedPatient,
+                  DropdownButtonFormField<String>(
+                    value: selectedPatientId,
                     decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
                     items: patients.map((p) {
+                      final id = p['_id']?.toString() ?? '';
                       final name = '${p['firstName'] ?? ''} ${p['lastName'] ?? ''}'.trim();
                       final cin = p['cin'] != null ? ' (CIN: ${p['cin']})' : '';
-                      return DropdownMenuItem(
-                        value: p as Map<String, dynamic>,
+                      return DropdownMenuItem<String>(
+                        value: id,
                         child: Text('$name$cin', overflow: TextOverflow.ellipsis),
                       );
                     }).toList(),
                     onChanged: (v) {
                       setModalState(() {
-                        selectedPatient = v;
-                        if (v != null && v['attendingDoctorId'] is Map) {
-                          selectedDoctor = v['attendingDoctorId'] as Map<String, dynamic>;
+                        selectedPatientId = v;
+                        final pat = patients.firstWhere((p) => p['_id']?.toString() == v, orElse: () => null);
+                        if (pat != null && pat['attendingDoctorId'] != null) {
+                          final defaultDocObj = pat['attendingDoctorId'];
+                          final targetDocId = defaultDocObj is Map ? defaultDocObj['_id']?.toString() : defaultDocObj?.toString();
+                          if (targetDocId != null && doctors.any((d) => d['_id']?.toString() == targetDocId || (d['userId'] is Map && d['userId']['_id']?.toString() == targetDocId))) {
+                            final matched = doctors.firstWhere((d) => d['_id']?.toString() == targetDocId || (d['userId'] is Map && d['userId']['_id']?.toString() == targetDocId));
+                            selectedDoctorId = matched['_id']?.toString();
+                          }
                         }
                       });
                     },
@@ -258,20 +286,27 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 const Text('Médecin Prescripteur / Destinataire (optionnel)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 6),
                 if (doctors.isNotEmpty)
-                  DropdownButtonFormField<Map<String, dynamic>>(
-                    initialValue: selectedDoctor,
+                  DropdownButtonFormField<String?>(
+                    value: selectedDoctorId,
                     decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
-                    items: doctors.map((d) {
-                      final u = d['userId'];
-                      final fn = u is Map ? (u['firstName'] ?? '') : (d['firstName'] ?? '');
-                      final ln = u is Map ? (u['lastName'] ?? '') : (d['lastName'] ?? '');
-                      final spec = d['specialty'] ?? 'Médecine';
-                      return DropdownMenuItem(
-                        value: d as Map<String, dynamic>,
-                        child: Text('Dr. $fn $ln ($spec)', overflow: TextOverflow.ellipsis),
-                      );
-                    }).toList(),
-                    onChanged: (v) => setModalState(() => selectedDoctor = v),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Aucun médecin assigné', style: TextStyle(color: Color(0xFF64748B))),
+                      ),
+                      ...doctors.map((d) {
+                        final id = d['_id']?.toString() ?? '';
+                        final u = d['userId'];
+                        final fn = u is Map ? (u['firstName'] ?? '') : (d['firstName'] ?? '');
+                        final ln = u is Map ? (u['lastName'] ?? '') : (d['lastName'] ?? '');
+                        final spec = d['specialty'] ?? 'Médecine';
+                        return DropdownMenuItem<String?>(
+                          value: id,
+                          child: Text('Dr. $fn $ln ($spec)', overflow: TextOverflow.ellipsis),
+                        );
+                      }),
+                    ],
+                    onChanged: (v) => setModalState(() => selectedDoctorId = v),
                   ),
 
                 const SizedBox(height: 14),
@@ -403,7 +438,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                     icon: const Icon(Icons.check_circle, color: Colors.white),
                     label: const Text('Créer l\'Examen dans le Dossier Patient', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     onPressed: () async {
-                      if (selectedPatient == null) {
+                      if (selectedPatientId == null) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez sélectionner un patient')));
                         return;
                       }
@@ -412,9 +447,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         return;
                       }
                       Navigator.pop(ctx);
-                      final patId = selectedPatient!['_id']?.toString() ?? '';
+                      final patId = selectedPatientId!;
                       final currentUserId = api.currentUser?['id'] ?? api.currentUser?['_id'];
-                      final docId = selectedDoctor?['_id']?.toString();
+                      final docId = selectedDoctorId;
 
                       final res = await api.createExam(
                         patientId: patId,
@@ -502,7 +537,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     final patName = patient is Map ? '${patient['firstName'] ?? ''} ${patient['lastName'] ?? ''}'.trim() : 'Patient';
 
     final doctorObj = exam['requestingDoctorId'] ?? (patient is Map ? patient['attendingDoctorId'] : null);
-    Map<String, dynamic>? selectedDoctor = doctorObj is Map ? doctorObj as Map<String, dynamic> : (doctors.isNotEmpty ? doctors.first as Map<String, dynamic> : null);
+    final targetDocId = doctorObj is Map ? doctorObj['_id']?.toString() : doctorObj?.toString();
+    String? selectedDoctorId;
+    if (targetDocId != null && doctors.any((d) => d['_id']?.toString() == targetDocId || (d['userId'] is Map && d['userId']['_id']?.toString() == targetDocId))) {
+      final matched = doctors.firstWhere((d) => d['_id']?.toString() == targetDocId || (d['userId'] is Map && d['userId']['_id']?.toString() == targetDocId));
+      selectedDoctorId = matched['_id']?.toString();
+    } else if (doctors.isNotEmpty) {
+      selectedDoctorId = doctors.first['_id']?.toString();
+    }
 
     final alertCtrl = TextEditingController(text: 'Résultat critique sur ${exam['examType'] ?? 'Examen'} : valeur panique à prendre en charge d\'urgence.');
 
@@ -514,9 +556,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (modalCtx, setModalState) {
-          final docUser = selectedDoctor != null ? (selectedDoctor!['userId'] is Map ? selectedDoctor!['userId'] : selectedDoctor!['user']) : null;
-          final dfn = docUser is Map ? (docUser['firstName'] ?? '') : (selectedDoctor != null ? (selectedDoctor!['firstName'] ?? '') : '');
-          final dln = docUser is Map ? (docUser['lastName'] ?? '') : (selectedDoctor != null ? (selectedDoctor!['lastName'] ?? '') : '');
+          final chosenDoc = doctors.firstWhere((d) => d['_id']?.toString() == selectedDoctorId, orElse: () => null);
+          final docUser = chosenDoc != null ? (chosenDoc['userId'] is Map ? chosenDoc['userId'] : chosenDoc['user']) : null;
+          final dfn = docUser is Map ? (docUser['firstName'] ?? '') : (chosenDoc != null ? (chosenDoc['firstName'] ?? '') : '');
+          final dln = docUser is Map ? (docUser['lastName'] ?? '') : (chosenDoc != null ? (chosenDoc['lastName'] ?? '') : '');
           final currentDocName = '$dfn $dln'.trim().isNotEmpty ? 'Dr. $dfn $dln'.trim() : 'Médecin prescripteur';
 
           return Container(
@@ -552,20 +595,21 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                   const Text('Médecin Destinataire de l\'Alerte *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                   const SizedBox(height: 6),
                   if (doctors.isNotEmpty)
-                    DropdownButtonFormField<Map<String, dynamic>>(
-                      initialValue: selectedDoctor,
+                    DropdownButtonFormField<String>(
+                      value: selectedDoctorId,
                       decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
                       items: doctors.map((d) {
+                        final id = d['_id']?.toString() ?? '';
                         final u = d['userId'];
                         final fn = u is Map ? (u['firstName'] ?? '') : (d['firstName'] ?? '');
                         final ln = u is Map ? (u['lastName'] ?? '') : (d['lastName'] ?? '');
                         final spec = d['specialty'] ?? 'Médecine';
-                        return DropdownMenuItem(
-                          value: d as Map<String, dynamic>,
+                        return DropdownMenuItem<String>(
+                          value: id,
                           child: Text('Dr. $fn $ln ($spec)', overflow: TextOverflow.ellipsis),
                         );
                       }).toList(),
-                      onChanged: (v) => setModalState(() => selectedDoctor = v),
+                      onChanged: (v) => setModalState(() => selectedDoctorId = v),
                     ),
                   const SizedBox(height: 10),
 
@@ -594,8 +638,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         Navigator.pop(ctx);
                         final patId = patient is Map ? patient['_id']?.toString() : exam['patientId']?.toString();
 
-                        final targetDocUser = selectedDoctor != null ? (selectedDoctor!['userId'] is Map ? selectedDoctor!['userId'] : selectedDoctor!['user']) : null;
-                        final targetDocUserId = targetDocUser is Map ? targetDocUser['_id']?.toString() : selectedDoctor?['_id']?.toString();
+                        final targetDocUser = chosenDoc != null ? (chosenDoc['userId'] is Map ? chosenDoc['userId'] : chosenDoc['user']) : null;
+                        final targetDocUserId = targetDocUser is Map ? targetDocUser['_id']?.toString() : chosenDoc?['_id']?.toString();
 
                         await api.createAlert(
                           patientId: patId ?? '',
@@ -1001,6 +1045,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         onLogout: widget.onLogout,
       ),
       appBar: AppBar(
+        backgroundColor: AppTheme.getRoleColor('TECHNICIAN'),
+        foregroundColor: Colors.white,
+        elevation: 0,
         title: Row(
           children: [
             Container(
@@ -1015,7 +1062,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
               child: Image.asset(
                 'assets/logo-polyclinique-arij.png',
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.biotech, color: AppTheme.primary, size: 20),
+                errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.lab_flask, color: AppTheme.primary, size: 20),
               ),
             ),
             const SizedBox(width: 10),
@@ -1026,12 +1073,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 children: [
                   const Text(
                     'Plateau Technique & Labo',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     fullName.isNotEmpty ? fullName : 'Technicien Arij',
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -1217,8 +1264,71 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     );
   }
 
+  Future<bool> _confirmDeleteExam(String examId, String examTitle) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_forever, color: Color(0xFFDC2626), size: 26),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Supprimer l\'examen ?',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Voulez-vous vraiment supprimer la demande d\'examen "$examTitle" ?\nCette action est irréversible.',
+          style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Supprimer', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      _executeDeleteExam(examId);
+      return true;
+    }
+    return false;
+  }
+
+  void _executeDeleteExam(String examId) {
+    if (examId.isEmpty) return;
+    setState(() {
+      _deletedExamIds.add(examId);
+      exams.removeWhere((e) => (e['_id']?.toString() == examId || e['id']?.toString() == examId));
+    });
+    api.deleteExam(examId);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Color(0xFF1E293B),
+          content: Text('🗑️ Examen supprimé avec succès.'),
+        ),
+      );
+    }
+  }
+
   Widget _buildExamCard(Map<String, dynamic> exam) {
-    final examId = exam['_id']?.toString() ?? '';
+    final examId = exam['_id']?.toString() ?? exam['id']?.toString() ?? '';
     final examType = exam['examType'] ?? 'Examen technique';
     final status = exam['status'] ?? 'PENDING';
     final priority = exam['priority'] ?? 'MEDIUM';
@@ -1264,8 +1374,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     }
 
     return Dismissible(
-      key: Key('exam_${exam['_id']}'),
+      key: Key('exam_$examId'),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => _confirmDeleteExam(examId, examType),
+      onDismissed: (_) {
+        _executeDeleteExam(examId);
+      },
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
@@ -1277,29 +1391,15 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Icon(Icons.delete_sweep, color: Colors.white, size: 24),
+            Icon(Icons.delete_forever, color: Colors.white, size: 24),
             SizedBox(width: 8),
             Text(
-              'Masquer / Supprimer',
+              'Supprimer',
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ],
         ),
       ),
-      onDismissed: (_) async {
-        final id = exam['_id']?.toString();
-        if (id != null) {
-          await api.deleteExam(id);
-          _loadExams();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Élément masqué de votre liste (conservé pour l\'administration).'),
-              ),
-            );
-          }
-        }
-      },
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
@@ -1453,6 +1553,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                   icon: const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 20),
                   tooltip: 'Signaler anomalie critique',
                   onPressed: () => _showCreatePanicAlertModal(exam),
+                ),
+                // Bouton Supprimer Examen
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Color(0xFFDC2626), size: 20),
+                  tooltip: 'Supprimer cet examen',
+                  onPressed: () => _confirmDeleteExam(examId, examType),
                 ),
                 const SizedBox(width: 4),
 
