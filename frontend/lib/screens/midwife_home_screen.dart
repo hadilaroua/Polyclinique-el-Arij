@@ -7,6 +7,7 @@ import '../services/notification_service.dart';
 import '../utils/theme.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'patient_dossier_screen.dart';
 import 'profile_screen.dart';
 
@@ -1136,6 +1137,7 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
           ],
         ),
         actions: [
+          const ThemeToggleButton(),
           // Bouton d'alertes avec compteur
 
           // Bouton cloche d'alertes avec badge dynamique

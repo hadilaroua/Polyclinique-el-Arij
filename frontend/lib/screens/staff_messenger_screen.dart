@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'chat_conversation_screen.dart';
 import 'profile_screen.dart';
 
@@ -110,9 +111,9 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           height: MediaQuery.of(context).size.height * 0.8,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: EdgeInsets.fromLTRB(18, 18, 18, MediaQuery.of(context).viewInsets.bottom + 18),
           child: Column(
@@ -243,9 +244,9 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
           return Container(
             height: MediaQuery.of(context).size.height * 0.82,
             padding: const EdgeInsets.all(18),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,7 +351,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
     final headerColor = AppTheme.getRoleColor(userRole);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8F8),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: headerColor,
@@ -372,6 +373,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
           ],
         ),
         actions: [
+          const ThemeToggleButton(),
           IconButton(
             tooltip: 'Nouveau Groupe',
             icon: const Icon(CupertinoIcons.person_3_fill, color: AppTheme.pearlAqua),

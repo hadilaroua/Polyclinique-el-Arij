@@ -46,32 +46,36 @@ class NotificationService {
       linux: linuxSettings,
     );
 
-    await _notificationsPlugin.initialize(
-      settings: settings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        debugPrint('Notification cliquée : ${response.payload}');
-      },
-    );
-
-    // Demander la permission sur Android 13+
-    if (!kIsWeb && Platform.isAndroid) {
-      final androidImplementation = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      await androidImplementation?.requestNotificationsPermission();
-    }
-
-    // Demander la permission sur iOS
-    if (!kIsWeb && Platform.isIOS) {
-      final iosImplementation = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>();
-      await iosImplementation?.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-        critical: true,
+    try {
+      await _notificationsPlugin.initialize(
+        settings: settings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          debugPrint('Notification cliquée : ${response.payload}');
+        },
       );
+
+      // Demander la permission sur Android 13+
+      if (!kIsWeb && Platform.isAndroid) {
+        final androidImplementation = _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        await androidImplementation?.requestNotificationsPermission();
+      }
+
+      // Demander la permission sur iOS
+      if (!kIsWeb && Platform.isIOS) {
+        final iosImplementation = _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin>();
+        await iosImplementation?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+          critical: true,
+        );
+      }
+    } catch (e) {
+      debugPrint('NotificationService: fallback / environnement de test sans canal natif ($e)');
     }
 
     _isInitialized = true;

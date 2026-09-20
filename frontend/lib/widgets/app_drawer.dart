@@ -4,6 +4,7 @@ import '../screens/staff_messenger_screen.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import 'avatar_widget.dart';
+import 'theme_toggle_button.dart';
 
 class AppDrawer extends StatelessWidget {
   final Function(int) onSelectTab;
@@ -19,6 +20,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppTheme.isDarkMode(context);
     final api = ApiService();
     final user = api.currentUser;
     final profile = api.currentProfile;
@@ -42,7 +44,7 @@ class AppDrawer extends StatelessWidget {
     }
 
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AppTheme.darkBackground : Colors.white,
       child: Column(
         children: [
           // En-tête professionnel avec photo de profil
@@ -59,7 +61,7 @@ class AppDrawer extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   roleColor,
-                  AppTheme.primaryDark,
+                  isDark ? const Color(0xFF090D16) : AppTheme.primaryDark,
                 ],
               ),
             ),
@@ -284,7 +286,13 @@ class AppDrawer extends StatelessWidget {
                   ),
                 ],
 
-                const Divider(height: 24, thickness: 1, color: AppTheme.border),
+                Divider(height: 24, thickness: 1, color: isDark ? AppTheme.darkBorder : AppTheme.border),
+
+                // Sélecteur 3 modes : Clair / Sombre / Système
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  child: const ThemeSettingsRow(),
+                ),
 
                 ListTile(
                   leading: Container(
@@ -298,19 +306,27 @@ class AppDrawer extends StatelessWidget {
                     ),
                     child: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.white, size: 20),
                   ),
-                  title: const Row(
+                  title: Row(
                     children: [
                       Text(
                         'Messagerie & Appels',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.accent),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: isDark ? AppTheme.darkAccent : AppTheme.accent,
+                        ),
                       ),
-                      SizedBox(width: 6),
-                      Icon(CupertinoIcons.chat_bubble_fill, color: AppTheme.accent, size: 14),
+                      const SizedBox(width: 6),
+                      Icon(
+                        CupertinoIcons.chat_bubble_fill,
+                        color: isDark ? AppTheme.darkAccent : AppTheme.accent,
+                        size: 14,
+                      ),
                     ],
                   ),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Chat direct, groupes & appels HD staff',
-                    style: TextStyle(fontSize: 11, color: Colors.black54),
+                    style: TextStyle(fontSize: 11, color: isDark ? AppTheme.darkTextMuted : Colors.black54),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -338,9 +354,9 @@ class AppDrawer extends StatelessWidget {
                     height: 36,
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: isDark ? AppTheme.darkBorder : AppTheme.border),
                     ),
                     child: Image.asset(
                       'assets/logo-polyclinique-arij.png',
@@ -348,22 +364,22 @@ class AppDrawer extends StatelessWidget {
                       errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.plus_square, color: AppTheme.primary, size: 20),
                     ),
                   ),
-                  title: const Text(
+                  title: Text(
                     'Polyclinique Arij Djerba',
                     style: TextStyle(
-                      color: AppTheme.textMain,
+                      color: isDark ? AppTheme.darkTextMain : AppTheme.textMain,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Midoun, Djerba — Tél: 75 730 001',
                     style: TextStyle(
-                      color: AppTheme.textMuted,
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
                       fontSize: 11,
                     ),
                   ),
-                  trailing: const Icon(CupertinoIcons.chevron_right, size: 18, color: AppTheme.textMuted),
+                  trailing: Icon(CupertinoIcons.chevron_right, size: 18, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
                   onTap: () {
                     Navigator.pop(context);
                     showAboutDialog(
@@ -386,8 +402,8 @@ class AppDrawer extends StatelessWidget {
           // Pied de menu Déconnexion
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppTheme.border)),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: isDark ? AppTheme.darkBorder : AppTheme.border)),
             ),
             child: ListTile(
               contentPadding: EdgeInsets.zero,
@@ -425,31 +441,33 @@ class AppDrawer extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final isDark = AppTheme.isDarkMode(context);
+
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppTheme.primaryLight,
+          color: isDark ? const Color(0xFF1E293B) : AppTheme.primaryLight,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: AppTheme.primary, size: 20),
+        child: Icon(icon, color: isDark ? AppTheme.darkPrimary : AppTheme.primary, size: 20),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          color: AppTheme.textMain,
+        style: TextStyle(
+          color: isDark ? AppTheme.darkTextMain : AppTheme.textMain,
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
-          color: AppTheme.textMuted,
+        style: TextStyle(
+          color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
           fontSize: 11,
         ),
       ),
-      trailing: const Icon(CupertinoIcons.chevron_right, size: 18, color: AppTheme.textMuted),
+      trailing: Icon(CupertinoIcons.chevron_right, size: 18, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
       onTap: onTap,
     );
   }

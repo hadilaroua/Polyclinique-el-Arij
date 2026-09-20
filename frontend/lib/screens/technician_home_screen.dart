@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'patient_dossier_screen.dart';
 import 'profile_screen.dart';
 
@@ -1087,6 +1088,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
           ],
         ),
         actions: [
+          const ThemeToggleButton(),
           // Bouton d'alertes avec compteur
 
           IconButton(

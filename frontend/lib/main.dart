@@ -12,6 +12,7 @@ import 'widgets/floating_messenger_head.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppTheme.initTheme();
   runApp(const ArijApp());
 }
 
@@ -62,11 +63,18 @@ class _ArijAppState extends State<ArijApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Polyclinique Arij Djerba — Staff',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.theme,
-      home: _checkingSession ? _buildSplashScreen() : _resolveRootScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppTheme.themeModeNotifier,
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          title: 'Polyclinique Arij Djerba — Staff',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeMode,
+          home: _checkingSession ? _buildSplashScreen() : _resolveRootScreen(),
+        );
+      },
     );
   }
 

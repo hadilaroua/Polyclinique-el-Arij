@@ -4,6 +4,7 @@ import '../screens/staff_messenger_screen.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/theme_toggle_button.dart';
 
 class PatientDossierScreen extends StatefulWidget {
   final Map<String, dynamic> patient;
@@ -85,7 +86,7 @@ class _PatientDossierScreenState extends State<PatientDossierScreen> with Single
     final phone = pat['phone'] ?? '-';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Row(
           children: [
@@ -115,6 +116,7 @@ class _PatientDossierScreenState extends State<PatientDossierScreen> with Single
           ],
         ),
         actions: [
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.forum_outlined, color: AppTheme.primary),
             tooltip: 'Messagerie & Discuter du cas avec le staff',
