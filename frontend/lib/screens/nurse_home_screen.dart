@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
@@ -30,6 +31,7 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
   List<dynamic> alerts = [];
   List<dynamic> doctors = [];
   final Set<String> _readAlertIds = {};
+  final Set<String> _deletedVitalIds = {};
   bool isLoading = true;
   String patientSearchQuery = '';
   String _selectedDepartmentFilter = 'ALL';
@@ -157,9 +159,13 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
       api.getDoctors(),
     ]);
     if (mounted) {
+      final cleanVitals = results[1].where((v) {
+        final id = v['_id']?.toString() ?? v['id']?.toString();
+        return id != null && !_deletedVitalIds.contains(id);
+      }).toList();
       setState(() {
         patients = results[0];
-        vitalSigns = results[1];
+        vitalSigns = cleanVitals;
         beds = results[2];
         alerts = results[3];
         doctors = results[4];
@@ -1054,6 +1060,9 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
         onLogout: widget.onLogout,
       ),
       appBar: AppBar(
+        backgroundColor: AppTheme.getRoleColor('NURSE'),
+        foregroundColor: Colors.white,
+        elevation: 0,
         title: Row(
           children: [
             Container(
@@ -1068,7 +1077,7 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
               child: Image.asset(
                 'assets/logo-polyclinique-arij.png',
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.healing, color: AppTheme.primary, size: 20),
+                errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.heart_fill, color: AppTheme.primary, size: 20),
               ),
             ),
             const SizedBox(width: 10),
@@ -1079,12 +1088,12 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
                 children: [
                   const Text(
                     'Soins Infirmiers',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     fullName.isNotEmpty ? fullName : 'Infirmier(ère)',
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -1635,6 +1644,62 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
     return Dismissible(
       key: Key('vital_$id'),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.delete_forever, color: Color(0xFFDC2626), size: 26),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Supprimer la constante ?',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Voulez-vous vraiment supprimer la constante enregistrée pour $patName ?\nCette action est irréversible.',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Annuler', style: TextStyle(color: Color(0xFF64748B))),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Supprimer', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (_) {
+        if (id.isNotEmpty) {
+          setState(() {
+            _deletedVitalIds.add(id);
+            vitalSigns.removeWhere((item) => item['_id']?.toString() == id || item['id']?.toString() == id);
+          });
+          api.deleteVitalSign(id);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: Color(0xFF1E293B),
+                content: Text('🗑️ Constante supprimée avec succès.'),
+              ),
+            );
+          }
+        }
+      },
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
@@ -1646,28 +1711,15 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Icon(Icons.delete_sweep, color: Colors.white, size: 24),
+            Icon(Icons.delete_forever, color: Colors.white, size: 24),
             SizedBox(width: 8),
             Text(
-              'Masquer / Supprimer',
+              'Supprimer',
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ],
         ),
       ),
-      onDismissed: (_) async {
-        if (id.isNotEmpty) {
-          await api.deleteVitalSign(id);
-          _loadData();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Constante masquée de votre vue (conservée dans l\'administration).'),
-              ),
-            );
-          }
-        }
-      },
       child: Card(
         margin: const EdgeInsets.only(bottom: 10),
         color: isAbnormal ? const Color(0xFFFFF1F2) : Colors.white,

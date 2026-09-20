@@ -72,7 +72,7 @@ class _ArijAppState extends State<ArijApp> {
 
   Widget _buildSplashScreen() {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppTheme.chocolatePlum,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -86,7 +86,7 @@ class _ArijAppState extends State<ArijApp> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.35),
+                    color: AppTheme.burntRose.withValues(alpha: 0.35),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -113,8 +113,9 @@ class _ArijAppState extends State<ArijApp> {
             const Text(
               'Connexion sécurisée en cours...',
               style: TextStyle(
-                color: Color(0xFF94A3B8),
+                color: AppTheme.pearlAqua,
                 fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 28),
@@ -123,7 +124,7 @@ class _ArijAppState extends State<ArijApp> {
               height: 24,
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.pearlAqua),
               ),
             ),
           ],

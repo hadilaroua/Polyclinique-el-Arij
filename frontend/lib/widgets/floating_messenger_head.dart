@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../screens/call_overlay_screen.dart';
 import '../screens/staff_messenger_screen.dart';
 import '../services/api_service.dart';
+import '../utils/theme.dart';
 import 'avatar_widget.dart';
 
 class FloatingMessengerHead extends StatefulWidget {
@@ -65,10 +67,10 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            backgroundColor: const Color(0xFF0F172A),
+            backgroundColor: AppTheme.chocolatePlum,
             title: Row(
               children: [
-                const Icon(Icons.phone_in_talk, color: Colors.greenAccent),
+                const Icon(CupertinoIcons.phone_fill_arrow_down_left, color: AppTheme.neonIce),
                 const SizedBox(width: 10),
                 Text(
                   'Appel $callType Entrant...',
@@ -93,14 +95,14 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
                 const SizedBox(height: 4),
                 Text(
                   sender['role'] ?? 'Personnel Clinique',
-                  style: TextStyle(color: Colors.cyanAccent.shade100, fontSize: 13),
+                  style: const TextStyle(color: AppTheme.pearlAqua, fontSize: 13),
                 ),
               ],
             ),
             actions: [
               TextButton.icon(
-                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                icon: const Icon(Icons.call_end),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.burntRose),
+                icon: const Icon(CupertinoIcons.phone_down_fill),
                 label: const Text('Refuser'),
                 onPressed: () {
                   api.sendCallSignal(
@@ -114,11 +116,11 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF16A34A),
+                  backgroundColor: AppTheme.mutedTeal,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                icon: const Icon(Icons.call),
+                icon: const Icon(CupertinoIcons.phone_fill),
                 label: const Text('Décrocher', style: TextStyle(fontWeight: FontWeight.bold)),
                 onPressed: () {
                   api.sendCallSignal(
@@ -130,7 +132,7 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
                   Navigator.pop(ctx);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    CupertinoPageRoute(
                       builder: (_) => CallOverlayScreen(
                         contact: sender,
                         callType: callType,
@@ -148,11 +150,10 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
     } catch (_) {}
   }
 
-
   void _openMessenger() {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (_) => StaffMessengerScreen(onLogout: widget.onLogout),
       ),
     );
@@ -189,52 +190,36 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
               child: AnimatedScale(
                 scale: isDragging ? 1.15 : 1.0,
                 duration: const Duration(milliseconds: 150),
-                child: Container(
+                child: SizedBox(
                   width: 58,
                   height: 58,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0284C7).withValues(alpha: 0.45),
-                        blurRadius: 12,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                    border: Border.all(color: Colors.white, width: 2.5),
-                  ),
                   child: Stack(
-                    alignment: Alignment.center,
+                    clipBehavior: Clip.none,
                     children: [
-                      const Icon(
-                        Icons.chat_bubble_rounded,
-                        color: Colors.white,
-                        size: 28,
+                      CustomPaint(
+                        size: const Size(58, 58),
+                        painter: MessengerBubblePainter(),
                       ),
                       Positioned(
-                        top: 2,
-                        right: 2,
+                        top: -2,
+                        right: -2,
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEF4444),
+                          decoration: BoxDecoration(
+                            color: AppTheme.danger,
                             shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
                           ),
                           constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
+                            minWidth: 18,
+                            minHeight: 18,
                           ),
                           child: const Center(
                             child: Text(
                               '1',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 9,
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -250,4 +235,66 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
       ],
     );
   }
+}
+
+class MessengerBubblePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // Messenger Blue Gradient Shader
+    final paint = Paint()
+      ..shader = const LinearGradient(
+        colors: [
+          Color(0xFF00C6FF),
+          Color(0xFF0078FF),
+          Color(0xFF0055FF),
+        ],
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+
+    // Outer speech bubble path (Circle with tail at bottom-left)
+    final bubblePath = Path();
+    final center = Offset(w * 0.5, h * 0.46);
+    final radius = w * 0.44;
+
+    bubblePath.addOval(Rect.fromCircle(center: center, radius: radius));
+
+    // Tail at bottom left
+    final tailPath = Path()
+      ..moveTo(w * 0.22, h * 0.72)
+      ..lineTo(w * 0.06, h * 0.94) // Pointer tip
+      ..lineTo(w * 0.38, h * 0.86)
+      ..close();
+
+    final combinedPath = Path.combine(PathOperation.union, bubblePath, tailPath);
+
+    // Subtle drop shadow
+    canvas.drawShadow(combinedPath, Colors.black.withValues(alpha: 0.35), 8, true);
+
+    // Draw main bubble body
+    canvas.drawPath(combinedPath, paint);
+
+    // Lightning bolt in white
+    final boltPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final boltPath = Path();
+    boltPath.moveTo(w * 0.66, h * 0.31);
+    boltPath.lineTo(w * 0.41, h * 0.49);
+    boltPath.lineTo(w * 0.52, h * 0.49);
+    boltPath.lineTo(w * 0.32, h * 0.65);
+    boltPath.lineTo(w * 0.57, h * 0.47);
+    boltPath.lineTo(w * 0.46, h * 0.47);
+    boltPath.close();
+
+    canvas.drawPath(boltPath, boltPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
 import 'call_overlay_screen.dart';
 
@@ -191,7 +193,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _attachmentOption(
-                  icon: Icons.image,
+                  icon: CupertinoIcons.photo_fill,
                   color: Colors.purple,
                   label: 'Photo / Cliché',
                   onTap: () async {
@@ -209,7 +211,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   },
                 ),
                 _attachmentOption(
-                  icon: Icons.picture_as_pdf,
+                  icon: CupertinoIcons.doc_fill,
                   color: Colors.red,
                   label: 'Document PDF',
                   onTap: () async {
@@ -227,8 +229,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   },
                 ),
                 _attachmentOption(
-                  icon: Icons.medical_information,
-                  color: const Color(0xFF0284C7),
+                  icon: CupertinoIcons.capsule_fill,
+                  color: AppTheme.accent,
                   label: 'Ordonnance',
                   onTap: () {
                     Navigator.pop(ctx);
@@ -239,7 +241,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   },
                 ),
                 _attachmentOption(
-                  icon: Icons.biotech,
+                  icon: CupertinoIcons.lab_flask,
                   color: const Color(0xFF059669),
                   label: 'Résultat Labo',
                   onTap: () {
@@ -296,7 +298,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         elevation: 1,
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+          icon: const Icon(CupertinoIcons.chevron_back, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -340,16 +342,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         actions: [
           IconButton(
             tooltip: 'Appel Audio',
-            icon: const Icon(Icons.phone, color: Color(0xFF0284C7)),
+            icon: const Icon(CupertinoIcons.phone_fill, color: AppTheme.accent),
             onPressed: () => _startCall('AUDIO'),
           ),
           IconButton(
             tooltip: 'Appel Vidéo',
-            icon: const Icon(Icons.videocam, color: Color(0xFF0284C7)),
+            icon: const Icon(CupertinoIcons.videocam_fill, color: AppTheme.accent),
             onPressed: () => _startCall('VIDEO'),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Color(0xFF0F172A)),
+            icon: const Icon(CupertinoIcons.ellipsis_vertical, color: Color(0xFF0F172A)),
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
               if (widget.isGroup)
@@ -357,7 +359,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   value: 'LEAVE_GROUP',
                   child: Row(
                     children: [
-                      Icon(Icons.exit_to_app, color: Colors.redAccent, size: 20),
+                      Icon(CupertinoIcons.arrow_right_square, color: Colors.redAccent, size: 20),
                       SizedBox(width: 8),
                       Text('Quitter le groupe'),
                     ],
@@ -368,7 +370,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   value: 'BLOCK',
                   child: Row(
                     children: [
-                      Icon(Icons.block, color: Colors.orange, size: 20),
+                      Icon(CupertinoIcons.slash_circle, color: Colors.orange, size: 20),
                       SizedBox(width: 8),
                       Text('Bloquer / Débloquer'),
                     ],
@@ -378,7 +380,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 value: 'ARCHIVE',
                 child: Row(
                   children: [
-                    Icon(Icons.archive, color: Colors.grey, size: 20),
+                    Icon(CupertinoIcons.archivebox, color: Colors.grey, size: 20),
                     SizedBox(width: 8),
                     Text('Archiver la discussion'),
                   ],
@@ -394,13 +396,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           // Historique des messages
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CupertinoActivityIndicator())
                 : messages.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.chat_bubble_outline, size: 54, color: Colors.grey.shade400),
+                            Icon(CupertinoIcons.chat_bubble, size: 54, color: Colors.grey.shade400),
                             const SizedBox(height: 10),
                             Text('Démarrer la discussion avec $name', style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                           ],
@@ -436,7 +438,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.add_circle, color: Color(0xFF0284C7), size: 26),
+                    icon: const Icon(CupertinoIcons.plus_circle_fill, color: AppTheme.accent, size: 26),
                     onPressed: _showAttachmentPicker,
                   ),
                   Expanded(
@@ -462,9 +464,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   const SizedBox(width: 6),
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: const Color(0xFF0284C7),
+                    backgroundColor: AppTheme.accent,
                     child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                      icon: const Icon(CupertinoIcons.arrow_up, color: Colors.white, size: 18),
                       onPressed: () => _sendMessage(),
                     ),
                   ),

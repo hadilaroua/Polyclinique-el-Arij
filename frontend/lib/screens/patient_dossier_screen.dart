@@ -773,18 +773,20 @@ class _PatientDossierScreenState extends State<PatientDossierScreen> with Single
             const Expanded(
               child: Text('Plateau Technique & Analyses', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.accent,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            if (_api.currentUser?['role'] == 'DOCTOR' || _api.currentUser?['role'] == 'ADMIN' || _api.currentUser?['role'] == 'MIDWIFE') ...[
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accent,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+                icon: const Icon(Icons.science_outlined, size: 16, color: Colors.white),
+                label: const Text('+ Prescrire un Examen', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                onPressed: _showAddExamModal,
               ),
-              icon: const Icon(Icons.science_outlined, size: 16, color: Colors.white),
-              label: const Text('+ Prescrire / Saisir Examen', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-              onPressed: _showAddExamModal,
-            ),
+            ],
           ],
         ),
         const SizedBox(height: 12),
@@ -845,7 +847,7 @@ class _PatientDossierScreenState extends State<PatientDossierScreen> with Single
                       const SizedBox(height: 6),
                       Text('Indication clinique : ${exam['requestNotes']}', style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic)),
                     ],
-                    if (!isCompleted) ...[
+                    if (!isCompleted && _api.currentUser?['role'] == 'TECHNICIAN') ...[
                       const SizedBox(height: 10),
                       Align(
                         alignment: Alignment.centerRight,
@@ -1072,13 +1074,15 @@ class _PatientDossierScreenState extends State<PatientDossierScreen> with Single
               const Icon(Icons.monitor_heart_outlined, size: 52, color: Color(0xFFCBD5E1)),
               const SizedBox(height: 12),
               const Text('Aucune constante vitale enregistrée pour ce patient.', style: TextStyle(color: Color(0xFF64748B))),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text('Prendre les Constantes', style: TextStyle(color: Colors.white)),
-                onPressed: _showAddVitalSignsModal,
-              ),
+              if (_api.currentUser?['role'] == 'NURSE' || _api.currentUser?['role'] == 'MIDWIFE' || _api.currentUser?['role'] == 'ADMIN') ...[
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: const Text('Prendre les Constantes', style: TextStyle(color: Colors.white)),
+                  onPressed: _showAddVitalSignsModal,
+                ),
+              ],
             ],
           ),
         ),
@@ -1094,18 +1098,20 @@ class _PatientDossierScreenState extends State<PatientDossierScreen> with Single
             const Expanded(
               child: Text('Relevés des Constantes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            if (_api.currentUser?['role'] == 'NURSE' || _api.currentUser?['role'] == 'MIDWIFE' || _api.currentUser?['role'] == 'ADMIN') ...[
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                label: const Text('+ Prendre Constantes', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                onPressed: _showAddVitalSignsModal,
               ),
-              icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
-              label: const Text('+ Prendre Constantes', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-              onPressed: _showAddVitalSignsModal,
-            ),
+            ],
           ],
         ),
         const SizedBox(height: 10),

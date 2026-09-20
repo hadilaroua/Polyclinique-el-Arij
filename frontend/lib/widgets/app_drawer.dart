@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../screens/staff_messenger_screen.dart';
 import '../services/api_service.dart';
@@ -57,7 +58,7 @@ class AppDrawer extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  roleColor.withValues(alpha: 0.9),
+                  roleColor,
                   AppTheme.primaryDark,
                 ],
               ),
@@ -85,7 +86,7 @@ class AppDrawer extends StatelessWidget {
                       child: Image.asset(
                         'assets/logo-polyclinique-arij.png',
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.local_hospital, size: 18, color: AppTheme.primary),
+                        errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.plus_square_fill, size: 18, color: AppTheme.primary),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -93,9 +94,9 @@ class AppDrawer extends StatelessWidget {
                       'Polyclinique Arij Djerba',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
@@ -192,7 +193,7 @@ class AppDrawer extends StatelessWidget {
               children: [
                 _drawerItem(
                   context,
-                  icon: Icons.dashboard_outlined,
+                  icon: CupertinoIcons.square_grid_2x2_fill,
                   title: 'Tableau de bord',
                   subtitle: 'Aperçu général de la journée',
                   onTap: () {
@@ -204,7 +205,7 @@ class AppDrawer extends StatelessWidget {
                 if (role == 'DOCTOR') ...[
                   _drawerItem(
                     context,
-                    icon: Icons.medical_services_outlined,
+                    icon: CupertinoIcons.plus_square_fill,
                     title: 'Mes Consultations',
                     subtitle: 'Dossiers & diagnostics',
                     onTap: () {
@@ -214,7 +215,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _drawerItem(
                     context,
-                    icon: Icons.biotech_outlined,
+                    icon: CupertinoIcons.lab_flask,
                     title: 'Examens & Bilans',
                     subtitle: 'Prescriptions & résultats labo/radio',
                     onTap: () {
@@ -227,7 +228,7 @@ class AppDrawer extends StatelessWidget {
                 if (role == 'NURSE') ...[
                   _drawerItem(
                     context,
-                    icon: Icons.favorite_outline,
+                    icon: CupertinoIcons.heart_fill,
                     title: 'Constantes Vitales',
                     subtitle: 'Prise de TA, Pouls, T°, SpO2',
                     onTap: () {
@@ -237,7 +238,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _drawerItem(
                     context,
-                    icon: Icons.bed_outlined,
+                    icon: CupertinoIcons.bed_double_fill,
                     title: 'Chambres & Lits',
                     subtitle: 'Gestion des lits hospitalisés',
                     onTap: () {
@@ -250,7 +251,7 @@ class AppDrawer extends StatelessWidget {
                 if (role == 'MIDWIFE') ...[
                   _drawerItem(
                     context,
-                    icon: Icons.pregnant_woman,
+                    icon: CupertinoIcons.person_2_fill,
                     title: 'Suivi Obstétrical',
                     subtitle: 'Consultations & soins prénatals',
                     onTap: () {
@@ -260,7 +261,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _drawerItem(
                     context,
-                    icon: Icons.favorite_outline,
+                    icon: CupertinoIcons.heart_fill,
                     title: 'Constantes Maternité',
                     subtitle: 'Surveillance mère et bébé',
                     onTap: () {
@@ -273,7 +274,7 @@ class AppDrawer extends StatelessWidget {
                 if (role == 'TECHNICIAN') ...[
                   _drawerItem(
                     context,
-                    icon: Icons.science_outlined,
+                    icon: CupertinoIcons.lab_flask,
                     title: 'Worklist Plateau',
                     subtitle: 'Examens à réaliser',
                     onTap: () {
@@ -291,20 +292,20 @@ class AppDrawer extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF0284C7), Color(0xFF0F172A)],
+                        colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.forum_rounded, color: Colors.white, size: 20),
+                    child: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.white, size: 20),
                   ),
                   title: const Row(
                     children: [
                       Text(
                         'Messagerie & Appels',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0284C7)),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.accent),
                       ),
                       SizedBox(width: 6),
-                      Icon(Icons.chat_bubble_outline, color: Color(0xFF0284C7), size: 14),
+                      Icon(CupertinoIcons.chat_bubble_fill, color: AppTheme.accent, size: 14),
                     ],
                   ),
                   subtitle: const Text(
@@ -315,14 +316,14 @@ class AppDrawer extends StatelessWidget {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => StaffMessengerScreen(onLogout: onLogout)),
+                      CupertinoPageRoute(builder: (_) => StaffMessengerScreen(onLogout: onLogout)),
                     );
                   },
                 ),
 
                 _drawerItem(
                   context,
-                  icon: Icons.person_outline,
+                  icon: CupertinoIcons.person_fill,
                   title: 'Mon Profil Professionnel',
                   subtitle: 'Changer photo, coordonnées',
                   onTap: () {
@@ -344,7 +345,7 @@ class AppDrawer extends StatelessWidget {
                     child: Image.asset(
                       'assets/logo-polyclinique-arij.png',
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.local_hospital_outlined, color: AppTheme.primary, size: 20),
+                      errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.plus_square, color: AppTheme.primary, size: 20),
                     ),
                   ),
                   title: const Text(
@@ -362,7 +363,7 @@ class AppDrawer extends StatelessWidget {
                       fontSize: 11,
                     ),
                   ),
-                  trailing: const Icon(Icons.chevron_right, size: 18, color: AppTheme.textMuted),
+                  trailing: const Icon(CupertinoIcons.chevron_right, size: 18, color: AppTheme.textMuted),
                   onTap: () {
                     Navigator.pop(context);
                     showAboutDialog(
@@ -396,7 +397,7 @@ class AppDrawer extends StatelessWidget {
                   color: AppTheme.danger.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.logout, color: AppTheme.danger, size: 20),
+                child: const Icon(CupertinoIcons.arrow_right_square_fill, color: AppTheme.danger, size: 20),
               ),
               title: const Text(
                 'Déconnexion',
@@ -448,7 +449,7 @@ class AppDrawer extends StatelessWidget {
           fontSize: 11,
         ),
       ),
-      trailing: const Icon(Icons.chevron_right, size: 18, color: AppTheme.textMuted),
+      trailing: const Icon(CupertinoIcons.chevron_right, size: 18, color: AppTheme.textMuted),
       onTap: onTap,
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
@@ -1093,6 +1094,9 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
         onLogout: widget.onLogout,
       ),
       appBar: AppBar(
+        backgroundColor: AppTheme.getRoleColor('MIDWIFE'),
+        foregroundColor: Colors.white,
+        elevation: 0,
         title: Row(
           children: [
             Container(
@@ -1107,7 +1111,7 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
               child: Image.asset(
                 'assets/logo-polyclinique-arij.png',
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.pregnant_woman, color: AppTheme.primary, size: 20),
+                errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.person_2_fill, color: AppTheme.primary, size: 20),
               ),
             ),
             const SizedBox(width: 10),
@@ -1118,12 +1122,12 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
                 children: [
                   const Text(
                     'Maternité & Pôle Mère-Enfant',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     fullName.isNotEmpty ? fullName : 'Sage-femme Arij',
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -33,6 +34,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
   List<dynamic> alerts = [];
   List<dynamic> technicians = [];
   final Set<String> _readAlertIds = {};
+  final Set<String> _deletedConsultationIds = {};
   bool isLoading = true;
   String patientSearchQuery = '';
   String _selectedDepartmentFilter = 'ALL';
@@ -134,12 +136,13 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       if (!mounted) return;
       try {
         final newAlerts = await api.getAlerts(isResolved: false);
+        final updatedExams = await api.getExams();
         if (!mounted) return;
 
         final oldCount = alerts.length;
         final newCount = newAlerts.length;
 
-        if (oldCount != newCount) {
+        if (oldCount != newCount || updatedExams.length != exams.length) {
           if (newCount > oldCount && !isLoading) {
             final latest = newAlerts.first;
             final creatorId = latest['createdBy'] is Map ? latest['createdBy']['_id'] : latest['createdBy'];
@@ -198,6 +201,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
 
           setState(() {
             alerts = newAlerts;
+            exams = updatedExams;
           });
         }
       } catch (_) {}
@@ -220,9 +224,13 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       api.getTechnicians(),
     ]);
     if (mounted) {
+      final cleanConsultations = results[1].where((c) {
+        final id = c['_id']?.toString() ?? c['id']?.toString();
+        return id != null && !_deletedConsultationIds.contains(id);
+      }).toList();
       setState(() {
         patients = results[0];
-        consultations = results[1];
+        consultations = cleanConsultations;
         exams = results[2];
         alerts = results[3];
         technicians = results[4];
@@ -1496,6 +1504,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
         onLogout: widget.onLogout,
       ),
       appBar: AppBar(
+        backgroundColor: AppTheme.getRoleColor('DOCTOR'),
+        foregroundColor: Colors.white,
+        elevation: 0,
         title: Row(
           children: [
             Container(
@@ -1510,7 +1521,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
               child: Image.asset(
                 'assets/logo-polyclinique-arij.png',
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.local_hospital, color: AppTheme.primary, size: 20),
+                errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.plus_square_fill, color: AppTheme.primary, size: 20),
               ),
             ),
             const SizedBox(width: 10),
@@ -1521,12 +1532,12 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 children: [
                   const Text(
                     'Cabinet Médical',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     'Dr. $fullName',
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -2032,6 +2043,13 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   final isInProgress = status == 'IN_PROGRESS';
                   final patient = ex['patientId'];
                   final patName = patient is Map ? '${patient['firstName'] ?? ''} ${patient['lastName'] ?? ''}'.trim() : 'Patient';
+                  final serviceName = ex['service'] ?? 'Plateau Technique';
+
+                  final techObj = ex['assignedTechnicianId'];
+                  final techUser = techObj is Map ? (techObj['userId'] is Map ? techObj['userId'] : techObj['user']) : null;
+                  final tfn = techUser is Map ? (techUser['firstName'] ?? '') : (techObj is Map ? (techObj['firstName'] ?? '') : '');
+                  final tln = techUser is Map ? (techUser['lastName'] ?? '') : (techObj is Map ? (techObj['lastName'] ?? '') : '');
+                  final techName = '$tfn $tln'.trim().isNotEmpty ? 'Tech. $tfn $tln' : null;
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -2045,9 +2063,12 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                ex['examType'] ?? 'Examen',
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                              Expanded(
+                                child: Text(
+                                  ex['examType'] ?? 'Examen',
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -2075,28 +2096,82 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          Text('Patient : $patName  |  Priorité : ${ex['priority'] ?? 'NORMAL'}',
+                          Text('Patient : $patName  |  Service : $serviceName  |  Priorité : ${ex['priority'] ?? 'NORMAL'}',
                               style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                          if (isCompleted && ex['result'] != null) ...[
+                          if (ex['requestNotes'] != null && ex['requestNotes'].toString().isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'Motif clinique : ${ex['requestNotes']}',
+                              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Color(0xFF475569)),
+                            ),
+                          ],
+                          if (isCompleted || (ex['result'] != null && ex['result'].toString().isNotEmpty)) ...[
                             const SizedBox(height: 10),
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF0FDF4),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: const Color(0xFFBBF7D0)),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Résultat validé par le laboratoire / radio :',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF166534))),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    ex['result'],
-                                    style: const TextStyle(fontSize: 13, color: Color(0xFF14532D)),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.check_circle, size: 16, color: Color(0xFF16A34A)),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          techName != null
+                                              ? 'Résultat validé par $techName :'
+                                              : 'Résultat validé par le plateau technique :',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF166534)),
+                                        ),
+                                      ),
+                                    ],
                                   ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    ex['result']?.toString() ?? 'Examen validé.',
+                                    style: const TextStyle(fontSize: 13, color: Color(0xFF14532D), fontWeight: FontWeight.w500),
+                                  ),
+                                  if (ex['technicalNotes'] != null && ex['technicalNotes'].toString().isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Notes technicien : ${ex['technicalNotes']}',
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF15803D), fontStyle: FontStyle.italic),
+                                    ),
+                                  ],
+                                  if (ex['resultDocumentUrl'] != null && ex['resultDocumentUrl'].toString().isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    InkWell(
+                                      onTap: () => _triggerRealDownload(context, 'result_${ex['_id']}.pdf'),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFDCFCE7),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: const Color(0xFF86EFAC)),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.picture_as_pdf, size: 15, color: Color(0xFF166534)),
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              child: Text(
+                                                'Document joint : ${ex['resultDocumentUrl']}',
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF166534), fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -2620,6 +2695,62 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     return Dismissible(
       key: Key('consultation_$id'),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.delete_forever, color: Color(0xFFDC2626), size: 26),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Supprimer la consultation ?',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Voulez-vous vraiment supprimer la consultation de $patientName ?\nCette action est irréversible.',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Annuler', style: TextStyle(color: Color(0xFF64748B))),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Supprimer', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (_) {
+        if (id.isNotEmpty) {
+          setState(() {
+            _deletedConsultationIds.add(id);
+            consultations.removeWhere((item) => item['_id']?.toString() == id || item['id']?.toString() == id);
+          });
+          api.deleteConsultation(id);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: Color(0xFF1E293B),
+                content: Text('🗑️ Consultation supprimée avec succès.'),
+              ),
+            );
+          }
+        }
+      },
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
@@ -2631,28 +2762,15 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Icon(Icons.delete_sweep, color: Colors.white, size: 24),
+            Icon(Icons.delete_forever, color: Colors.white, size: 24),
             SizedBox(width: 8),
             Text(
-              'Masquer / Supprimer',
+              'Supprimer',
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ],
         ),
       ),
-      onDismissed: (_) async {
-        if (id.isNotEmpty) {
-          await api.deleteConsultation(id);
-          _loadData();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Consultation masquée de votre vue (conservée dans l\'administration).'),
-              ),
-            );
-          }
-        }
-      },
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
