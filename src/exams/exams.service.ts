@@ -217,8 +217,8 @@ export class ExamsService {
    */
   async complete(id: string, dto: CompleteExamDto): Promise<ExamDocument> {
     const exam = await this.findById(id);
-    if (exam.status !== ExamStatus.IN_PROGRESS) {
-      throw new BadRequestException(`L'examen doit être EN COURS pour être complété`);
+    if (exam.status === ExamStatus.CANCELLED) {
+      throw new BadRequestException(`Impossible de compléter un examen annulé`);
     }
     const updated = await this.examModel
       .findByIdAndUpdate(
@@ -326,15 +326,17 @@ export class ExamsService {
       return { message: 'Examen supprimé définitivement de la base de données' };
     }
 
-    if (userId) {
-      const exam = await this.examModel.findByIdAndUpdate(
-        id,
-        { $addToSet: { softDeletedByUserIds: userId } },
-        { new: true },
-      );
-      if (!exam) throw new NotFoundException(`Examen introuvable avec l'ID : ${id}`);
-    }
-    return { message: 'Examen masqué de votre espace personnel' };
+    const exam = await this.examModel.findByIdAndUpdate(
+      id,
+      {
+        isSoftDeleted: true,
+        status: ExamStatus.CANCELLED,
+        ...(userId ? { $addToSet: { softDeletedByUserIds: userId } } : {}),
+      },
+      { new: true },
+    );
+    if (!exam) throw new NotFoundException(`Examen introuvable avec l'ID : ${id}`);
+    return { message: 'Examen supprimé avec succès' };
   }
 
   async count(filter: Record<string, any> = {}): Promise<number> {
