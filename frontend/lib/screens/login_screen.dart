@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../utils/theme.dart';
-import '../widgets/avatar_widget.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,50 +18,47 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   bool isLoading = false;
   bool obscurePassword = true;
   String? errorMessage;
-  String? loggingInRole;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
 
-  final List<Map<String, String>> _staffProfiles = [
+  int _selectedRoleIndex = 0;
+
+  final List<Map<String, dynamic>> _stitchRoles = [
     {
-      'name': 'Dr. Karima Ben Ali',
-      'roleTitle': 'Cardiologue',
-      'email': 'dr.karima@arij.tn',
-      'pass': 'Doctor123!',
-      'badge': 'Médecin',
-      'color': '0xFF247BA0',
+      'code': 'MED',
+      'label': 'Médecin',
+      'icon': CupertinoIcons.person_crop_circle_badge_checkmark,
+      'badge': 'Corps Médical',
+      'defaultEmail': 'dr.karima@arij.tn',
+      'defaultPass': 'Doctor123!',
+      'color': Color(0xFF007EA7),
     },
     {
-      'name': 'Youssef Mansour',
-      'roleTitle': 'Tech. Laboratoire',
-      'email': 'sami.technicien@arij.tn',
-      'pass': 'Tech123!',
-      'badge': 'Technicien',
-      'color': '0xFF8B5CF6',
+      'code': 'INF',
+      'label': 'Infirmier',
+      'icon': CupertinoIcons.heart_circle,
+      'badge': 'Soins & Constantes',
+      'defaultEmail': 'sonia.infirmiere@arij.tn',
+      'defaultPass': 'Nurse123!',
+      'color': Color(0xFF00A896),
     },
     {
-      'name': 'Sonia Abid',
-      'roleTitle': 'Infirmière Major',
-      'email': 'sonia.infirmiere@arij.tn',
-      'pass': 'Nurse123!',
-      'badge': 'Infirmière',
-      'color': '0xFF10B981',
+      'code': 'SFM',
+      'label': 'Sage-Femme',
+      'icon': CupertinoIcons.waveform_path_badge_plus,
+      'badge': 'Maternité / RCF',
+      'defaultEmail': 'fatma.sagefemme@arij.tn',
+      'defaultPass': 'Midwife123!',
+      'color': Color(0xFFE11D48),
     },
     {
-      'name': 'Fatma Zahra',
-      'roleTitle': 'Sage-Femme',
-      'email': 'fatma.sagefemme@arij.tn',
-      'pass': 'Midwife123!',
-      'badge': 'Sage-Femme',
-      'color': '0xFFEC4899',
-    },
-    {
-      'name': 'Dr. Youssef Ben Amor',
-      'roleTitle': 'Urgentiste',
-      'email': 'dr.youssef@polyclinique-arij.tn',
-      'pass': 'Doctor123!',
-      'badge': 'Médecin',
-      'color': '0xFF247BA0',
+      'code': 'TEC',
+      'label': 'Technicien',
+      'icon': CupertinoIcons.lab_flask,
+      'badge': 'Bio & Imagerie',
+      'defaultEmail': 'sami.technicien@arij.tn',
+      'defaultPass': 'Tech123!',
+      'color': Color(0xFF8B5CF6),
     },
   ];
 
@@ -71,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   void initState() {
     super.initState();
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 700),
       vsync: this,
     );
     _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
@@ -86,14 +81,22 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     super.dispose();
   }
 
-  Future<void> _handleLogin({String? email, String? password, String? staffName}) async {
+  void _onSelectStitchRole(int index) {
+    setState(() {
+      _selectedRoleIndex = index;
+      emailController.text = _stitchRoles[index]['defaultEmail'];
+      passwordController.text = _stitchRoles[index]['defaultPass'];
+      errorMessage = null;
+    });
+  }
+
+  Future<void> _handleLogin({String? email, String? password}) async {
     final targetEmail = email ?? emailController.text.trim();
     final targetPass = password ?? passwordController.text;
 
     setState(() {
       isLoading = true;
       errorMessage = null;
-      loggingInRole = staffName;
     });
 
     final api = ApiService();
@@ -102,7 +105,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     if (!mounted) return;
     setState(() {
       isLoading = false;
-      loggingInRole = null;
     });
 
     if (res['success'] == true) {
@@ -134,408 +136,542 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       }
     } else {
       setState(() {
-        errorMessage = res['message'] ?? 'Email ou mot de passe incorrect';
+        errorMessage = res['message'] ?? 'Identifiants biométriques ou mot de passe non reconnus.';
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final textCol = AppTheme.textColor(context);
-    final subtextCol = AppTheme.subtextColor(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentRole = _stitchRoles[_selectedRoleIndex];
+    final activeColor = currentRole['color'] as Color;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor(context),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnim,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-
-                // ── Logo & Brand ───────────────────────────────────────────
-                Center(
-                  child: Column(
-                    children: [
-                      // Logo container
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor(context),
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                            color: AppTheme.borderColor(context),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.purple.withValues(alpha: 0.15),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(21),
-                          child: Image.asset(
-                            'assets/logo-polyclinique-arij.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.local_hospital_rounded,
-                              size: 40,
-                              color: AppTheme.purple,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Polyclinique Arij',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: textCol,
-                          letterSpacing: -0.8,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: AppTheme.purpleLightColor(context),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Système de Santé Intégré — Djerba',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.purpleColor(context),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 36),
-
-                // ── Quick staff profiles ───────────────────────────────────
-                Row(
+          child: Column(
+            children: [
+              // ── Top Bar: Réseau Sécurisé HDS ──────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Row(
                   children: [
-                    Text(
-                      'Connexion rapide',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: textCol,
-                        letterSpacing: -0.3,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
                       ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'Personnel en service',
-                      style: TextStyle(fontSize: 12, color: subtextCol),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
-                // Staff cards horizontal scroll
-                SizedBox(
-                  height: 120,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _staffProfiles.length,
-                    itemBuilder: (context, index) {
-                      final staff = _staffProfiles[index];
-                      final isLoggingInThis = loggingInRole == staff['name'];
-                      final cardColor = Color(int.parse(staff['color']!));
-
-                      return GestureDetector(
-                        onTap: isLoading
-                            ? null
-                            : () => _handleLogin(
-                                  email: staff['email'],
-                                  password: staff['pass'],
-                                  staffName: staff['name'],
-                                ),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 130,
-                          margin: const EdgeInsets.only(right: 12),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: isLoggingInThis
-                                ? cardColor.withValues(alpha: 0.08)
-                                : AppTheme.surfaceColor(context),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: isLoggingInThis
-                                  ? cardColor
-                                  : AppTheme.borderColor(context),
-                              width: isLoggingInThis ? 1.5 : 1,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  AvatarWidget(
-                                    name: staff['name']!,
-                                    radius: 20,
-                                  ),
-                                  if (isLoggingInThis)
-                                    const CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                staff['name']!.split(' ').take(2).join(' '),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: textCol,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: cardColor.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  staff['badge']!,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: cardColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                // ── Divider ─────────────────────────────────────────────────
-                Row(
-                  children: [
-                    Expanded(
-                        child: Divider(
-                            color: AppTheme.borderColor(context), height: 1)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'ou identifiants manuels',
-                        style: TextStyle(fontSize: 12, color: subtextCol),
-                      ),
-                    ),
-                    Expanded(
-                        child: Divider(
-                            color: AppTheme.borderColor(context), height: 1)),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                // ── Error banner ─────────────────────────────────────────────
-                if (errorMessage != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.danger.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                          color: AppTheme.danger.withValues(alpha: 0.25)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline_rounded,
-                            color: AppTheme.danger, size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            errorMessage!,
-                            style: const TextStyle(
-                                color: AppTheme.danger,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
-                // ── Form fields ──────────────────────────────────────────────
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor(context),
-                    borderRadius: BorderRadius.circular(18),
-                    border:
-                        Border.all(color: AppTheme.borderColor(context)),
-                  ),
-                  child: Column(
-                    children: [
-                      // Email field
-                      TextField(
-                        controller: emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(fontSize: 15, color: textCol),
-                        decoration: InputDecoration(
-                          hintText: 'Email professionnel',
-                          hintStyle:
-                              TextStyle(fontSize: 14, color: subtextCol),
-                          prefixIcon: Icon(Icons.mail_outline_rounded,
-                              size: 20, color: subtextCol),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 16),
-                        ),
-                      ),
-                      Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: AppTheme.borderColor(context)),
-                      // Password field
-                      TextField(
-                        controller: passwordController,
-                        obscureText: obscurePassword,
-                        style: TextStyle(fontSize: 15, color: textCol),
-                        decoration: InputDecoration(
-                          hintText: 'Mot de passe',
-                          hintStyle:
-                              TextStyle(fontSize: 14, color: subtextCol),
-                          prefixIcon: Icon(Icons.lock_outline_rounded,
-                              size: 20, color: subtextCol),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              size: 20,
-                              color: subtextCol,
-                            ),
-                            onPressed: () => setState(
-                                () => obscurePassword = !obscurePassword),
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 16),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // ── Login button ─────────────────────────────────────────────
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : () => _handleLogin(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.purpleColor(context),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: isLoading && loggingInRole == null
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Se connecter',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_rounded,
-                                  size: 18, color: Colors.white),
-                            ],
-                          ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // ── Register link ─────────────────────────────────────────────
-                Center(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                          builder: (_) => RegisterScreen(
-                            onRegistered: widget.onLoginSuccess,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Text.rich(
-                      TextSpan(
-                        text: 'Nouveau membre ? ',
-                        style:
-                            TextStyle(color: subtextCol, fontSize: 13),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          TextSpan(
-                            text: 'Activer mon compte',
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'RÉSEAU SÉCURISÉ HDS',
                             style: TextStyle(
-                              color: AppTheme.purpleColor(context),
+                              fontSize: 10,
                               fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                              color: Color(0xFF059669),
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const Spacer(),
+                    Text(
+                      'v2.4 Pro',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Scrollable Body ──────────────────────────────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 12),
+
+                      // Brand Caduceus Icon + Title
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF007EA7), Color(0xFF003459)],
+                          ),
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF007EA7).withValues(alpha: 0.35),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.waveform_path_ecg,
+                          size: 38,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'POLYCLINIQUE EL ARIJ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2.0,
+                          color: activeColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Espace Soignant Sécurisé',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Authentification clinique biométrique ou matricule',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // ── Stitch Segmented Role Switcher ───────────────────────
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: List.generate(_stitchRoles.length, (idx) {
+                            final role = _stitchRoles[idx];
+                            final isSel = idx == _selectedRoleIndex;
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () => _onSelectStitchRole(idx),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(vertical: 9),
+                                  decoration: BoxDecoration(
+                                    color: isSel
+                                        ? (isDark ? const Color(0xFF0F172A) : Colors.white)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: isSel
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.08),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        role['icon'] as IconData,
+                                        size: 18,
+                                        color: isSel
+                                            ? role['color'] as Color
+                                            : (isDark
+                                                ? const Color(0xFF64748B)
+                                                : const Color(0xFF94A3B8)),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        role['label'] as String,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: isSel ? FontWeight.w700 : FontWeight.w600,
+                                          color: isSel
+                                              ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                                              : (isDark
+                                                  ? const Color(0xFF64748B)
+                                                  : const Color(0xFF64748B)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      // ── Stitch Biometric Face ID Quick Unlock Card ──────────
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: isDark
+                                ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                                : [Colors.white, const Color(0xFFF1F5F9)],
+                          ),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: activeColor.withValues(alpha: 0.25),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: activeColor.withValues(alpha: 0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: activeColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    CupertinoIcons.viewfinder,
+                                    size: 26,
+                                    color: activeColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Session Rapide Soignant',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        currentRole['badge'] as String,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: activeColor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton.icon(
+                                onPressed: isLoading ? null : () => _handleLogin(),
+                                icon: isLoading
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(CupertinoIcons.bolt_fill, size: 18, color: Colors.white),
+                                label: Text(
+                                  isLoading
+                                      ? 'Connexion en cours...'
+                                      : 'Déverrouiller Face ID (${currentRole['label']})',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: activeColor,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      if (errorMessage != null) ...[
+                        const SizedBox(height: 14),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(CupertinoIcons.exclamationmark_circle_fill,
+                                  size: 18, color: Color(0xFFEF4444)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  errorMessage!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFEF4444),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // ── Separator ───────────────────────────────────────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'OU IDENTIFIANTS MANUELS',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.0,
+                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // ── Email Input ─────────────────────────────────────────
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            fontSize: 14,
+                          ),
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(
+                              CupertinoIcons.mail,
+                              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                              size: 20,
+                            ),
+                            hintText: 'Email ou matricule soignant',
+                            hintStyle: TextStyle(
+                              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                              fontSize: 13,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ── Password Input ──────────────────────────────────────
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: passwordController,
+                          obscureText: obscurePassword,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            fontSize: 14,
+                          ),
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(
+                              CupertinoIcons.lock,
+                              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                              size: 20,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                obscurePassword ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
+                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                size: 18,
+                              ),
+                              onPressed: () => setState(() => obscurePassword = !obscurePassword),
+                            ),
+                            hintText: 'Mot de passe sécurisé',
+                            hintStyle: TextStyle(
+                              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                              fontSize: 13,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Manual Login Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: OutlinedButton(
+                          onPressed: isLoading ? null : () => _handleLogin(),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: Text(
+                            'Connexion manuelle avec mot de passe',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Register link
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                builder: (_) => RegisterScreen(
+                                  onRegistered: widget.onLoginSuccess,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text.rich(
+                            TextSpan(
+                              text: 'Nouveau praticien ? ',
+                              style: TextStyle(
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                fontSize: 13,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Activer mon badge d’accès',
+                                  style: TextStyle(
+                                    color: activeColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+                    ],
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 32),
-              ],
-            ),
+              // ── Security Footer ──────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.shield_lefthalf_fill,
+                      size: 14,
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Données de santé hébergées certifiées HDS & RGPD Santé',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
