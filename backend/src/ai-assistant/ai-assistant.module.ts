@@ -40,5 +40,6 @@ import { Doctor, DoctorSchema } from '../doctors/schemas/doctor.schema';
     AiContextBuilderService,
     DailyBriefingService,
   ],
+  exports: [AiProviderService],
 })
 export class AiAssistantModule {}

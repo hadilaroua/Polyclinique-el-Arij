@@ -30,6 +30,12 @@ class ApiService {
     return headers;
   }
 
+  // --- Timeout constant ---
+  static const Duration _timeout = Duration(seconds: 10);
+
+  Future<http.Response> _get(String path) =>
+      http.get(Uri.parse('$baseUrl$path'), headers: _headers).timeout(_timeout);
+
   // --- Sauvegarde & Restauration de Session (Persistance) ---
 
   Future<void> _saveSession() async {
@@ -88,22 +94,27 @@ class ApiService {
   // --- Authentification ---
 
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email.trim(), 'password': password}),
-    );
-
-    final data = jsonDecode(res.body);
-    if (res.statusCode >= 200 && res.statusCode < 300) {
-      token = data['accessToken'];
-      currentUser = data['user'];
-      await fetchProfile();
-      await _saveSession();
-      return {'success': true, 'user': currentUser};
-    } else {
-      final msg = data['message'] ?? 'Échec de connexion';
-      return {'success': false, 'message': msg is List ? msg.join('\n') : msg.toString()};
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$baseUrl/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email.trim(), 'password': password}),
+          )
+          .timeout(_timeout);
+      final data = jsonDecode(res.body);
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        token = data['accessToken'];
+        currentUser = data['user'];
+        await fetchProfile();
+        await _saveSession();
+        return {'success': true, 'user': currentUser};
+      } else {
+        final msg = data['message'] ?? 'Échec de connexion';
+        return {'success': false, 'message': msg is List ? msg.join('\n') : msg.toString()};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Impossible de joindre le serveur. Vérifiez votre connexion.'};
     }
   }
 
@@ -132,7 +143,7 @@ class ApiService {
       Uri.parse('$baseUrl/auth/register-staff'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(payload),
-    );
+    ).timeout(_timeout);
 
     final data = jsonDecode(res.body);
     if (res.statusCode >= 200 && res.statusCode < 300) {
@@ -150,10 +161,7 @@ class ApiService {
   Future<void> fetchProfile() async {
     if (token == null) return;
     try {
-      final res = await http.get(
-        Uri.parse('$baseUrl/auth/profile'),
-        headers: _headers,
-      );
+      final res = await _get('/auth/profile');
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         currentUser = data['user'];
@@ -184,7 +192,7 @@ class ApiService {
       Uri.parse('$baseUrl/auth/profile'),
       headers: _headers,
       body: jsonEncode(payload),
-    );
+    ).timeout(_timeout);
 
     final data = jsonDecode(res.body);
     if (res.statusCode == 200) {
@@ -222,7 +230,7 @@ class ApiService {
     if (assignedNurseId != null && assignedNurseId.isNotEmpty) queryParams['assignedNurseId'] = assignedNurseId;
 
     final uri = Uri.parse('$baseUrl/patients').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    final res = await http.get(uri, headers: _headers);
+    final res = await http.get(uri, headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       final List<dynamic> list = jsonDecode(res.body) as List<dynamic>;
       final uniqueMap = <String, dynamic>{};
@@ -237,7 +245,7 @@ class ApiService {
   }
 
   Future<List<dynamic>> getNurses() async {
-    final res = await http.get(Uri.parse('$baseUrl/users?role=NURSE'), headers: _headers);
+    final res = await http.get(Uri.parse('$baseUrl/users?role=NURSE'), headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -245,7 +253,7 @@ class ApiService {
   }
 
   Future<List<dynamic>> getMidwives() async {
-    final res = await http.get(Uri.parse('$baseUrl/users?role=MIDWIFE'), headers: _headers);
+    final res = await http.get(Uri.parse('$baseUrl/users?role=MIDWIFE'), headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -260,7 +268,7 @@ class ApiService {
     if (doctorId != null) queryParams['doctorId'] = doctorId;
 
     final uri = Uri.parse('$baseUrl/consultations').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    final res = await http.get(uri, headers: _headers);
+    final res = await http.get(uri, headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -295,20 +303,25 @@ class ApiService {
       if (followUpDate != null && followUpDate.isNotEmpty) 'followUpDate': followUpDate,
     };
 
-    final res = await http.post(
-      Uri.parse('$baseUrl/consultations'),
-      headers: _headers,
-      body: jsonEncode(payload),
-    );
-    final data = jsonDecode(res.body);
-    return {'success': res.statusCode == 201, 'data': data};
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/consultations'),
+        headers: _headers,
+        body: jsonEncode(payload),
+      ).timeout(_timeout);
+      final data = jsonDecode(res.body);
+      return {'success': res.statusCode == 201 || res.statusCode == 200, 'data': data};
+    } catch (e) {
+      debugPrint('Erreur createConsultation: $e');
+      return {'success': false, 'error': e.toString()};
+    }
   }
 
   // --- Constantes Vitales ---
 
   Future<List<dynamic>> getVitalSigns({String? patientId}) async {
     final uri = Uri.parse('$baseUrl/vital-signs${patientId != null ? '?patientId=$patientId' : ''}');
-    final res = await http.get(uri, headers: _headers);
+    final res = await http.get(uri, headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -349,7 +362,7 @@ class ApiService {
       Uri.parse('$baseUrl/vital-signs'),
       headers: _headers,
       body: jsonEncode(payload),
-    );
+    ).timeout(_timeout);
     final data = jsonDecode(res.body);
     return {'success': res.statusCode == 201, 'data': data};
   }
@@ -375,7 +388,7 @@ class ApiService {
     if (priority != null) queryParams['priority'] = priority;
 
     final uri = Uri.parse('$baseUrl/exams').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    final res = await http.get(uri, headers: _headers);
+    final res = await http.get(uri, headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -384,7 +397,7 @@ class ApiService {
 
   Future<List<dynamic>> getTechnicians() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/technicians'), headers: _headers);
+      final res = await http.get(Uri.parse('$baseUrl/technicians'), headers: _headers).timeout(_timeout);
       if (res.statusCode == 200) {
         return jsonDecode(res.body);
       }
@@ -429,7 +442,7 @@ class ApiService {
         Uri.parse('$baseUrl/exams'),
         headers: _headers,
         body: jsonEncode(payload),
-      );
+      ).timeout(_timeout);
       final data = jsonDecode(res.body);
       if (res.statusCode != 201) {
         debugPrint('Erreur création examen (${res.statusCode}): ${res.body}');
@@ -446,7 +459,7 @@ class ApiService {
       Uri.parse('$baseUrl/exams/$examId/assign'),
       headers: _headers,
       body: jsonEncode({'technicianId': technicianId}),
-    );
+    ).timeout(_timeout);
     final data = jsonDecode(res.body);
     return {'success': res.statusCode == 200, 'data': data};
   }
@@ -464,7 +477,7 @@ class ApiService {
   Future<List<dynamic>> getStaffUsers() async {
     await ensureAuthenticated();
     try {
-      final res = await http.get(Uri.parse('$baseUrl/users'), headers: _headers);
+      final res = await http.get(Uri.parse('$baseUrl/users'), headers: _headers).timeout(_timeout);
       if (res.statusCode == 200) {
         final list = jsonDecode(res.body) as List<dynamic>;
         return list.where((u) => u['role'] != 'PATIENT').toList();
@@ -478,7 +491,7 @@ class ApiService {
   Future<Map<String, dynamic>> getConversations() async {
     await ensureAuthenticated();
     try {
-      final res = await http.get(Uri.parse('$baseUrl/messages/conversations'), headers: _headers);
+      final res = await http.get(Uri.parse('$baseUrl/messages/conversations'), headers: _headers).timeout(_timeout);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         var staff = (data['staffList'] as List<dynamic>?) ?? [];
@@ -502,7 +515,7 @@ class ApiService {
   Future<List<dynamic>> getChatHistory(String targetId, {bool isGroup = false}) async {
     try {
       final uri = Uri.parse('$baseUrl/messages/history/$targetId?isGroup=$isGroup');
-      final res = await http.get(uri, headers: _headers);
+      final res = await http.get(uri, headers: _headers).timeout(_timeout);
       if (res.statusCode == 200) {
         return jsonDecode(res.body) as List<dynamic>;
       }
@@ -532,7 +545,7 @@ class ApiService {
         Uri.parse('$baseUrl/messages/send'),
         headers: _headers,
         body: jsonEncode(payload),
-      );
+      ).timeout(_timeout);
       final data = jsonDecode(res.body);
       return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': data};
     } catch (e) {
@@ -557,7 +570,7 @@ class ApiService {
         Uri.parse('$baseUrl/messages/call/signal'),
         headers: _headers,
         body: jsonEncode(payload),
-      );
+      ).timeout(_timeout);
       final data = jsonDecode(res.body);
       return {'success': res.statusCode == 201 || res.statusCode == 200, 'data': data};
     } catch (e) {
@@ -568,7 +581,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> getPendingCall() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/messages/call/pending'), headers: _headers);
+      final res = await http.get(Uri.parse('$baseUrl/messages/call/pending'), headers: _headers).timeout(_timeout);
       if (res.statusCode == 200) {
         return jsonDecode(res.body) as Map<String, dynamic>;
       }
@@ -594,7 +607,7 @@ class ApiService {
 
           'memberIds': memberIds,
         }),
-      );
+      ).timeout(_timeout);
       return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': jsonDecode(res.body)};
     } catch (e) {
       return {'success': false, 'error': e.toString()};
@@ -606,7 +619,7 @@ class ApiService {
       final res = await http.post(
         Uri.parse('$baseUrl/messages/groups/$groupId/leave'),
         headers: _headers,
-      );
+      ).timeout(_timeout);
       return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': jsonDecode(res.body)};
     } catch (e) {
       return {'success': false, 'error': e.toString()};
@@ -619,7 +632,7 @@ class ApiService {
         Uri.parse('$baseUrl/messages/users/block'),
         headers: _headers,
         body: jsonEncode({'targetUserId': targetUserId}),
-      );
+      ).timeout(_timeout);
       return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': jsonDecode(res.body)};
     } catch (e) {
       return {'success': false, 'error': e.toString()};
@@ -632,7 +645,7 @@ class ApiService {
         Uri.parse('$baseUrl/messages/conversations/archive'),
         headers: _headers,
         body: jsonEncode({'targetId': targetId}),
-      );
+      ).timeout(_timeout);
       return {'success': res.statusCode == 200 || res.statusCode == 201, 'data': jsonDecode(res.body)};
     } catch (e) {
       return {'success': false, 'error': e.toString()};
@@ -641,7 +654,7 @@ class ApiService {
 
   Future<bool> deleteExam(String examId) async {
     try {
-      final res = await http.delete(Uri.parse('$baseUrl/exams/$examId'), headers: _headers);
+      final res = await http.delete(Uri.parse('$baseUrl/exams/$examId'), headers: _headers).timeout(_timeout);
       return res.statusCode == 200 || res.statusCode == 204;
     } catch (e) {
       return false;
@@ -650,7 +663,7 @@ class ApiService {
 
   Future<bool> deleteVitalSign(String id) async {
     try {
-      final res = await http.delete(Uri.parse('$baseUrl/vital-signs/$id'), headers: _headers);
+      final res = await http.delete(Uri.parse('$baseUrl/vital-signs/$id'), headers: _headers).timeout(_timeout);
       return res.statusCode == 200 || res.statusCode == 204;
     } catch (e) {
       return false;
@@ -659,7 +672,7 @@ class ApiService {
 
   Future<bool> deleteConsultation(String id) async {
     try {
-      final res = await http.delete(Uri.parse('$baseUrl/consultations/$id'), headers: _headers);
+      final res = await http.delete(Uri.parse('$baseUrl/consultations/$id'), headers: _headers).timeout(_timeout);
       return res.statusCode == 200 || res.statusCode == 204;
     } catch (e) {
       return false;
@@ -680,7 +693,7 @@ class ApiService {
         if (notes != null && notes.isNotEmpty) 'technicalNotes': notes,
         if (resultDocumentUrl != null && resultDocumentUrl.isNotEmpty) 'resultDocumentUrl': resultDocumentUrl,
       }),
-    );
+    ).timeout(_timeout);
     final data = jsonDecode(res.body);
     return {'success': res.statusCode == 200, 'data': data};
   }
@@ -688,7 +701,7 @@ class ApiService {
   // --- Médecins ---
 
   Future<List<dynamic>> getDoctors() async {
-    final res = await http.get(Uri.parse('$baseUrl/doctors'), headers: _headers);
+    final res = await http.get(Uri.parse('$baseUrl/doctors'), headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -703,7 +716,7 @@ class ApiService {
     if (isResolved != null) queryParams['isResolved'] = isResolved.toString();
 
     final uri = Uri.parse('$baseUrl/alerts').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    final res = await http.get(uri, headers: _headers);
+    final res = await http.get(uri, headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -733,7 +746,7 @@ class ApiService {
       Uri.parse('$baseUrl/alerts'),
       headers: _headers,
       body: jsonEncode(payload),
-    );
+    ).timeout(_timeout);
     final data = jsonDecode(res.body);
     return {'success': res.statusCode == 201, 'data': data};
   }
@@ -742,7 +755,7 @@ class ApiService {
     final res = await http.patch(
       Uri.parse('$baseUrl/alerts/$alertId/resolve'),
       headers: _headers,
-    );
+    ).timeout(_timeout);
     final data = jsonDecode(res.body);
     return {'success': res.statusCode == 200, 'data': data};
   }
@@ -751,7 +764,7 @@ class ApiService {
     final res = await http.patch(
       Uri.parse('$baseUrl/alerts/resolve-all'),
       headers: _headers,
-    );
+    ).timeout(_timeout);
     final data = jsonDecode(res.body);
     return {'success': res.statusCode == 200, 'data': data};
   }
@@ -760,7 +773,7 @@ class ApiService {
 
   Future<List<dynamic>> getAuditLogs({String? patientId}) async {
     final uri = Uri.parse('$baseUrl/audit-logs${patientId != null ? '/patient/$patientId' : ''}');
-    final res = await http.get(uri, headers: _headers);
+    final res = await http.get(uri, headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -769,20 +782,122 @@ class ApiService {
 
   // --- Hospitalisation & Lits ---
 
-  Future<List<dynamic>> getBeds() async {
-    final res = await http.get(Uri.parse('$baseUrl/hospitalization/beds'), headers: _headers);
+  Future<List<dynamic>> getBeds({String? roomId, String? status}) async {
+    String url = '$baseUrl/hospitalization/beds';
+    final params = <String>[];
+    if (roomId != null) params.add('roomId=$roomId');
+    if (status != null) params.add('status=$status');
+    if (params.isNotEmpty) url += '?${params.join('&')}';
+    final res = await http.get(Uri.parse(url), headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
     return [];
   }
 
-  Future<List<dynamic>> getRooms() async {
-    final res = await http.get(Uri.parse('$baseUrl/hospitalization/rooms'), headers: _headers);
+  Future<List<dynamic>> getRooms({String? service}) async {
+    String url = '$baseUrl/hospitalization/rooms';
+    if (service != null && service.isNotEmpty) {
+      url += '?service=${Uri.encodeComponent(service)}';
+    }
+    final res = await http.get(Uri.parse(url), headers: _headers).timeout(_timeout);
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as List<dynamic>;
     }
     return [];
+  }
+
+  Future<List<dynamic>> getRoomsWithBeds({String? service}) async {
+    String url = '$baseUrl/hospitalization/rooms-with-beds';
+    if (service != null && service.isNotEmpty) {
+      url += '?service=${Uri.encodeComponent(service)}';
+    }
+    final res = await http.get(Uri.parse(url), headers: _headers).timeout(_timeout);
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> admitPatient({
+    required String patientId,
+    required String bedId,
+    required String service,
+    String? admissionReason,
+    String? doctorId,
+    DateTime? admissionDate,
+  }) async {
+    final body = {
+      'patientId': patientId,
+      'bedId': bedId,
+      'service': service,
+      'admissionReason': admissionReason ?? 'Hospitalisation clinique',
+      if (doctorId != null && doctorId.isNotEmpty) 'admittedByDoctorId': doctorId,
+      'admissionDate': (admissionDate ?? DateTime.now()).toIso8601String(),
+    };
+    final res = await http.post(
+      Uri.parse('$baseUrl/hospitalization/stays'),
+      headers: _headers,
+      body: jsonEncode(body),
+    ).timeout(_timeout);
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw Exception('Erreur admission: ${res.body}');
+  }
+
+  Future<Map<String, dynamic>> dischargePatient({
+    required String stayId,
+    String? dischargeNotes,
+    DateTime? dischargeDate,
+  }) async {
+    final body = {
+      'dischargeDate': (dischargeDate ?? DateTime.now()).toIso8601String(),
+      'dischargeNotes': dischargeNotes ?? 'Sortie autorisée par l\'équipe soignante',
+    };
+    final res = await http.patch(
+      Uri.parse('$baseUrl/hospitalization/stays/$stayId/discharge'),
+      headers: _headers,
+      body: jsonEncode(body),
+    ).timeout(_timeout);
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw Exception('Erreur décharge: ${res.body}');
+  }
+
+  Future<List<dynamic>> getStays({String? patientId, String? status, String? service}) async {
+    final params = <String, String>{};
+    if (patientId != null && patientId.isNotEmpty) params['patientId'] = patientId;
+    if (status != null && status.isNotEmpty) params['status'] = status;
+    if (service != null && service.isNotEmpty) params['service'] = service;
+
+    final uri = Uri.parse('$baseUrl/hospitalization/stays').replace(queryParameters: params.isNotEmpty ? params : null);
+    final res = await http.get(uri, headers: _headers).timeout(_timeout);
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<bool> freeBed(String bedId, {String? notes}) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/hospitalization/beds/$bedId/free'),
+      headers: _headers,
+      body: jsonEncode({'notes': notes ?? 'Lit libéré par l\'infirmier(e)'}),
+    ).timeout(_timeout);
+    return res.statusCode == 200 || res.statusCode == 201;
+  }
+
+  Future<Map<String, dynamic>> getOccupancyStats() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/hospitalization/stats/occupancy'),
+      headers: _headers,
+    ).timeout(_timeout);
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return {};
   }
 
   // --- AI Assistant (Arij Assistant) ---
@@ -792,7 +907,7 @@ class ApiService {
       final res = await http.get(
         Uri.parse('$baseUrl/ai-assistant/daily-briefing'),
         headers: _headers,
-      );
+      ).timeout(_timeout);
       if (res.statusCode == 200) {
         return jsonDecode(res.body);
       }
@@ -807,7 +922,7 @@ class ApiService {
       final res = await http.post(
         Uri.parse('$baseUrl/ai-assistant/patient-summary/$patientId'),
         headers: _headers,
-      );
+      ).timeout(_timeout);
       if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body);
       }
@@ -824,7 +939,7 @@ class ApiService {
         Uri.parse('$baseUrl/ai-assistant/consultation-draft'),
         headers: _headers,
         body: jsonEncode({'notes': notes}),
-      );
+      ).timeout(_timeout);
       if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body);
       }
@@ -849,7 +964,7 @@ class ApiService {
         Uri.parse('$baseUrl/ai-assistant/chat'),
         headers: _headers,
         body: jsonEncode(body),
-      );
+      ).timeout(_timeout);
       if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body);
       }
@@ -859,5 +974,109 @@ class ApiService {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  // --- 🩺 Patient Timeline Intelligente ---
+
+  Future<Map<String, dynamic>> getPatientTimeline(
+    String patientId, {
+    String? filter,
+    String? period,
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final queryParams = <String, String>{};
+      if (filter != null && filter.isNotEmpty) queryParams['filter'] = filter;
+      if (period != null && period.isNotEmpty) queryParams['period'] = period;
+      if (startDate != null) queryParams['startDate'] = startDate;
+      if (endDate != null) queryParams['endDate'] = endDate;
+
+      final uri = Uri.parse('$baseUrl/patients/$patientId/timeline').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final res = await http.get(uri, headers: _headers).timeout(_timeout);
+
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+      return {'events': [], 'total': 0, 'error': 'Erreur ${res.statusCode}'};
+    } catch (e) {
+      debugPrint('Erreur getPatientTimeline: $e');
+      return {'events': [], 'total': 0, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> summarizePatientTimeline(
+    String patientId, {
+    List<String>? eventIds,
+    String? period,
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (eventIds != null && eventIds.isNotEmpty) body['eventIds'] = eventIds;
+      if (period != null) body['period'] = period;
+      if (startDate != null) body['startDate'] = startDate;
+      if (endDate != null) body['endDate'] = endDate;
+
+      final res = await http.post(
+        Uri.parse('$baseUrl/patients/$patientId/timeline/summarize'),
+        headers: _headers,
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 25)); // Un peu plus de temps pour l'IA
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return jsonDecode(res.body);
+      }
+      final error = jsonDecode(res.body);
+      return {
+        'success': false,
+        'summary': error['message'] ?? 'Impossible de générer le résumé pour le moment.',
+      };
+    } catch (e) {
+      debugPrint('Erreur summarizePatientTimeline: $e');
+      return {
+        'success': false,
+        'summary': 'Erreur de connexion lors de la synthèse IA.',
+      };
+    }
+  }
+
+  // --- 📊 Smart Patient Monitoring ---
+
+  Future<Map<String, dynamic>> getSmartPatientMonitoring(
+    String patientId, {
+    String period = '24h',
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/patients/$patientId/monitoring?period=$period');
+      final res = await http.get(uri, headers: _headers).timeout(_timeout);
+
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+      return {'error': 'Erreur ${res.statusCode}'};
+    } catch (e) {
+      debugPrint('Erreur getSmartPatientMonitoring: $e');
+      return {'error': e.toString()};
+    }
+  }
+
+  Future<List<dynamic>> getVitalRulesConfig() async {
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/patients/vital-rules/config'),
+        headers: _headers,
+      ).timeout(_timeout);
+
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Erreur getVitalRulesConfig: $e');
+      return [];
+    }
+  }
 }
+
 

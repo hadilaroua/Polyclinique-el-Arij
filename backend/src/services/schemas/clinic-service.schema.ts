@@ -34,6 +34,5 @@ export class ClinicService {
 
 export const ClinicServiceSchema = SchemaFactory.createForClass(ClinicService);
 
-ClinicServiceSchema.index({ name: 1 });
 ClinicServiceSchema.index({ isActive: 1 });
 ClinicServiceSchema.index({ displayOrder: 1 });

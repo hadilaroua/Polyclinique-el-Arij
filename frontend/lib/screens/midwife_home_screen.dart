@@ -1,13 +1,14 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../utils/theme.dart';
 import '../widgets/app_drawer.dart';
-import '../widgets/avatar_widget.dart';
-import '../widgets/theme_toggle_button.dart';
+import '../widgets/dark_ambient_background.dart';
+import '../widgets/figma_header.dart';
+import '../widgets/ios_bottom_nav_bar.dart';
+import '../widgets/rooms_and_beds_view.dart';
 import 'patient_dossier_screen.dart';
 import 'profile_screen.dart';
 
@@ -22,6 +23,7 @@ class MidwifeHomeScreen extends StatefulWidget {
 }
 
 class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentTab = 0;
   final api = ApiService();
 
@@ -1089,128 +1091,67 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
     final fullName = '${user?['firstName'] ?? ''} ${user?['lastName'] ?? ''}'.trim();
 
     return Scaffold(
+      key: _scaffoldKey,
       drawer: AppDrawer(
         onSelectTab: (idx) => setState(() => _currentTab = idx),
         onOpenProfile: _openProfile,
         onLogout: widget.onLogout,
       ),
-      appBar: AppBar(
-        backgroundColor: AppTheme.getRoleColor('MIDWIFE'),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Image.asset(
-                'assets/logo-polyclinique-arij.png',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.person_2_fill, color: AppTheme.primary, size: 20),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Maternité & Pôle Mère-Enfant',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    fullName.isNotEmpty ? fullName : 'Sage-femme Arij',
-                    style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85)),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          const ThemeToggleButton(),
-          // Bouton d'alertes avec compteur
-
-          // Bouton cloche d'alertes avec badge dynamique
-          Stack(
-            alignment: Alignment.center,
+      body: DarkAmbientBackground(
+        child: SafeArea(
+          child: Column(
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                tooltip: 'Alertes Maternité',
-                onPressed: _showAlertsModal,
+              FigmaHeader(
+                roleName: 'SAGE-FEMME',
+                roleColor: AppTheme.getRoleColor('MIDWIFE'),
+                onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                onThemeToggle: AppTheme.toggleTheme,
+                onNotificationsPressed: _showAlertsModal,
+                unreadNotifications: unreadAlertCount,
+                profileImageUrl: user?['avatarUrl'],
+                userName: fullName,
               ),
-              if (unreadAlertCount > 0)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Color(0xFFBE185D), shape: BoxShape.circle),
-                    child: Text(
-                      '$unreadAlertCount',
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
+              if (isLoading)
+                const Expanded(child: Center(child: CircularProgressIndicator()))
+              else
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentTab,
+                    children: [
+                      _buildMaternityOverviewTab(),
+                      _buildBedsTab(),
+                      _buildVitalsTab(),
+                      _buildLaborTrackingTab(),
+                    ],
                   ),
                 ),
             ],
           ),
-          GestureDetector(
-            onTap: _openProfile,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 14),
-              child: AvatarWidget(
-                avatarUrl: user?['avatarUrl'],
-                name: fullName,
-                role: 'MIDWIFE',
-                radius: 18,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : IndexedStack(
-              index: _currentTab,
-              children: [
-                _buildMaternityOverviewTab(),
-                _buildBedsTab(),
-                _buildVitalsTab(),
-                _buildLaborTrackingTab(),
-              ],
-            ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: IosBottomNavBar(
         selectedIndex: _currentTab,
-        onDestinationSelected: (idx) => setState(() => _currentTab = idx),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.child_friendly_outlined),
-            selectedIcon: Icon(Icons.child_friendly),
+        onItemSelected: (idx) => setState(() => _currentTab = idx),
+        activeColor: AppTheme.tropicalTeal,
+        items: const [
+          IosBottomNavItem(
+            icon: CupertinoIcons.house,
+            selectedIcon: CupertinoIcons.house_fill,
             label: 'Maternité',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.single_bed_outlined),
-            selectedIcon: Icon(Icons.single_bed),
+          IosBottomNavItem(
+            icon: CupertinoIcons.bed_double,
+            selectedIcon: CupertinoIcons.bed_double_fill,
             label: 'Boxes & Lits',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.favorite_outline),
-            selectedIcon: Icon(Icons.favorite),
+          IosBottomNavItem(
+            icon: CupertinoIcons.heart,
+            selectedIcon: CupertinoIcons.heart_fill,
             label: 'Constantes',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.timeline_outlined),
-            selectedIcon: Icon(Icons.timeline),
+          IosBottomNavItem(
+            icon: CupertinoIcons.waveform_path_ecg,
+            selectedIcon: CupertinoIcons.waveform_path_ecg,
             label: 'Suivi Travail',
           ),
         ],
@@ -1220,6 +1161,9 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
 
   // 👩‍🍼 Onglet 1 : Tableau de bord Maternité & Patientes
   Widget _buildMaternityOverviewTab() {
+    final isDark = AppTheme.isDarkMode(context);
+    final user = api.currentUser;
+    final fullName = '${user?['firstName'] ?? ''} ${user?['lastName'] ?? ''}'.trim();
     final filtered = patients.where((p) {
       final q = patientSearchQuery.toLowerCase();
       final fn = (p['firstName'] ?? '').toString().toLowerCase();
@@ -1233,58 +1177,29 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Bannière dégradée
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFEC4899), Color(0xFFBE185D)],
-              ),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Polyclinique Arij — Pôle Obstétrique',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Unité Mère-Enfant & Suites de Couches',
-                        style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text('${patients.length} Patientes', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text('${beds.length} Lits & Boxes', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+          // Bannière Figma
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bonjour, $fullName',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                  color: AppTheme.textColor(context),
                 ),
-                const Icon(Icons.child_care, size: 52, color: Colors.white24),
-              ],
-            ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${patients.length} patientes aujourd\'hui • ${alerts.length} alertes',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.subtextColor(context),
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 16),
@@ -1324,15 +1239,33 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
 
           const SizedBox(height: 20),
 
-          // Barre de recherche
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Rechercher une patiente (Nom, Prénom, CIN)...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          // Barre de recherche Figma style
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.borderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            onChanged: (val) => setState(() => patientSearchQuery = val),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Rechercher une patiente (Nom, Prénom, CIN)...',
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8),
+                ),
+                prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFFE85076)),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              onChanged: (val) => setState(() => patientSearchQuery = val),
+            ),
           ),
 
           const SizedBox(height: 16),
@@ -1354,10 +1287,23 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
               final fullName = '$fn $ln'.trim().isNotEmpty ? '$fn $ln'.trim() : (p['name'] ?? 'Patiente Maternité');
               final rawAllergies = p['allergies'];
               final allergiesStr = rawAllergies is List ? rawAllergies.join(', ') : (rawAllergies?.toString() ?? '');
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.borderColor(context)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListTile(
                   contentPadding: const EdgeInsets.all(12),
                   leading: const CircleAvatar(
                     radius: 22,
@@ -1452,6 +1398,7 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
                   ),
                   onTap: () => _openPatientDossier(p as Map<String, dynamic>),
                 ),
+                ),
               );
             }),
         ],
@@ -1461,55 +1408,10 @@ class _MidwifeHomeScreenState extends State<MidwifeHomeScreen> {
 
   // 🛏️ Onglet 2 : Boxes d'Accouchement & Lits de Maternité
   Widget _buildBedsTab() {
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: beds.isEmpty
-          ? const Center(child: Text('Aucun lit configuré'))
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                const Text('Boxes de Travail & Chambres Maternité', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 12),
-                ...beds.map((bed) {
-                  final status = bed['status'] ?? 'AVAILABLE';
-                  final isOccupied = status == 'OCCUPIED' || bed['isOccupied'] == true;
-                  final room = bed['roomId'];
-                  final roomNum = room is Map ? room['number'] : (bed['roomNumber'] ?? '101');
-                  final roomDept = room is Map ? room['department'] : 'Maternité';
-                  final bedNum = bed['number'] ?? bed['bedNumber'] ?? '1';
-                  final patient = bed['currentPatientId'];
-                  final patName = patient is Map ? '${patient['firstName'] ?? ''} ${patient['lastName'] ?? ''}'.trim() : null;
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: isOccupied ? const Color(0xFFFCE7F3) : const Color(0xFFECFDF5),
-                        child: Icon(Icons.single_bed, color: isOccupied ? const Color(0xFFBE185D) : const Color(0xFF059669)),
-                      ),
-                      title: Text('Box / Lit : $bedNum — Chambre $roomNum ($roomDept)', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(isOccupied ? 'Occupé par : ${patName ?? 'Patiente'}' : 'Disponible pour accouchement / suites de couches', style: TextStyle(color: isOccupied ? const Color(0xFFBE185D) : const Color(0xFF059669))),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isOccupied ? const Color(0xFFFCE7F3) : const Color(0xFFECFDF5),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          isOccupied ? 'OCCUPÉ' : 'LIBRE',
-                          style: TextStyle(
-                            color: isOccupied ? const Color(0xFFBE185D) : const Color(0xFF059669),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
+    return RoomsAndBedsView(
+      initialServiceFilter: 'Maternité',
+      isMidwifeView: true,
+      onRefreshParent: _loadData,
     );
   }
 

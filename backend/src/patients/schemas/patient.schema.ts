@@ -105,8 +105,6 @@ export class Patient {
 export const PatientSchema = SchemaFactory.createForClass(Patient);
 
 PatientSchema.index({ lastName: 1, firstName: 1 });
-PatientSchema.index({ cin: 1 });
-PatientSchema.index({ dossierNumber: 1 });
 PatientSchema.index({ isActive: 1 });
 PatientSchema.index({ department: 1 });
 PatientSchema.index({ attendingDoctorId: 1 });

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#f8f9ff;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}@supports(-webkit-touch-callout:none){body{min-height:-webkit-fill-available;}}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-fixed": "#79f7e3", "secondary-fixed": "#c2e8ff", "surface-container": "#e5eeff", "primary": "#001026", "primary-fixed": "#d5e3ff", "vital-scheduled": "#F59E0B", "inverse-on-surface": "#eaf1ff", "surface-dim": "#cbdbf5", "error": "#ba1a1a", "surface-container-low": "#eff4ff", "on-primary-fixed-variant": "#314769", "surface-glass": "rgba(255, 255, 255, 0.78)", "inverse-primary": "#b1c7f0", "surface": "#f8f9ff", "surface-tint": "#495f82", "on-secondary": "#ffffff", "surface-container-highest": "#d3e4fe", "on-tertiary": "#ffffff", "surface-variant": "#d3e4fe", "secondary-fixed-dim": "#78d1fe", "tertiary-container": "#002a25", "surface-bright": "#f8f9ff", "surface-container-lowest": "#ffffff", "outline": "#74777f", "primary-container": "#0b2545", "on-background": "#0b1c30", "secondary-container": "#78d1fe", "on-secondary-fixed-variant": "#004d67", "sky-tint": "#E0F2FE", "background": "#f8f9ff", "outline-variant": "#c4c6cf", "canvas-bg": "#F8FAFC", "on-surface-variant": "#44474e", "vital-discharged": "#10B981", "on-surface": "#0b1c30", "on-tertiary-fixed": "#00201c", "on-primary-fixed": "#001c3b", "tertiary": "#00120f", "error-container": "#ffdad6", "on-secondary-fixed": "#001e2b", "vital-emergency": "#E11D48", "tertiary-fixed-dim": "#59dbc7", "on-secondary-container": "#005977", "inverse-surface": "#213145", "secondary": "#006688", "on-primary-container": "#778db2", "on-error": "#ffffff", "on-error-container": "#93000a", "on-tertiary-container": "#009d8c", "on-tertiary-fixed-variant": "#005047", "primary-fixed-dim": "#b1c7f0", "on-primary": "#ffffff", "surface-container-high": "#dce9ff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "1.75rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "space-lg": "1.25rem", "margin": "1rem", "margin-tablet": "1.5rem", "space-md": "1rem", "gutter": "1rem", "gutter-sm": "0.75rem" }, fontFamily: { "label-sm": ["Inter"], "label-md": ["Inter"], "display-hero": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "display-hero-mobile": ["Plus Jakarta Sans"], "body-md": ["Inter"], "body-sm": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-lg": ["Inter"] }, fontSize: { "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "display-hero": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "headline-lg": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "display-hero-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "body-md": ["15px", { "lineHeight": "21px", "fontWeight": "400" }], "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["17px", { "lineHeight": "22px", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "18px", "fontWeight": "600" }], "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }] } } } };</script></head><body class="bg-surface text-on-surface flex flex-col min-h-screen selection:bg-secondary-fixed"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-12 px-5 flex items-center justify-between font-label-sm text-label-sm text-on-surface font-semibold tracking-tight"><span>09:41</span><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">signal_cellular_4_bar</span><span class="material-symbols-outlined text-[16px]">wifi</span><span class="material-symbols-outlined text-[18px]">battery_charging_full</span></div></div><div class="h-16 px-4 flex items-center justify-between gap-2"><div class="flex items-center gap-2"><button aria-label="Menu Principal" class="w-11 h-11 flex items-center justify-center rounded-xl text-primary active:scale-95 transition-transform"><span class="material-symbols-outlined text-[24px]">menu</span></button><div class="flex items-center gap-2"><img alt="Polyclinique El Arij Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XuDuaKNDMJxopRxCsTq4hAa4z19BFL9iNVlDEoYrgak9BgychftHT1c7ik3DeNpLPULM3DGmo9BTSkHTcBwo5dUxqNwgq2yxoS83ms91hPuaKXENiY6g0ELMBHFyZp2S6dnSteQMeCzMutV9BVEbJNJSyg_woIlhH7ZA42ZX7Me0OGhkA2RMn6dDgeZIiwttHE1DEV3HXF6evhS4U4oG1DbOd8jewaLR3Vh-GJINYLfIPMWRWa7eKULUV7"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary tracking-tight leading-none">Polyclinique El Arij</span><span class="font-label-sm text-label-sm text-secondary font-medium tracking-normal">Briefing Accueil</span></div></div></div><div class="flex items-center gap-1.5"><div class="hidden sm:flex items-center gap-1 bg-surface-container px-2.5 py-1 rounded-full text-secondary font-label-sm text-label-sm font-semibold"><span class="material-symbols-outlined text-[14px]">stethoscope</span><span>Dr. Karima - Cardio</span></div><button aria-label="Alertes Cliniques" class="relative w-11 h-11 flex items-center justify-center rounded-xl text-on-surface-variant hover:text-on-surface active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-vital-emergency ring-2 ring-surface animate-pulse"></span></button><div class="relative flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNJwkaIUjZebYhc5SN0JGrnStUlBUYE2I9X3uVVhMbbIrMJ3hWxjqWJ1usOAzGOF0Vbpco14FF8umt4VNy2KdrgRVg9iQmZxNk2iXiYymHnus_yHJdRxA0bWSZZD0R6QO-U6mynvp4r08dpVaZ3qqlqHPutiQMASV6Smiu8-72MaOrzVXu6ki6tB-s-dpqKkJoI1lB_z5yxPGW0FCaz2NVoqrOKVYWS6oq4ZhSD8Z7wiHbmuCfhvp5mw"/><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-vital-discharged ring-2 ring-surface" title="De garde"></span></div></div></div></header><main class="flex flex-col relative w-full pt-28 pb-28 bg-surface"><div class="flex flex-col w-full px-4 gap-5 pb-6">
+<!-- Welcome & Mediterranean Warmth Bar -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-label-sm text-secondary font-semibold uppercase tracking-wider">Service Cardiologie &amp; Soins Continus</span>
+<span class="w-1.5 h-1.5 rounded-full bg-vital-discharged"></span>
+</div>
+<p class="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">Bonjour Dr. Karima</p>
+</div>
+<div class="flex items-center gap-1.5 bg-surface-container-high px-3 py-1.5 rounded-full shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">wb_sunny</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">Djerba 26°C</span>
+</div>
+</div>
+<!-- Bannière Briefing Quotidien IA (DailyBriefingCard) -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low shadow-md p-4 transition-all">
+<div class="absolute -right-10 -top-10 w-36 h-36 rounded-full bg-secondary-fixed/40 blur-2xl pointer-events-none"></div>
+<div class="absolute -left-12 -bottom-12 w-32 h-32 rounded-full bg-tertiary-fixed/30 blur-2xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-3.5">
+<!-- Status pill & timestamp -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-tertiary-fixed flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-primary font-bold">Briefing Quotidien IA</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed-dim/30 text-tertiary-container font-label-sm text-[10px] font-bold">CLINICAL AI 4.2</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Synthétisé il y a 8 min (09:33)</p>
+</div>
+</div>
+<button aria-label="Déplier le résumé" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary active:scale-95 transition-transform" id="toggle-summary-btn">
+<span class="material-symbols-outlined text-[20px] transition-transform duration-200" id="summary-chevron">expand_more</span>
+</button>
+</div>
+<!-- Critical cases synthesized bullets -->
+<div class="bg-surface-container-lowest/80 backdrop-blur-md rounded-lg p-3 shadow-sm flex flex-col gap-2">
+<div class="flex items-start gap-2.5">
+<div class="mt-0.5 w-2 h-2 rounded-full bg-vital-emergency flex-shrink-0 animate-ping"></div>
+<p class="font-body-sm text-body-sm text-on-surface leading-snug">
+<strong class="text-vital-emergency font-semibold">3 patients</strong> avec Score NEWS ≥ 5 en surveillance rapprochée (Unité Arij Sud).
+          </p>
+</div>
+<div class="flex items-start gap-2.5">
+<div class="mt-0.5 w-2 h-2 rounded-full bg-vital-scheduled flex-shrink-0"></div>
+<p class="font-body-sm text-body-sm text-on-surface leading-snug">
+<strong class="text-on-surface font-semibold">1 résultat panique</strong> : Troponine I à 1.42 ng/mL (Chambre 204).
+          </p>
+</div>
+<div class="flex items-start gap-2.5">
+<div class="mt-0.5 w-2 h-2 rounded-full bg-secondary flex-shrink-0"></div>
+<p class="font-body-sm text-body-sm text-on-surface leading-snug">
+            Capacité saturée à <strong class="text-secondary font-semibold">86% d'occupation des lits</strong> • 4 transferts prévus avant 14h.
+          </p>
+</div>
+</div>
+<!-- Audio player & action bar -->
+<div class="flex items-center gap-2 pt-0.5">
+<button class="flex-1 flex items-center justify-center gap-2 bg-primary-container text-on-primary py-2.5 px-3 rounded-lg shadow-sm active:scale-[0.98] transition-all" id="audio-brief-btn">
+<span class="material-symbols-outlined text-[20px] text-tertiary-fixed" id="audio-icon">play_circle</span>
+<span class="font-label-md text-label-md font-semibold tracking-wide" id="audio-label">Écouter le Briefing IA (2m 14s)</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 bg-surface-container px-3.5 py-2.5 rounded-lg text-secondary active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[18px]">calendar_view_day</span>
+<span class="font-label-md text-label-md font-semibold">Planning</span>
+</button>
+</div>
+<!-- Expandable Audio Waveform preview (Hidden by default, triggered on play) -->
+<div class="hidden flex items-center justify-between gap-1 px-2 py-2 bg-primary/5 rounded-lg" id="audio-wave-container">
+<span class="font-label-sm text-[10px] text-secondary font-mono">0:42</span>
+<div class="flex-1 flex items-center justify-center gap-0.5 h-5 mx-2">
+<span class="w-1 bg-secondary rounded-full h-3 animate-pulse"></span>
+<span class="w-1 bg-secondary rounded-full h-5 animate-pulse delay-75"></span>
+<span class="w-1 bg-secondary rounded-full h-2 animate-pulse delay-100"></span>
+<span class="w-1 bg-secondary-fixed-dim rounded-full h-4 animate-pulse delay-150"></span>
+<span class="w-1 bg-secondary rounded-full h-5 animate-pulse delay-200"></span>
+<span class="w-1 bg-secondary rounded-full h-3"></span>
+<span class="w-1 bg-outline-variant rounded-full h-2"></span>
+<span class="w-1 bg-outline-variant rounded-full h-3"></span>
+<span class="w-1 bg-outline-variant rounded-full h-4"></span>
+<span class="w-1 bg-outline-variant rounded-full h-2"></span>
+<span class="w-1 bg-outline-variant rounded-full h-1"></span>
+</div>
+<span class="font-label-sm text-[10px] text-on-surface-variant font-mono">-1:32</span>
+</div>
+</div>
+</div>
+<!-- iOS 2x2 Clinical KPIs Grid -->
+<div class="flex flex-col gap-2.5">
+<div class="flex items-center justify-between px-1">
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">Indicateurs de Service</h2>
+<span class="font-label-sm text-label-sm text-secondary font-medium">Temps réel</span>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<!-- KPI 1: Consultations -->
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-transform">
+<div class="flex items-center justify-between mb-2">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">stethoscope</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-[10px] text-secondary font-semibold">6 / 14</span>
+</div>
+<div>
+<span class="font-headline-lg text-headline-lg text-primary font-bold tracking-tight">14</span>
+<p class="font-label-md text-label-md text-on-surface font-medium">Consultations du jour</p>
+<div class="w-full bg-surface-container rounded-full h-1.5 mt-2 overflow-hidden">
+<div class="bg-secondary h-1.5 rounded-full" style="width: 43%;"></div>
+</div>
+<span class="font-label-sm text-[10px] text-on-surface-variant mt-1 block">6 terminées • 8 restantes</span>
+</div>
+</div>
+<!-- KPI 2: Patients hospitalisés -->
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-transform">
+<div class="flex items-center justify-between mb-2">
+<div class="w-9 h-9 rounded-lg bg-sky-tint flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">hotel</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-sky-tint font-label-sm text-[10px] text-secondary font-semibold">86% pleins</span>
+</div>
+<div>
+<span class="font-headline-lg text-headline-lg text-primary font-bold tracking-tight">28</span>
+<p class="font-label-md text-label-md text-on-surface font-medium">Patients hospitalisés</p>
+<div class="flex items-center gap-1 mt-2 text-vital-discharged">
+<span class="material-symbols-outlined text-[14px]">arrow_outward</span>
+<span class="font-label-sm text-[10px] font-semibold text-secondary">4 transferts programmés</span>
+</div>
+</div>
+</div>
+<!-- KPI 3: Examens en attente -->
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-transform">
+<div class="flex items-center justify-between mb-2">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[20px]">chips</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-vital-scheduled/15 font-label-sm text-[10px] text-vital-scheduled font-semibold">3 Labo • 4 Radio</span>
+</div>
+<div>
+<span class="font-headline-lg text-headline-lg text-primary font-bold tracking-tight">7</span>
+<p class="font-label-md text-label-md text-on-surface font-medium">Examens en attente</p>
+<div class="flex items-center gap-1 mt-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-vital-scheduled">pending_actions</span>
+<span class="font-label-sm text-[10px]">Délai moyen: 32 min</span>
+</div>
+</div>
+</div>
+<!-- KPI 4: Alertes Actives -->
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-transform relative overflow-hidden">
+<div class="absolute top-0 right-0 w-12 h-12 bg-vital-emergency/10 rounded-bl-full pointer-events-none"></div>
+<div class="flex items-center justify-between mb-2">
+<div class="w-9 h-9 rounded-lg bg-vital-emergency/10 flex items-center justify-center text-vital-emergency">
+<span class="material-symbols-outlined text-[20px]">notification_important</span>
+</div>
+<span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-vital-emergency/15 text-vital-emergency font-label-sm text-[10px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-vital-emergency animate-ping"></span>
+            Critique
+          </span>
+</div>
+<div>
+<span class="font-headline-lg text-headline-lg text-vital-emergency font-bold tracking-tight">2</span>
+<p class="font-label-md text-label-md text-on-surface font-medium">Alertes actives</p>
+<div class="flex items-center gap-1 mt-2">
+<span class="material-symbols-outlined text-[13px] text-vital-emergency">emergency_home</span>
+<span class="font-label-sm text-[10px] text-vital-emergency font-semibold">Chambres 204 &amp; 112</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions Bar (Boutons d'actions rapides) -->
+<div class="flex flex-col gap-2.5">
+<div class="flex items-center justify-between px-1">
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">Actions Cliniques</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Raccourcis garde</span>
+</div>
+<div class="grid grid-cols-3 gap-2.5">
+<!-- Action 1: Nouvelle Consultation -->
+<button class="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform group">
+<div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-on-primary group-hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[22px]">add</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-primary font-bold leading-tight">Nouvelle</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Consultation</span>
+</div>
+</button>
+<!-- Action 2: Prescrire Examen -->
+<button class="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform group">
+<div class="w-11 h-11 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container group-hover:bg-secondary-fixed transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[22px]">science</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-primary font-bold leading-tight">Prescrire</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Examen / Bio</span>
+</div>
+</button>
+<!-- Action 3: Occupation des lits -->
+<button class="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform group">
+<div class="w-11 h-11 rounded-full bg-surface-container-high flex items-center justify-center text-secondary group-hover:bg-surface-container-highest transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[22px]">single_bed</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-primary font-bold leading-tight">Lits Djerba</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Plan dynamique</span>
+</div>
+</button>
+</div>
+</div>
+<!-- Medical Department Visual Ambient Card (Djerba Clinic Ambience) -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm p-4">
+<div class="flex items-center gap-3">
+<img class="w-16 h-16 rounded-lg object-cover flex-shrink-0" data-alt="A clean, modern Mediterranean hospital clinic ward in Djerba Tunisia, soft natural sunlight entering through frosted architectural arches, coastal blue tones and high-tech minimalist monitoring equipment, tranquil healing atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCe0ybUQjUpk_p3KYUFyLtG_b9oUIrFj3CzF2e_PaUqKwbQCi2yjM5VG0u0A-RKLpqsehepO5bcAGhO56_b_udM8QtjYV2RYmuz6WZnX8N-SxMKXAcNnevqz0gyzluEXAoLjQFISo0LrYeOCAXCzL5nF5PCE51hTycBF7ToA_QdgnTBckyK4YNQFDF0eKXZvwNhjhd0HjxpCq9EU_HIG78SIh_CnDVsSwcsvUpR0uBnH53TawNQ61_0rw"/>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-label-sm text-secondary font-bold uppercase">Unité Coronarienne El Arij</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-primary font-label-sm text-[10px] font-semibold">Aile Nord</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface font-medium truncate">Relève de garde : Équipe Dr. Karima &amp; Dr. Slim</p>
+<div class="flex items-center gap-3 mt-1.5">
+<span class="font-label-sm text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-vital-discharged">check_circle</span>
+            Pharmacie validée
+          </span>
+<span class="font-label-sm text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-secondary">sync</span>
+            Synchronisé HIS
+          </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Liste des Patients Prioritaires du Tour -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">Patients Prioritaires</h2>
+<span class="px-2 py-0.5 rounded-full bg-vital-emergency/15 text-vital-emergency font-label-sm text-[11px] font-bold">3 Urgents</span>
+</div>
+<button class="font-label-sm text-label-sm text-secondary font-semibold">Voir les 28</button>
+</div>
+<!-- Segmented priority selector -->
+<div class="bg-surface-container p-1 rounded-xl flex items-center justify-between">
+<button class="flex-1 py-1.5 rounded-lg bg-surface-container-lowest shadow-sm font-label-sm text-label-sm font-bold text-primary text-center">Score NEWS ≥ 5 (3)</button>
+<button class="flex-1 py-1.5 rounded-lg font-label-sm text-label-sm font-medium text-on-surface-variant hover:text-primary text-center">Bio Panique (1)</button>
+<button class="flex-1 py-1.5 rounded-lg font-label-sm text-label-sm font-medium text-on-surface-variant hover:text-primary text-center">Sorties Prévues (4)</button>
+</div>
+<!-- Patient Cards Stack -->
+<div class="flex flex-col gap-3">
+<!-- Patient 1: Moncef Trabelsi (Critical) -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col gap-3 active:scale-[0.99] transition-transform">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Portrait of an elderly Tunisian man patient in modern hospital room in Djerba, calm expression, soft medical ambient lighting, high realism portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJkK99bgIvHDai9PVVVRUVvzyr2ICcm6EIdiSoztIUd7TlqsS3voxf0Ngdfz8DXctsnxBU6pSQPapbYhEZpyNaSNDxHs-x8W8-OoIAbrICCR1V9X9IUzT8sWg88nmpo3EnKHC68_hFB5Q799a5sD439YcMvdFnC965yTHJSt0fA1pywS53KvM7AcDlBP8dIcoEtyArXs-SS830cCZSmQ8RTgrS45ABegsqnScDhQAMKNuiQvTje7viCg"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-vital-emergency ring-2 ring-surface-container-lowest"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">Moncef Trabelsi</span>
+<span class="px-2 py-0.5 rounded-full bg-vital-emergency/15 text-vital-emergency font-label-sm text-[11px] font-bold">NEWS 7</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">68 ans • Chambre 204 (Lit B) • AOMI + Douleur thoracique</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">chevron_right</span>
+</div>
+<!-- Vital signs live stream row -->
+<div class="grid grid-cols-3 gap-2 bg-surface-container-low rounded-lg p-2.5">
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Tension Artérielle</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">14/9</span>
+<span class="font-label-sm text-[10px] text-vital-scheduled">cmHg</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Saturation SpO2</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-vital-emergency font-bold">93%</span>
+<span class="material-symbols-outlined text-[12px] text-vital-emergency">trending_down</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Fréq. Cardiaque</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">98</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">bpm</span>
+</div>
+</div>
+</div>
+<!-- Clinical alert context -->
+<div class="flex items-center justify-between text-on-surface-variant">
+<div class="flex items-center gap-1.5 text-vital-emergency font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+<span>Troponine positive à 09:15 • ECG demandé</span>
+</div>
+<button class="bg-surface-container px-2.5 py-1 rounded-md text-secondary font-label-sm text-label-sm font-semibold hover:bg-surface-container-high transition-colors">
+            Voir Dossier
+          </button>
+</div>
+</div>
+<!-- Patient 2: Leila Ben Salem (Surveillance) -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col gap-3 active:scale-[0.99] transition-transform">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Portrait of a middle-aged North African woman patient with gentle smile in a bright recovery room at Polyclinique El Arij, Mediterranean sunlight, healthcare aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCacOayzTSZ5wQH6a8nkBW67cmCDIsK2VljlJ5SitL_ylWpOBNqEjLI0bNVsykK3W44DgAiLxAS829yYpEJ76ZsRnu2s-Db86TzO0dHFlFlLPqOIBi7ye7uwGH4z0zxx3O6w07Jn4FgUrCXDm0q2PVD0tHVN-5davdbWmsVR-Ml0RneU9QwKbpoUaITIQJ5i9hVPvidWLCdbmnIrtJ9EPenwOnh3J1dJ10b0KjmrqVMIahZix1u-zJhaQ"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-vital-scheduled ring-2 ring-surface-container-lowest"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">Leïla Ben Salem</span>
+<span class="px-2 py-0.5 rounded-full bg-vital-scheduled/15 text-vital-scheduled font-label-sm text-[11px] font-bold">NEWS 5</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">54 ans • Chambre 112 (Lit A) • Insuffisance Rénale Aiguë</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">chevron_right</span>
+</div>
+<!-- Vital signs live stream row -->
+<div class="grid grid-cols-3 gap-2 bg-surface-container-low rounded-lg p-2.5">
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Tension Artérielle</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">15/10</span>
+<span class="font-label-sm text-[10px] text-vital-scheduled">cmHg</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Saturation SpO2</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">96%</span>
+<span class="font-label-sm text-[10px] text-vital-discharged">Stb</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Fréq. Cardiaque</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">84</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">bpm</span>
+</div>
+</div>
+</div>
+<!-- Clinical alert context -->
+<div class="flex items-center justify-between text-on-surface-variant">
+<div class="flex items-center gap-1.5 text-vital-scheduled font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">water_drop</span>
+<span>Créatininémie en hausse (210 µmol/L)</span>
+</div>
+<button class="bg-surface-container px-2.5 py-1 rounded-md text-secondary font-label-sm text-label-sm font-semibold hover:bg-surface-container-high transition-colors">
+            Voir Dossier
+          </button>
+</div>
+</div>
+<!-- Patient 3: Habib Ghedira (Post-op surveillance) -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col gap-3 active:scale-[0.99] transition-transform">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="relative">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-primary font-headline-sm font-bold">
+                HG
+              </div>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-vital-scheduled ring-2 ring-surface-container-lowest"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">Habib Ghedira</span>
+<span class="px-2 py-0.5 rounded-full bg-vital-scheduled/15 text-vital-scheduled font-label-sm text-[11px] font-bold">NEWS 5</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">72 ans • Chambre 108 (Lit C) • J+1 Pontage Aorto-coronarien</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">chevron_right</span>
+</div>
+<!-- Vital signs live stream row -->
+<div class="grid grid-cols-3 gap-2 bg-surface-container-low rounded-lg p-2.5">
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Tension Artérielle</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">12/8</span>
+<span class="font-label-sm text-[10px] text-vital-discharged">cmHg</span>
+</div>
+</div>
+<div class="flex items-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Saturation SpO2</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">95%</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">O2 2L</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Fréq. Cardiaque</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-vital-scheduled font-bold">102</span>
+<span class="font-label-sm text-[10px] text-vital-scheduled">bpm</span>
+</div>
+</div>
+</div>
+<!-- Clinical alert context -->
+<div class="flex items-center justify-between text-on-surface-variant">
+<div class="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">monitor_heart</span>
+<span>Tachycardie sinusale modérée • Bilan hydro-électrolytique ok</span>
+</div>
+<button class="bg-surface-container px-2.5 py-1 rounded-md text-secondary font-label-sm text-label-sm font-semibold hover:bg-surface-container-high transition-colors">
+            Voir Dossier
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Micro-interaction script for the AI Daily Briefing Audio simulator -->
+<script>
+    (function initBriefingInteractions() {
+      const audioBtn = document.getElementById('audio-brief-btn');
+      const audioIcon = document.getElementById('audio-icon');
+      const audioLabel = document.getElementById('audio-label');
+      const waveContainer = document.getElementById('audio-wave-container');
+      let isPlaying = false;
+
+      if (audioBtn) {
+        audioBtn.addEventListener('click', function() {
+          isPlaying = !isPlaying;
+          if (isPlaying) {
+            audioIcon.textContent = 'pause_circle';
+            audioLabel.textContent = 'Pause du Briefing (Dr. IA)';
+            waveContainer.classList.remove('hidden');
+          } else {
+            audioIcon.textContent = 'play_circle';
+            audioLabel.textContent = 'Reprendre le Briefing (2m 14s)';
+            waveContainer.classList.add('hidden');
+          }
+        });
+      }
+
+      const toggleSummaryBtn = document.getElementById('toggle-summary-btn');
+      const chevron = document.getElementById('summary-chevron');
+      if (toggleSummaryBtn && chevron) {
+        toggleSummaryBtn.addEventListener('click', function() {
+          const isRotated = chevron.style.transform === 'rotate(180deg)';
+          chevron.style.transform = isRotated ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+      }
+    })();
+  </script>
+</div></main><aside class="fixed bottom-24 right-4 z-40 flex items-center"><div class="relative group flex items-center gap-2"><button aria-label="VoIP Urgence Staff" class="w-10 h-10 rounded-full bg-surface-container-high text-secondary flex items-center justify-center shadow-md active:scale-95 transition-transform"><span class="material-symbols-outlined text-[20px]">call</span></button><button aria-label="Staff Messenger" class="relative w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-[0_12px_32px_-4px_rgba(11,37,69,0.22)] active:scale-95 transition-transform"><span class="material-symbols-outlined text-[24px]">forum</span><span class="absolute -top-1 -right-1 bg-vital-emergency text-on-error font-label-sm text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold ring-2 ring-surface">3</span></button></div></aside><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/80 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.03)]" data-active-classes="text-secondary font-semibold"><div class="flex justify-around items-center h-16 px-2"><a aria-current="page" class="flex flex-col items-center justify-center gap-1 w-16 h-12 transition-all select-none text-secondary font-semibold" data-path="briefing-accueil" href="#"><span class="material-symbols-outlined text-[22px]">home</span><span class="font-label-sm text-label-sm">Briefing</span></a><a class="flex flex-col items-center justify-center gap-1 w-16 h-12 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="patients-lits" href="#"><span class="material-symbols-outlined text-[22px]">hotel</span><span class="font-label-sm text-label-sm">Patients</span></a><a class="flex flex-col items-center justify-center gap-1 w-16 h-12 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="consultations-soins" href="#"><span class="material-symbols-outlined text-[22px]">clinical_notes</span><span class="font-label-sm text-label-sm">Soins</span></a><a class="flex flex-col items-center justify-center gap-1 w-16 h-12 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="labo-examens" href="#"><span class="material-symbols-outlined text-[22px]">chips</span><span class="font-label-sm text-label-sm">Labo</span></a></div></nav></body></html>

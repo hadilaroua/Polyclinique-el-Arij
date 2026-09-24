@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../screens/daily_briefing_screen.dart';
 import '../screens/staff_messenger_screen.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import 'avatar_widget.dart';
-import 'theme_toggle_button.dart';
+import 'dark_ambient_background.dart';
+import 'rooms_and_beds_view.dart';
 
 class AppDrawer extends StatelessWidget {
   final Function(int) onSelectTab;
@@ -34,441 +36,423 @@ class AppDrawer extends StatelessWidget {
     final roleColor = AppTheme.getRoleColor(role);
 
     // Extraction du service ou spécialité selon le profil
-    String serviceText = 'Polyclinique Arij Djerba';
+    String serviceText = 'Polyclinique El Arij';
     if (profile != null) {
       serviceText = profile['specialty'] ??
           profile['service'] ??
           profile['department'] ??
           profile['technicalDepartment'] ??
-          'Polyclinique Arij';
+          'Polyclinique El Arij';
     }
 
     return Drawer(
-      backgroundColor: isDark ? AppTheme.darkBackground : Colors.white,
-      child: Column(
-        children: [
-          // En-tête professionnel avec photo de profil
-          Container(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              MediaQuery.of(context).padding.top + 20,
-              20,
-              20,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  roleColor,
-                  isDark ? const Color(0xFF090D16) : AppTheme.primaryDark,
+      backgroundColor: isDark ? const Color(0xFF0D141F) : Colors.white,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            // ── En-tête professionnel iOS avec dégradé et profil soignant ──
+            Container(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                MediaQuery.of(context).padding.top + 16,
+                20,
+                20,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    roleColor.withValues(alpha: isDark ? 0.9 : 1.0),
+                    isDark ? const Color(0xFF090E17) : AppTheme.primaryDark,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Logo & Marque Polyclinique Arij
-                Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 6,
-                          ),
-                        ],
-                      ),
-                      child: Image.asset(
-                        'assets/logo-polyclinique-arij.png',
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.plus_square_fill, size: 18, color: AppTheme.primary),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'Polyclinique Arij Djerba',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    AvatarWidget(
-                      avatarUrl: avatarUrl,
-                      name: fullName,
-                      role: role,
-                      radius: 30,
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            fullName.isNotEmpty ? fullName : 'Soignant Arij',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              AppTheme.getRoleLabel(role),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Logo & Titre Clinique
+                  Row(
                     children: [
-                      Text(
-                        'CIN: $cin',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                      Container(
+                        width: 32,
+                        height: 32,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/logo-polyclinique-arij.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(CupertinoIcons.plus_square_fill, size: 18, color: AppTheme.primary),
                         ),
                       ),
-                      Flexible(
-                        child: Text(
-                          serviceText,
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Polyclinique El Arij',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  // Profil & Badge
+                  Row(
+                    children: [
+                      AvatarWidget(
+                        avatarUrl: avatarUrl,
+                        name: fullName,
+                        role: role,
+                        radius: 28,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fullName.isNotEmpty ? fullName : 'Soignant Arij',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.22),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                AppTheme.getRoleLabel(role),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  // Cartouche info CIN & Service bien aérée avec séparateur
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'CIN: $cin',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Menu de navigation selon le métier
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: [
-                _drawerItem(
-                  context,
-                  icon: CupertinoIcons.square_grid_2x2_fill,
-                  title: 'Tableau de bord',
-                  subtitle: 'Aperçu général de la journée',
-                  onTap: () {
-                    Navigator.pop(context);
-                    onSelectTab(0);
-                  },
-                ),
-
-                if (role == 'DOCTOR') ...[
-                  _drawerItem(
-                    context,
-                    icon: CupertinoIcons.plus_square_fill,
-                    title: 'Mes Consultations',
-                    subtitle: 'Dossiers & diagnostics',
-                    onTap: () {
-                      Navigator.pop(context);
-                      onSelectTab(1);
-                    },
-                  ),
-                  _drawerItem(
-                    context,
-                    icon: CupertinoIcons.lab_flask,
-                    title: 'Examens & Bilans',
-                    subtitle: 'Prescriptions & résultats labo/radio',
-                    onTap: () {
-                      Navigator.pop(context);
-                      onSelectTab(2);
-                    },
+                        const SizedBox(width: 8),
+                        Text(
+                          '•',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            serviceText,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
+              ),
+            ),
 
-                if (role == 'NURSE') ...[
-                  _drawerItem(
+            // ── Menu d'outils cliniques essentiels sans répétition ──
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                children: [
+                  _sectionHeader(context, 'OUTILS CLINIQUES & ACTIONS'),
+                  const SizedBox(height: 8),
+
+                  _drawerCardItem(
                     context,
-                    icon: CupertinoIcons.heart_fill,
-                    title: 'Constantes Vitales',
-                    subtitle: 'Prise de TA, Pouls, T°, SpO2',
+                    icon: CupertinoIcons.sparkles,
+                    iconColor: const Color(0xFF00A896),
+                    iconBg: const Color(0xFF00A896).withValues(alpha: 0.14),
+                    title: 'Briefing IA du Jour',
+                    subtitle: 'Synthèse intelligente & priorités de garde',
                     onTap: () {
                       Navigator.pop(context);
-                      onSelectTab(1);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DailyBriefingScreen(onLogout: onLogout),
+                        ),
+                      );
                     },
                   ),
-                  _drawerItem(
+                  const SizedBox(height: 8),
+
+                  _drawerCardItem(
                     context,
                     icon: CupertinoIcons.bed_double_fill,
+                    iconColor: const Color(0xFF007EA7),
+                    iconBg: const Color(0xFF007EA7).withValues(alpha: 0.14),
                     title: 'Chambres & Lits',
-                    subtitle: 'Gestion des lits hospitalisés',
+                    subtitle: 'Plan d’occupation & lits disponibles',
                     onTap: () {
                       Navigator.pop(context);
-                      onSelectTab(2);
+                      if (role == 'NURSE') {
+                        onSelectTab(3);
+                      } else if (role == 'MIDWIFE') {
+                        onSelectTab(1);
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => Scaffold(
+                              appBar: AppBar(
+                                title: const Text('Occupation Chambres & Lits', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                                backgroundColor: AppTheme.surfaceColor(context),
+                                elevation: 0,
+                                iconTheme: IconThemeData(color: AppTheme.textColor(context)),
+                              ),
+                              body: const DarkAmbientBackground(
+                                child: RoomsAndBedsView(),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
+                  _drawerCardItem(
+                    context,
+                    icon: CupertinoIcons.chat_bubble_2_fill,
+                    iconColor: const Color(0xFF38BDF8),
+                    iconBg: const Color(0xFF38BDF8).withValues(alpha: 0.14),
+                    title: 'Messagerie & Appels',
+                    subtitle: 'Canaux d’urgences, staff & appels HD',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(builder: (_) => StaffMessengerScreen(onLogout: onLogout)),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
+                  _drawerCardItem(
+                    context,
+                    icon: CupertinoIcons.person_crop_circle_fill,
+                    iconColor: const Color(0xFF818CF8),
+                    iconBg: const Color(0xFF818CF8).withValues(alpha: 0.14),
+                    title: 'Mon Profil & Garde',
+                    subtitle: 'Coordonnées, statut & disponibilité',
+                    onTap: () {
+                      Navigator.pop(context);
+                      onOpenProfile();
                     },
                   ),
                 ],
+              ),
+            ),
 
-                if (role == 'MIDWIFE') ...[
-                  _drawerItem(
-                    context,
-                    icon: CupertinoIcons.person_2_fill,
-                    title: 'Suivi Obstétrical',
-                    subtitle: 'Consultations & soins prénatals',
-                    onTap: () {
-                      Navigator.pop(context);
-                      onSelectTab(1);
-                    },
+            // ── Pied de tiroir : Bouton Déconnexion iOS ──
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: isDark ? const Color(0xFF1E293B) : AppTheme.border,
+                    width: 0.8,
                   ),
-                  _drawerItem(
-                    context,
-                    icon: CupertinoIcons.heart_fill,
-                    title: 'Constantes Maternité',
-                    subtitle: 'Surveillance mère et bébé',
-                    onTap: () {
-                      Navigator.pop(context);
-                      onSelectTab(2);
-                    },
-                  ),
-                ],
-
-                if (role == 'TECHNICIAN') ...[
-                  _drawerItem(
-                    context,
-                    icon: CupertinoIcons.lab_flask,
-                    title: 'Worklist Plateau',
-                    subtitle: 'Examens à réaliser',
-                    onTap: () {
-                      Navigator.pop(context);
-                      onSelectTab(1);
-                    },
-                  ),
-                ],
-
-                Divider(height: 24, thickness: 1, color: isDark ? AppTheme.darkBorder : AppTheme.border),
-
-                // Sélecteur 3 modes : Clair / Sombre / Système
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  child: const ThemeSettingsRow(),
                 ),
-
-                ListTile(
-                  leading: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.white, size: 20),
-                  ),
-                  title: Row(
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  Navigator.pop(context);
+                  onLogout();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                  child: Row(
                     children: [
-                      Text(
-                        'Messagerie & Appels',
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.danger.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(CupertinoIcons.square_arrow_right, color: AppTheme.danger, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Déconnexion',
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: isDark ? AppTheme.darkAccent : AppTheme.accent,
+                          color: AppTheme.danger,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const Spacer(),
                       Icon(
-                        CupertinoIcons.chat_bubble_fill,
-                        color: isDark ? AppTheme.darkAccent : AppTheme.accent,
-                        size: 14,
+                        CupertinoIcons.chevron_right,
+                        size: 16,
+                        color: AppTheme.danger.withValues(alpha: 0.6),
                       ),
                     ],
                   ),
-                  subtitle: Text(
-                    'Chat direct, groupes & appels HD staff',
-                    style: TextStyle(fontSize: 11, color: isDark ? AppTheme.darkTextMuted : Colors.black54),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(builder: (_) => StaffMessengerScreen(onLogout: onLogout)),
-                    );
-                  },
-                ),
-
-                _drawerItem(
-                  context,
-                  icon: CupertinoIcons.person_fill,
-                  title: 'Mon Profil Professionnel',
-                  subtitle: 'Changer photo, coordonnées',
-                  onTap: () {
-                    Navigator.pop(context);
-                    onOpenProfile();
-                  },
-                ),
-
-                ListTile(
-                  leading: Container(
-                    width: 36,
-                    height: 36,
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: isDark ? AppTheme.darkBorder : AppTheme.border),
-                    ),
-                    child: Image.asset(
-                      'assets/logo-polyclinique-arij.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.plus_square, color: AppTheme.primary, size: 20),
-                    ),
-                  ),
-                  title: Text(
-                    'Polyclinique Arij Djerba',
-                    style: TextStyle(
-                      color: isDark ? AppTheme.darkTextMain : AppTheme.textMain,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Midoun, Djerba — Tél: 75 730 001',
-                    style: TextStyle(
-                      color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
-                      fontSize: 11,
-                    ),
-                  ),
-                  trailing: Icon(CupertinoIcons.chevron_right, size: 18, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
-                  onTap: () {
-                    Navigator.pop(context);
-                    showAboutDialog(
-                      context: context,
-                      applicationName: 'Polyclinique Arij Djerba',
-                      applicationVersion: 'Version 2.0.0 (Clinique Staff)',
-                      applicationIcon: Image.asset(
-                        'assets/logo-polyclinique-arij.png',
-                        width: 48,
-                        height: 48,
-                      ),
-                      applicationLegalese: 'Système d’Information Médical Intégré',
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          // Pied de menu Déconnexion
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: isDark ? AppTheme.darkBorder : AppTheme.border)),
-            ),
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.danger.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(CupertinoIcons.arrow_right_square_fill, color: AppTheme.danger, size: 20),
-              ),
-              title: const Text(
-                'Déconnexion',
-                style: TextStyle(
-                  color: AppTheme.danger,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
                 ),
               ),
-              onTap: () {
-                Navigator.pop(context);
-                onLogout();
-              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _drawerItem(
+  Widget _sectionHeader(BuildContext context, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF8E9BAE),
+          letterSpacing: 0.6,
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerCardItem(
     BuildContext context, {
     required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
     final isDark = AppTheme.isDarkMode(context);
 
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : AppTheme.primaryLight,
-          borderRadius: BorderRadius.circular(8),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161F2E) : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? const Color(0xFF243042) : Colors.grey.shade200,
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: iconColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppTheme.textMain,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF8E9BAE) : AppTheme.textMuted,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 15,
+                color: isDark ? const Color(0xFF64748B) : Colors.grey.shade400,
+              ),
+            ],
+          ),
         ),
-        child: Icon(icon, color: isDark ? AppTheme.darkPrimary : AppTheme.primary, size: 20),
       ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isDark ? AppTheme.darkTextMain : AppTheme.textMain,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(
-          color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
-          fontSize: 11,
-        ),
-      ),
-      trailing: Icon(CupertinoIcons.chevron_right, size: 18, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
-      onTap: onTap,
     );
   }
 }

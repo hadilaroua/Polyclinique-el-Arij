@@ -35,7 +35,7 @@ export class AiProviderService {
     if (this.isConfigured && this.genAI) {
       try {
         const model = this.genAI.getGenerativeModel({
-          model: 'gemini-3.6-flash',
+          model: 'gemini-2.5-flash',
           safetySettings: [
             {
               category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
