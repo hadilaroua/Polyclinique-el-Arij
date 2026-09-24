@@ -196,9 +196,26 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      CustomPaint(
-                        size: const Size(58, 58),
-                        painter: MessengerBubblePainter(),
+                      Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF6E56EB),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6E56EB).withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: CustomPaint(
+                            size: const Size(28, 28),
+                            painter: SpeechBubbleOutlinePainter(),
+                          ),
+                        ),
                       ),
                       Positioned(
                         top: -2,
@@ -206,7 +223,7 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppTheme.danger,
+                            color: const Color(0xFFEF4444),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 1.5),
                           ),
@@ -237,62 +254,34 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
   }
 }
 
-class MessengerBubblePainter extends CustomPainter {
+class SpeechBubbleOutlinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
 
-    // Messenger Blue Gradient Shader
     final paint = Paint()
-      ..shader = const LinearGradient(
-        colors: [
-          Color(0xFF00C6FF),
-          Color(0xFF0078FF),
-          Color(0xFF0055FF),
-        ],
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.fill;
-
-    // Outer speech bubble path (Circle with tail at bottom-left)
-    final bubblePath = Path();
-    final center = Offset(w * 0.5, h * 0.46);
-    final radius = w * 0.44;
-
-    bubblePath.addOval(Rect.fromCircle(center: center, radius: radius));
-
-    // Tail at bottom left
-    final tailPath = Path()
-      ..moveTo(w * 0.22, h * 0.72)
-      ..lineTo(w * 0.06, h * 0.94) // Pointer tip
-      ..lineTo(w * 0.38, h * 0.86)
-      ..close();
-
-    final combinedPath = Path.combine(PathOperation.union, bubblePath, tailPath);
-
-    // Subtle drop shadow
-    canvas.drawShadow(combinedPath, Colors.black.withValues(alpha: 0.35), 8, true);
-
-    // Draw main bubble body
-    canvas.drawPath(combinedPath, paint);
-
-    // Lightning bolt in white
-    final boltPaint = Paint()
       ..color = Colors.white
-      ..style = PaintingStyle.fill;
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
-    final boltPath = Path();
-    boltPath.moveTo(w * 0.66, h * 0.31);
-    boltPath.lineTo(w * 0.41, h * 0.49);
-    boltPath.lineTo(w * 0.52, h * 0.49);
-    boltPath.lineTo(w * 0.32, h * 0.65);
-    boltPath.lineTo(w * 0.57, h * 0.47);
-    boltPath.lineTo(w * 0.46, h * 0.47);
-    boltPath.close();
+    final path = Path();
+    // Center of main circular bubble
+    final cx = w * 0.52;
+    final cy = h * 0.46;
+    final r = w * 0.40;
 
-    canvas.drawPath(boltPath, boltPaint);
+    // Start arc at 2.6 radians (~150 deg), sweeping clockwise to 2.1 radians (~120 deg)
+    path.addArc(Rect.fromCircle(center: Offset(cx, cy), radius: r), 2.3, 5.0);
+
+    // Smooth tail pointing to bottom left (as seen in Screenshot 2)
+    path.lineTo(cx - r * 0.95, cy + r * 0.85); // tail tip
+    path.quadraticBezierTo(cx - r * 0.4, cy + r * 0.75, cx - r * 0.2, cy + r * 0.96);
+    path.close();
+
+    canvas.drawPath(path, paint);
   }
 
   @override

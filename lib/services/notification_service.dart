@@ -67,12 +67,16 @@ class NotificationService {
         final iosImplementation = _notificationsPlugin
             .resolvePlatformSpecificImplementation<
                 IOSFlutterLocalNotificationsPlugin>();
-        await iosImplementation?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-          critical: true,
-        );
+        await iosImplementation
+            ?.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            )
+            .timeout(
+              const Duration(milliseconds: 1500),
+              onTimeout: () => null,
+            );
       }
     } catch (e) {
       debugPrint('NotificationService: fallback / environnement de test sans canal natif ($e)');

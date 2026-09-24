@@ -2,102 +2,139 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Design System officiel de la Polyclinique Arij Djerba
-/// Palette Light Mode : Bleu pétrole #123B50, Bleu médical #247BA0, Turquoise #35B8B0
-/// Palette Dark Mode  : Fond profond #0B1218, Surfaces #121E27, Cartes #172733
+/// Design System — Polyclinique El Arij (Djerba)
+/// Mediterranean Clinical Precision & iOS HIG-informed Glassmorphism
 class AppTheme {
   // ==========================================================================
-  // PALETTE LIGHT MODE — Identité visuelle officielle Polyclinique Arij
+  // PALETTE OFFICIELLE DU DESIGN SYSTEM (Mediterranean Clinical Precision)
   // ==========================================================================
+  
+  /// Primary Institutional Navy (#001026 / #0B2545)
+  static const Color primary = Color(0xFF001026);
+  static const Color primaryNavy = Color(0xFF0B2545);
+  static const Color primaryContainer = Color(0xFF0B2545);
+  static const Color onPrimary = Colors.white;
+  static const Color onPrimaryContainer = Color(0xFF778DB2);
 
-  /// Bleu pétrole — couleur de marque, en-têtes AppBar
-  static const Color primary = Color(0xFF123B50);
-  /// Variation foncée du bleu pétrole pour les gradients et ombres légères
-  static const Color primaryDark = Color(0xFF0D2D3D);
-  /// Variation claire du bleu pétrole pour les fonds de badge et chips
-  static const Color primaryLight = Color(0xFFDDE8EF);
-  /// Bleu médical — actions secondaires, liens, badges informatifs
-  static const Color accent = Color(0xFF247BA0);
-  /// Turquoise — accent fort, indicateurs sélectionnés, icônes actives
-  static const Color turquoise = Color(0xFF35B8B0);
-  /// Fond général de l'application en mode clair
-  static const Color background = Color(0xFFF4F7FA);
-  /// Surfaces et cartes blanches
-  static const Color surface = Color(0xFFFFFFFF);
-  /// Texte principal (haute lisibilité sur fond clair)
-  static const Color textMain = Color(0xFF20313D);
-  /// Texte secondaire / muted
-  static const Color textMuted = Color(0xFF718096);
-  /// Bordures et séparateurs en mode clair
-  static const Color border = Color(0xFFE2EAF0);
+  /// Secondary Mediterranean Bondi Blue (#006688 / #007EA7)
+  static const Color secondary = Color(0xFF006688);
+  static const Color secondaryBondi = Color(0xFF007EA7);
+  static const Color secondaryContainer = Color(0xFF78D1FE);
+  static const Color onSecondaryContainer = Color(0xFF005977);
+  static const Color secondaryFixed = Color(0xFFC2E8FF);
+  static const Color secondaryFixedDim = Color(0xFF78D1FE);
 
-  // Statuts sémantiques cliniques (mode clair)
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color danger  = Color(0xFFEF4444);
-  static const Color info    = Color(0xFF247BA0);
+  /// Tertiary Ocean Teal (#00A896 / #79F7E3)
+  static const Color tertiary = Color(0xFF00120F);
+  static const Color tertiaryTeal = Color(0xFF00A896);
+  static const Color tertiaryFixed = Color(0xFF79F7E3);
+  static const Color tertiaryFixedDim = Color(0xFF59DBC7);
+  static const Color tertiaryContainer = Color(0xFF002A25);
+  static const Color onTertiaryContainer = Color(0xFF009D8C);
+
+  /// Sky & Atmospheric Tints
+  static const Color skyTint = Color(0xFFE0F2FE);
+  static const Color primaryFixed = Color(0xFFD5E3FF);
+  static const Color primaryFixedDim = Color(0xFFB1C7F0);
+
+  /// Surfaces & Backgrounds
+  static const Color surface = Color(0xFFF8F9FF);
+  static const Color canvasBg = Color(0xFFF8FAFC);
+  static const Color background = Color(0xFFF8F9FF);
+  static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
+  static const Color surfaceContainerLow = Color(0xFFEFF4FF);
+  static const Color surfaceContainer = Color(0xFFE5EEFF);
+  static const Color surfaceContainerHigh = Color(0xFFDCE9FF);
+  static const Color surfaceContainerHighest = Color(0xFFD3E4FE);
+  static const Color surfaceDim = Color(0xFFCBDBF5);
+  static const Color surfaceGlass = Color(0xC7FFFFFF); // rgba(255,255,255,0.78)
+
+  /// Typographie & Neutres
+  static const Color onSurface = Color(0xFF0B1C30);
+  static const Color onSurfaceVariant = Color(0xFF44474E);
+  static const Color textMain = Color(0xFF0B1C30);
+  static const Color textMuted = Color(0xFF64748B);
+  static const Color border = Color(0xFFE2E8F0);
+  static const Color outline = Color(0xFF74777F);
+  static const Color outlineVariant = Color(0xFFC4C6CF);
+
+  /// Vital Clinical Tokens (Triage Médical)
+  static const Color vitalEmergency = Color(0xFFE11D48); // Rouge Urgence / NEWS ≥ 5 / Troponine+
+  static const Color vitalScheduled = Color(0xFFF59E0B); // Ambre / Surveillance / Attention
+  static const Color vitalDischarged = Color(0xFF10B981); // Émeraude / Normal / Validé / De garde
+  static const Color error = Color(0xFFBA1A1A);
+  static const Color errorContainer = Color(0xFFFFDAD6);
+  static const Color onErrorContainer = Color(0xFF93000A);
 
   // ==========================================================================
-  // PALETTE DARK MODE — Bleu pétrole profond & gris bleuté élégant
+  // PALETTE DARK MODE (OLED / Électron)
   // ==========================================================================
+  static const Color darkBackground = Color(0xFF0B131E);
+  static const Color darkSurface = Color(0xFF121E2E);
+  static const Color darkCard = Color(0xFF1B293C);
+  static const Color darkElevated = Color(0xFF22344B);
+  static const Color darkTextMain = Color(0xFFF1F5F9);
+  static const Color darkTextMuted = Color(0xFF94A3B8);
+  static const Color darkBorder = Color(0xFF28394E);
+  static const Color darkPrimary = Color(0xFF78D1FE);
+  static const Color darkSecondary = Color(0xFF59DBC7);
 
-  /// Fond général application en mode sombre (pas de noir pur)
-  static const Color darkBackground     = Color(0xFF0B1218);
-  /// Surfaces principales (fond de panneau, drawer, modales)
-  static const Color darkSurface        = Color(0xFF121E27);
-  /// Cartes et conteneurs élevés
-  static const Color darkCard           = Color(0xFF172733);
-  /// Surfaces très élevées (dialogues, bottom sheets, tooltips)
-  static const Color darkElevated       = Color(0xFF203541);
-  /// Bleu médical adapté pour le mode sombre (lumineux mais doux)
-  static const Color darkAccent         = Color(0xFF5CA9D6);
-  /// Turquoise adapté pour le mode sombre
-  static const Color darkTurquoise      = Color(0xFF55D3C7);
-  /// Texte principal en mode sombre (très lisible, pas blanc pur agressif)
-  static const Color darkTextMain       = Color(0xFFF2F6F8);
-  /// Texte secondaire en mode sombre
-  static const Color darkTextMuted      = Color(0xFFA6B6C2);
-  /// Bordures et séparateurs en mode sombre
-  static const Color darkBorder         = Color(0xFF2B414F);
-  /// Bleu pétrole pour les variantes de brand en mode sombre
-  static const Color darkPrimary        = Color(0xFF5CA9D6);
-
-  // Statuts sémantiques cliniques (mode sombre — plus lumineux pour contraste)
+  // ==========================================================================
+  // RÉTROCOMPATIBILITÉ AVEC L'ANCIENNE CHARTE
+  // ==========================================================================
+  static const Color tropicalTeal = Color(0xFF007EA7);
+  static const Color bondiBlue = Color(0xFF006688);
+  static const Color emerald = Color(0xFF10B981);
+  static const Color oceanMist = Color(0xFF00A896);
+  static const Color willowGreen = Color(0xFF10B981);
+  static const Color lightGreen = Color(0xFF79F7E3);
+  static const Color limeCream = Color(0xFFE0F2FE);
+  static const Color primaryDark = Color(0xFF001026);
+  static const Color primaryLight = Color(0xFFE0F2FE);
+  static const Color accent = Color(0xFF006688);
+  static const Color turquoise = Color(0xFF00A896);
+  static const Color purple = Color(0xFF006688);
+  static const Color purpleLight = Color(0xFFE0F2FE);
+  static const Color purpleDark = Color(0xFF001026);
+  static const Color success = vitalDischarged;
+  static const Color warning = vitalScheduled;
+  static const Color danger = vitalEmergency;
+  static const Color info = secondary;
+  static const Color darkAccent = Color(0xFF59DBC7);
+  static const Color darkTurquoise = Color(0xFF79F7E3);
   static const Color darkSuccess = Color(0xFF34D399);
   static const Color darkWarning = Color(0xFFFBBF24);
-  static const Color darkDanger  = Color(0xFFF87171);
-  static const Color darkInfo    = Color(0xFF5CA9D6);
-
-  // ==========================================================================
-  // RÉTROCOMPATIBILITÉ — Alias vers la nouvelle palette
-  // ==========================================================================
-  static const Color burntRose     = primary;
-  static const Color mutedTeal     = accent;
-  static const Color pearlAqua     = primaryLight;
-  static const Color neonIce       = turquoise;
-  static const Color plumDark      = primaryDark;
+  static const Color darkDanger = Color(0xFFF87171);
+  static const Color darkInfo = Color(0xFF78D1FE);
+  static const Color darkPurple = Color(0xFF78D1FE);
+  static const Color darkPurpleLight = Color(0xFF1B293C);
+  static const Color burntRose = primary;
+  static const Color mutedTeal = accent;
+  static const Color pearlAqua = primaryLight;
+  static const Color neonIce = turquoise;
+  static const Color plumDark = primaryDark;
   static const Color chocolatePlum = primaryDark;
-  static const Color smokyRose     = primary;
-  static const Color taupeGrey     = textMuted;
+  static const Color smokyRose = primary;
+  static const Color taupeGrey = textMuted;
+  static const Color darkBg = darkBackground;
+  static const Color darkSurf = darkSurface;
 
-  // Compatibilité avec les accents précédents (utilisés dans les anciens écrans)
-  static const Color darkBg        = darkBackground;
-  static const Color darkSurf      = darkSurface;
+  // Palette Maternité / Sage-femme
+  static const Color midwifePrimary = Color(0xFFD946EF);
+  static const Color midwifeDark = Color(0xFFA21CAF);
+  static const Color midwifeLight = Color(0xFFFAE8FF);
+  static const Color midwifeAccent = Color(0xFFE879F9);
 
   // ==========================================================================
-  // GESTION DYNAMIQUE DU THÈME (Light / Dark / System)
+  // GESTION DU THÈME
   // ==========================================================================
-
   static final ValueNotifier<ThemeMode> themeModeNotifier =
       ValueNotifier<ThemeMode>(ThemeMode.system);
 
   static const String _themePrefKey = 'polyclinique_arij_theme_v2';
 
-  /// Indique si le thème sélectionné est sombre
-  /// En mode Système, vérifie la luminosité du MediaQuery
   static bool get isDark => themeModeNotifier.value == ThemeMode.dark;
 
-  /// Vérifie dynamiquement si l'écran est en mode sombre (y compris System)
   static bool isDarkMode(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark;
   }
@@ -140,7 +177,6 @@ class AppTheme {
     } catch (_) {}
   }
 
-  /// Bascule uniquement entre Light et Dark (sans System)
   static Future<void> toggleTheme() async {
     final next = themeModeNotifier.value == ThemeMode.dark
         ? ThemeMode.light
@@ -149,17 +185,22 @@ class AppTheme {
   }
 
   // ==========================================================================
-  // HELPERS DE COULEURS CONTEXTUELLES (adaptent automatiquement au thème)
+  // HELPERS CONTEXTUELS DE COULEURS
   // ==========================================================================
-
   static Color cardColor(BuildContext context) =>
-      isDarkMode(context) ? darkCard : surface;
+      isDarkMode(context) ? darkCard : surfaceContainerLowest;
 
   static Color surfaceColor(BuildContext context) =>
-      isDarkMode(context) ? darkSurface : surface;
+      isDarkMode(context) ? darkSurface : surfaceContainerLowest;
+
+  static Color surfaceContainerLowColor(BuildContext context) =>
+      isDarkMode(context) ? darkElevated : surfaceContainerLow;
+
+  static Color surfaceContainerColor(BuildContext context) =>
+      isDarkMode(context) ? darkElevated : surfaceContainer;
 
   static Color elevatedSurface(BuildContext context) =>
-      isDarkMode(context) ? darkElevated : const Color(0xFFF0F4F8);
+      isDarkMode(context) ? darkElevated : surfaceContainerHigh;
 
   static Color backgroundColor(BuildContext context) =>
       isDarkMode(context) ? darkBackground : background;
@@ -177,353 +218,271 @@ class AppTheme {
       isDarkMode(context) ? darkPrimary : primary;
 
   static Color accentColor(BuildContext context) =>
-      isDarkMode(context) ? darkAccent : accent;
+      isDarkMode(context) ? darkSecondary : secondary;
 
   static Color turquoiseColor(BuildContext context) =>
-      isDarkMode(context) ? darkTurquoise : turquoise;
+      isDarkMode(context) ? darkSecondary : tertiaryTeal;
 
   static Color successColor(BuildContext context) =>
-      isDarkMode(context) ? darkSuccess : success;
+      isDarkMode(context) ? darkSuccess : vitalDischarged;
 
   static Color warningColor(BuildContext context) =>
-      isDarkMode(context) ? darkWarning : warning;
+      isDarkMode(context) ? darkWarning : vitalScheduled;
 
   static Color dangerColor(BuildContext context) =>
-      isDarkMode(context) ? darkDanger : danger;
+      isDarkMode(context) ? darkDanger : vitalEmergency;
+
+  static Color purpleColor(BuildContext context) =>
+      isDarkMode(context) ? darkPurple : secondary;
+
+  static Color purpleLightColor(BuildContext context) =>
+      isDarkMode(context) ? darkPurpleLight : secondaryFixed;
 
   // ==========================================================================
-  // LIGHT THEME — ThemeData complet (Material 3 + iOS natif)
+  // OMBRES & ÉLÉVATION iOS
   // ==========================================================================
+  static List<BoxShadow> cardShadow(BuildContext context) {
+    final isDark = isDarkMode(context);
+    return [
+      BoxShadow(
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.35)
+            : const Color(0xFF0B2545).withValues(alpha: 0.05),
+        blurRadius: 18,
+        offset: const Offset(0, 4),
+        spreadRadius: -2,
+      ),
+      BoxShadow(
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.2)
+            : const Color(0xFF0B2545).withValues(alpha: 0.02),
+        blurRadius: 4,
+        offset: const Offset(0, 1),
+      ),
+    ];
+  }
 
+  static List<BoxShadow> modalShadow(BuildContext context) {
+    final isDark = isDarkMode(context);
+    return [
+      BoxShadow(
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.6)
+            : const Color(0xFF0B2545).withValues(alpha: 0.16),
+        blurRadius: 32,
+        offset: const Offset(0, 12),
+        spreadRadius: -4,
+      ),
+    ];
+  }
+
+  // ==========================================================================
+  // LIGHT THEME (iOS Premium)
+  // ==========================================================================
   static ThemeData get lightTheme => ThemeData(
-    useMaterial3: true,
-    fontFamily: 'SF Pro Display',
-    brightness: Brightness.light,
-    scaffoldBackgroundColor: background,
-    canvasColor: background,
-    cardColor: surface,
-    pageTransitionsTheme: const PageTransitionsTheme(
-      builders: {
-        TargetPlatform.iOS:     CupertinoPageTransitionsBuilder(),
-        TargetPlatform.macOS:   CupertinoPageTransitionsBuilder(),
-        TargetPlatform.android: ZoomPageTransitionsBuilder(),
-      },
-    ),
-    colorScheme: const ColorScheme(
-      brightness:    Brightness.light,
-      primary:       primary,
-      onPrimary:     Colors.white,
-      secondary:     accent,
-      onSecondary:   Colors.white,
-      tertiary:      turquoise,
-      onTertiary:    Colors.white,
-      surface:       surface,
-      onSurface:     textMain,
-      error:         danger,
-      onError:       Colors.white,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor:  primary,
-      foregroundColor:  Colors.white,
-      elevation:        0,
-      centerTitle:      false,
-      shadowColor:      Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      titleTextStyle: TextStyle(
-        fontSize:      17,
-        fontWeight:    FontWeight.w700,
-        color:         Colors.white,
-        letterSpacing: -0.3,
-      ),
-      iconTheme: IconThemeData(color: Colors.white, size: 22),
-    ),
-    drawerTheme: const DrawerThemeData(
-      backgroundColor: surface,
-      elevation:       0,
-      width:           300,
-    ),
-    dialogTheme: DialogThemeData(
-      backgroundColor: surface,
-      surfaceTintColor: Colors.transparent,
-      elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titleTextStyle: const TextStyle(
-        fontSize: 17, fontWeight: FontWeight.w700, color: textMain,
-      ),
-    ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor:  surface,
-      surfaceTintColor: Colors.transparent,
-      elevation:        0,
-      dragHandleColor:  border,
-      dragHandleSize:   Size(40, 4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-    ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor:    surface,
-      surfaceTintColor:   Colors.transparent,
-      indicatorColor:     Color(0xFFD6F0EE),
-      elevation:          0,
-      height:             64,
-      labelBehavior:      NavigationDestinationLabelBehavior.alwaysShow,
-      iconTheme: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: turquoise, size: 24);
-        }
-        return const IconThemeData(color: textMuted, size: 22);
-      }),
-      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return const TextStyle(
-            fontSize: 11, fontWeight: FontWeight.w700, color: turquoise,
-          );
-        }
-        return const TextStyle(
-          fontSize: 11, fontWeight: FontWeight.w500, color: textMuted,
-        );
-      }),
-    ),
-    dividerTheme: const DividerThemeData(
-      color:     border,
-      thickness: 0.8,
-      space:     0,
-    ),
-    cardTheme: CardThemeData(
-      color:     surface,
-      elevation: 0,
-      margin:    EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: border, width: 1),
-      ),
-    ),
-    chipTheme: ChipThemeData(
-      backgroundColor:  primaryLight,
-      selectedColor:    turquoise,
-      labelStyle:       const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled:          true,
-      fillColor:       surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      hintStyle:       const TextStyle(color: textMuted, fontSize: 14),
-      labelStyle:      const TextStyle(color: textMuted, fontSize: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide:   const BorderSide(color: border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide:   const BorderSide(color: border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide:   const BorderSide(color: turquoise, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide:   const BorderSide(color: danger),
-      ),
-    ),
-    listTileTheme: const ListTileThemeData(
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    ),
-    switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return turquoise;
-        return const Color(0xFFCBD5E1);
-      }),
-      trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return turquoise.withValues(alpha: 0.35);
-        }
-        return border;
-      }),
-    ),
-  );
+        useMaterial3: true,
+        fontFamily: 'SF Pro Display',
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: background,
+        canvasColor: background,
+        cardColor: surfaceContainerLowest,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          },
+        ),
+        colorScheme: const ColorScheme(
+          brightness: Brightness.light,
+          primary: primary,
+          onPrimary: Colors.white,
+          secondary: secondary,
+          onSecondary: Colors.white,
+          tertiary: tertiaryTeal,
+          onTertiary: Colors.white,
+          surface: surfaceContainerLowest,
+          onSurface: textMain,
+          error: vitalEmergency,
+          onError: Colors.white,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: textMain,
+          elevation: 0,
+          centerTitle: false,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          titleTextStyle: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: textMain,
+            letterSpacing: -0.4,
+          ),
+          iconTheme: IconThemeData(color: textMain, size: 22),
+        ),
+        dividerTheme: const DividerThemeData(
+          color: border,
+          thickness: 0.8,
+          space: 0,
+        ),
+        cardTheme: CardThemeData(
+          color: surfaceContainerLowest,
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: surfaceContainerLow,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          hintStyle: const TextStyle(color: textMuted, fontSize: 14),
+          labelStyle: const TextStyle(color: textMuted, fontSize: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: secondary, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: vitalEmergency),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primary,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+        ),
+      );
 
   // ==========================================================================
-  // DARK THEME — ThemeData complet (Bleu pétrole profond, pas de noir pur)
+  // DARK THEME (OLED / Électron)
   // ==========================================================================
-
   static ThemeData get darkTheme => ThemeData(
-    useMaterial3: true,
-    fontFamily: 'SF Pro Display',
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: darkBackground,
-    canvasColor:             darkBackground,
-    cardColor:               darkCard,
-    pageTransitionsTheme: const PageTransitionsTheme(
-      builders: {
-        TargetPlatform.iOS:     CupertinoPageTransitionsBuilder(),
-        TargetPlatform.macOS:   CupertinoPageTransitionsBuilder(),
-        TargetPlatform.android: ZoomPageTransitionsBuilder(),
-      },
-    ),
-    colorScheme: const ColorScheme(
-      brightness:  Brightness.dark,
-      primary:     darkTurquoise,
-      onPrimary:   Color(0xFF0B1218),
-      secondary:   darkAccent,
-      onSecondary: Color(0xFF0B1218),
-      tertiary:    darkTurquoise,
-      onTertiary:  Color(0xFF0B1218),
-      surface:     darkCard,
-      onSurface:   darkTextMain,
-      error:       darkDanger,
-      onError:     Color(0xFF0B1218),
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor:  darkSurface,
-      foregroundColor:  darkTextMain,
-      elevation:        0,
-      centerTitle:      false,
-      shadowColor:      Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      titleTextStyle: TextStyle(
-        fontSize:      17,
-        fontWeight:    FontWeight.w700,
-        color:         darkTextMain,
-        letterSpacing: -0.3,
-      ),
-      iconTheme: IconThemeData(color: darkTextMain, size: 22),
-    ),
-    drawerTheme: const DrawerThemeData(
-      backgroundColor: darkSurface,
-      elevation:       0,
-      width:           300,
-    ),
-    dialogTheme: DialogThemeData(
-      backgroundColor:  darkElevated,
-      surfaceTintColor: Colors.transparent,
-      elevation:        4,
-      shadowColor:      Colors.black.withValues(alpha: 0.4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titleTextStyle: const TextStyle(
-        fontSize: 17, fontWeight: FontWeight.w700, color: darkTextMain,
-      ),
-    ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor:  darkCard,
-      surfaceTintColor: Colors.transparent,
-      elevation:        0,
-      dragHandleColor:  darkBorder,
-      dragHandleSize:   Size(40, 4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-    ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor:  darkSurface,
-      surfaceTintColor: Colors.transparent,
-      indicatorColor:   darkTurquoise.withValues(alpha: 0.2),
-      elevation:        0,
-      height:           64,
-      labelBehavior:    NavigationDestinationLabelBehavior.alwaysShow,
-      iconTheme: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: darkTurquoise, size: 24);
-        }
-        return const IconThemeData(color: darkTextMuted, size: 22);
-      }),
-      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return const TextStyle(
-            fontSize: 11, fontWeight: FontWeight.w700, color: darkTurquoise,
-          );
-        }
-        return const TextStyle(
-          fontSize: 11, fontWeight: FontWeight.w500, color: darkTextMuted,
-        );
-      }),
-    ),
-    dividerTheme: const DividerThemeData(
-      color:     darkBorder,
-      thickness: 0.8,
-      space:     0,
-    ),
-    cardTheme: CardThemeData(
-      color:     darkCard,
-      elevation: 0,
-      margin:    EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: darkBorder, width: 1),
-      ),
-    ),
-    chipTheme: ChipThemeData(
-      backgroundColor: darkElevated,
-      selectedColor:   darkTurquoise.withValues(alpha: 0.25),
-      labelStyle: const TextStyle(
-        fontSize: 12, fontWeight: FontWeight.w600, color: darkTextMain,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled:         true,
-      fillColor:      darkElevated,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      hintStyle:  const TextStyle(color: darkTextMuted, fontSize: 14),
-      labelStyle: const TextStyle(color: darkTextMuted, fontSize: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide:   const BorderSide(color: darkBorder),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide:   const BorderSide(color: darkBorder),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide:   const BorderSide(color: darkTurquoise, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide:   const BorderSide(color: darkDanger),
-      ),
-    ),
-    listTileTheme: const ListTileThemeData(
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    ),
-    switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return darkTurquoise;
-        return const Color(0xFF4A5568);
-      }),
-      trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return darkTurquoise.withValues(alpha: 0.35);
-        }
-        return darkBorder;
-      }),
-    ),
-  );
+        useMaterial3: true,
+        fontFamily: 'SF Pro Display',
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: darkBackground,
+        canvasColor: darkBackground,
+        cardColor: darkCard,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          },
+        ),
+        colorScheme: const ColorScheme(
+          brightness: Brightness.dark,
+          primary: darkPrimary,
+          onPrimary: Color(0xFF0B131E),
+          secondary: darkSecondary,
+          onSecondary: Color(0xFF0B131E),
+          tertiary: darkSecondary,
+          onTertiary: Color(0xFF0B131E),
+          surface: darkCard,
+          onSurface: darkTextMain,
+          error: darkDanger,
+          onError: Colors.white,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: darkTextMain,
+          elevation: 0,
+          centerTitle: false,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          titleTextStyle: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: darkTextMain,
+            letterSpacing: -0.4,
+          ),
+          iconTheme: IconThemeData(color: darkTextMain, size: 22),
+        ),
+        dividerTheme: const DividerThemeData(
+          color: darkBorder,
+          thickness: 0.8,
+          space: 0,
+        ),
+        cardTheme: CardThemeData(
+          color: darkCard,
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: darkBorder, width: 1),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: darkElevated,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          hintStyle: const TextStyle(color: darkTextMuted, fontSize: 14),
+          labelStyle: const TextStyle(color: darkTextMuted, fontSize: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: darkPrimary, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: darkDanger),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: darkPrimary,
+            foregroundColor: const Color(0xFF0B131E),
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+        ),
+      );
 
-  // Rétrocompatibilité
   static ThemeData get theme => lightTheme;
 
   // ==========================================================================
-  // COULEURS DE RÔLES
+  // COULEURS & LABELS DES RÔLES
   // ==========================================================================
-
   static Color getRoleColor(String? role) {
     switch (role?.toUpperCase()) {
       case 'DOCTOR':
-        return const Color(0xFF247BA0);  // Bleu médical Arij
+        return secondary; // Bondi Blue (#006688)
       case 'NURSE':
-        return const Color(0xFF10B981);  // Vert émeraude soins
+        return vitalDischarged; // Emerald (#10B981)
       case 'MIDWIFE':
-        return const Color(0xFFEC4899);  // Rose maternité
+        return midwifePrimary; // Magenta / Amaranth (#D946EF)
       case 'TECHNICIAN':
-        return const Color(0xFF8B5CF6);  // Violet plateau technique
+        return tertiaryTeal; // Ocean Teal (#00A896)
       case 'ADMIN':
-        return const Color(0xFFF59E0B);  // Ambre administration
+        return primary; // Institutional Navy (#001026)
       default:
-        return primary;
+        return secondary;
     }
   }
 
@@ -553,7 +512,7 @@ class AppTheme {
       case 'MIDWIFE':
         return CupertinoIcons.person_2_fill;
       case 'TECHNICIAN':
-        return CupertinoIcons.lab_flask;
+        return CupertinoIcons.lab_flask_solid;
       case 'ADMIN':
         return CupertinoIcons.gear_alt_fill;
       default:

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
@@ -8,7 +7,12 @@ import '../services/notification_service.dart';
 import '../utils/theme.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/avatar_widget.dart';
-import '../widgets/theme_toggle_button.dart';
+import '../widgets/dark_ambient_background.dart';
+import '../widgets/figma_header.dart';
+import '../widgets/ios_bottom_nav_bar.dart';
+import '../widgets/rooms_and_beds_view.dart';
+import 'briefing_detail_screen.dart';
+import 'nurse_care_calendar_screen.dart';
 import 'patient_dossier_screen.dart';
 import 'profile_screen.dart';
 
@@ -23,6 +27,7 @@ class NurseHomeScreen extends StatefulWidget {
 }
 
 class _NurseHomeScreenState extends State<NurseHomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentTab = 0;
   final api = ApiService();
 
@@ -31,6 +36,7 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
   List<dynamic> beds = [];
   List<dynamic> alerts = [];
   List<dynamic> doctors = [];
+  Map<String, dynamic> dailyBriefing = {};
   final Set<String> _readAlertIds = {};
   final Set<String> _deletedVitalIds = {};
   bool isLoading = true;
@@ -152,27 +158,95 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
 
   Future<void> _loadData() async {
     setState(() => isLoading = true);
-    final results = await Future.wait([
-      api.getPatients(),
-      api.getVitalSigns(),
-      api.getBeds(),
-      api.getAlerts(),
-      api.getDoctors(),
-    ]);
-    if (mounted) {
-      final cleanVitals = results[1].where((v) {
-        final id = v['_id']?.toString() ?? v['id']?.toString();
-        return id != null && !_deletedVitalIds.contains(id);
-      }).toList();
-      setState(() {
-        patients = results[0];
-        vitalSigns = cleanVitals;
-        beds = results[2];
-        alerts = results[3];
-        doctors = results[4];
-        isLoading = false;
-      });
+    try {
+      final patRes = await api.getPatients();
+      final vitalsRes = await api.getVitalSigns();
+      final bedsRes = await api.getBeds();
+      final alertsRes = await api.getAlerts();
+      final docsRes = await api.getDoctors();
+      final briefingRes = await api.getDailyBriefing();
+
+      if (mounted) {
+        final cleanVitals = vitalsRes.where((v) {
+          final id = v['_id']?.toString() ?? v['id']?.toString();
+          return id != null && !_deletedVitalIds.contains(id);
+        }).toList();
+
+        final validBriefing = briefingRes.isNotEmpty && briefingRes['metrics'] != null
+            ? briefingRes
+            : _getDefaultBriefingData();
+
+        setState(() {
+          patients = patRes;
+          vitalSigns = cleanVitals;
+          beds = bedsRes;
+          alerts = alertsRes;
+          doctors = docsRes;
+          dailyBriefing = validBriefing;
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          dailyBriefing = _getDefaultBriefingData();
+          isLoading = false;
+        });
+      }
     }
+  }
+
+  Map<String, dynamic> _getDefaultBriefingData() {
+    final user = api.currentUser;
+    final name = '${user?['firstName'] ?? ''} ${user?['lastName'] ?? ''}'.trim();
+    return {
+      'date': 'Lundi 26 mai 2025',
+      'rawDate': '2025-05-26',
+      'greeting': 'Bonjour, $name 👋',
+      'subGreeting': 'Voici votre briefing du jour',
+      'serviceName': user?['service'] ?? 'Service Soins Infirmiers',
+      'weather': {'temp': '26°C', 'city': 'Djerba', 'condition': 'Ensoleillé'},
+      'metrics': {
+        'consultationsCount': 7,
+        'urgentConsultationsCount': 2,
+        'hospitalizedCount': 3,
+        'toMonitorHospitalizedCount': 1,
+        'pendingExamsCount': 2,
+        'tasksCount': 4,
+        'urgentTasksCount': 1,
+      },
+      'nextAppointment': {
+        'time': '09:30',
+        'title': 'Tournée des constantes - Étage 2',
+        'room': 'Chambre 204 • Infirmerie',
+        'doctor': 'Dr Aroua',
+        'patientName': 'Yassine Khelil',
+      },
+      'aiSummary':
+          "Aujourd'hui, vous avez 7 actes de soins planifiés. 3 patients hospitalisés nécessitent une surveillance régulière. 2 examens biologiques sont en attente et 4 tâches prioritaires restent à finaliser. Une attention particulière est requise pour le patient en chambre 407.",
+      'aiSummaryPreview':
+          "Vous avez 7 soins planifiés aujourd'hui. 2 examens sont en attente de résultat et 3 patients hospitalisés nécessitent une surveillance particulière.",
+      'consultationsList': [
+        {'time': '09:30', 'title': 'Prise de constantes - Tension & SpO2', 'room': 'Chambre 204', 'specialty': 'Soins Infirmiers', 'isUrgent': true, 'patientName': 'Yassine Khelil'},
+        {'time': '11:00', 'title': 'Administration traitement IV', 'room': 'Chambre 312', 'specialty': 'Cardiologie', 'isUrgent': false, 'patientName': 'Leila Bouaziz'},
+        {'time': '14:00', 'title': 'Surveillance respiratoire post-aérosol', 'room': 'Chambre 407', 'specialty': 'Pneumologie', 'isUrgent': true, 'patientName': 'Salem Ghrissi'},
+      ],
+      'hospitalizedList': [
+        {'room': 'Chambre 204', 'service': 'Médecine Interne', 'status': 'Stable', 'statusColor': 'green', 'patientName': 'Yassine Khelil'},
+        {'room': 'Chambre 312', 'service': 'Cardiologie', 'status': 'En cours', 'statusColor': 'blue', 'patientName': 'Leila Bouaziz'},
+        {'room': 'Chambre 407', 'service': 'Pneumologie', 'status': 'À surveiller', 'statusColor': 'orange', 'patientName': 'Salem Ghrissi'},
+      ],
+      'pendingExamsList': [
+        {'title': 'Scanner thoracique', 'patientName': 'Patient (S. Ghrissi)', 'department': 'Radiologie', 'status': 'En attente'},
+        {'title': 'Bilan biologique', 'patientName': 'Patient (Y. Khelil)', 'department': 'Laboratoire', 'status': 'En attente'},
+      ],
+      'tasksList': [
+        {'id': 't1', 'title': 'Rendre compte de la visite', 'location': 'Chambre 204', 'time': '10:30', 'isCompleted': false, 'isPriority': true},
+        {'id': 't2', 'title': 'Vérifier résultats biologiques', 'location': 'Laboratoire', 'time': '11:00', 'isCompleted': false, 'isPriority': false},
+        {'id': 't3', 'title': 'Valider ordonnance de sortie', 'location': 'Chambre 312', 'time': '15:00', 'isCompleted': false, 'isPriority': false},
+        {'id': 't4', 'title': 'Contrôle tensionnel post-perfusion', 'location': 'Salle de soins', 'time': '16:30', 'isCompleted': false, 'isPriority': false},
+      ],
+    };
   }
 
   void _openProfile() {
@@ -448,6 +522,137 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showPendingExamsModal() {
+    final pendingExams = (dailyBriefing['pendingExamsList'] as List?) ?? [];
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.science_rounded, color: AppTheme.bondiBlue),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Examens en attente (${pendingExams.length})',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const Divider(),
+            Expanded(
+              child: pendingExams.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_outline, size: 48, color: Color(0xFF10B981)),
+                          SizedBox(height: 8),
+                          Text(
+                            'Aucun examen en attente',
+                            style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: pendingExams.length,
+                      itemBuilder: (context, idx) {
+                        final e = pendingExams[idx];
+                        final title = e['title'] ?? 'Examen';
+                        final patName = e['patientName'] ?? 'Patient';
+                        final dept = e['department'] ?? 'Service';
+                        final status = e['status'] ?? 'En attente';
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          color: const Color(0xFFF8FAFC),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '$title  •  $patName',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.textColor(context),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            dept,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF64748B),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFEDD5),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    status,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFEA580C),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );
@@ -1055,128 +1260,67 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
     final fullName = '${user?['firstName'] ?? ''} ${user?['lastName'] ?? ''}'.trim();
 
     return Scaffold(
+      key: _scaffoldKey,
       drawer: AppDrawer(
         onSelectTab: (idx) => setState(() => _currentTab = idx),
         onOpenProfile: _openProfile,
         onLogout: widget.onLogout,
       ),
-      appBar: AppBar(
-        backgroundColor: AppTheme.getRoleColor('NURSE'),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Image.asset(
-                'assets/logo-polyclinique-arij.png',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.heart_fill, color: AppTheme.primary, size: 20),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Soins Infirmiers',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    fullName.isNotEmpty ? fullName : 'Infirmier(ère)',
-                    style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85)),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          const ThemeToggleButton(),
-          // Bouton d'alertes avec compteur
-
-          // Bouton d'alertes avec compteur
-          Stack(
-            alignment: Alignment.center,
+      body: DarkAmbientBackground(
+        child: SafeArea(
+          child: Column(
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                tooltip: 'Alertes médicales',
-                onPressed: _showAlertsModal,
+              FigmaHeader(
+                roleName: 'INFIRMIER',
+                roleColor: AppTheme.getRoleColor('NURSE'),
+                onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                onThemeToggle: AppTheme.toggleTheme,
+                onNotificationsPressed: _showAlertsModal,
+                unreadNotifications: unreadAlertCount,
+                profileImageUrl: user?['avatarUrl'],
+                userName: fullName,
               ),
-              if (unreadAlertCount > 0)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    child: Text(
-                      '$unreadAlertCount',
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
+              if (isLoading)
+                const Expanded(child: Center(child: CircularProgressIndicator()))
+              else
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentTab,
+                    children: [
+                      _buildOverviewTab(),
+                      _buildPatientsTab(),
+                      _buildVitalsTab(),
+                      _buildBedsTab(),
+                    ],
                   ),
                 ),
             ],
           ),
-          GestureDetector(
-            onTap: _openProfile,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 14),
-              child: AvatarWidget(
-                avatarUrl: user?['avatarUrl'],
-                name: fullName,
-                role: 'NURSE',
-                radius: 18,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : IndexedStack(
-              index: _currentTab,
-              children: [
-                _buildOverviewTab(),
-                _buildPatientsTab(),
-                _buildVitalsTab(),
-                _buildBedsTab(),
-              ],
-            ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: IosBottomNavBar(
         selectedIndex: _currentTab,
-        onDestinationSelected: (idx) => setState(() => _currentTab = idx),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
+        onItemSelected: (idx) => setState(() => _currentTab = idx),
+        activeColor: AppTheme.tropicalTeal,
+        items: const [
+          IosBottomNavItem(
+            icon: CupertinoIcons.house,
+            selectedIcon: CupertinoIcons.house_fill,
             label: 'Accueil',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.folder_shared_outlined),
-            selectedIcon: Icon(Icons.folder_shared),
+          IosBottomNavItem(
+            icon: CupertinoIcons.person_2,
+            selectedIcon: CupertinoIcons.person_2_fill,
             label: 'Patients',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.monitor_heart_outlined),
-            selectedIcon: Icon(Icons.monitor_heart),
+          IosBottomNavItem(
+            icon: CupertinoIcons.heart,
+            selectedIcon: CupertinoIcons.heart_fill,
             label: 'Constantes',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.bed_outlined),
-            selectedIcon: Icon(Icons.bed),
+          IosBottomNavItem(
+            icon: CupertinoIcons.bed_double,
+            selectedIcon: CupertinoIcons.bed_double_fill,
             label: 'Lits',
           ),
         ],
@@ -1185,72 +1329,347 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
   }
 
   Widget _buildOverviewTab() {
+    final isDark = AppTheme.isDarkMode(context);
+    final user = api.currentUser;
+    final fullName = '${user?['firstName'] ?? ''} ${user?['lastName'] ?? ''}'.trim();
+    final greeting = dailyBriefing['greeting'] ?? 'Bonjour, $fullName 👋';
+    final subGreeting = dailyBriefing['subGreeting'] ?? 'Voici votre briefing du jour';
+    final dateStr = dailyBriefing['date'] ?? 'Lundi 26 mai 2025';
+    final metrics = (dailyBriefing['metrics'] as Map<String, dynamic>?) ?? {};
+    final consultationsCount = metrics['consultationsCount'] ?? 7;
+    final hospitalizedCount = metrics['hospitalizedCount'] ?? (beds.isNotEmpty ? beds.where((b) => b['status'] == 'OCCUPIED').length : 3);
+    final pendingExamsCount = metrics['pendingExamsCount'] ?? 2;
+    final aiSummaryPreview = dailyBriefing['aiSummaryPreview'] ??
+        "Vous avez $consultationsCount soins planifiés aujourd'hui. $pendingExamsCount examens sont en attente de résultat et $hospitalizedCount patients hospitalisés nécessitent une surveillance particulière.";
+
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         children: [
-          // Bannière Infirmière
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
+          // ── Greeting & Weather Row ──────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      greeting,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textColor(context),
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subGreeting,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Unité d\'Hospitalisation & Soins',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Poste Soignant Actif',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: [
-                          _badgeStat('${patients.length} Patients', onTap: () => setState(() => _currentTab = 1)),
-                          _badgeStat('${vitalSigns.length} Constantes', onTap: () => setState(() => _currentTab = 2)),
-                          _badgeStat('${beds.length} Lits', onTap: () => setState(() => _currentTab = 3)),
-                        ],
-                      ),
-                    ],
-                  ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.borderColor(context)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                Container(
-                  width: 60,
-                  height: 60,
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Image.asset(
-                    'assets/logo-polyclinique-arij.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.healing, size: 36, color: AppTheme.primary),
-                  ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.wb_sunny_rounded, color: Color(0xFFF59E0B), size: 18),
+                    SizedBox(width: 6),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('26°C', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                        Text('Djerba', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // ── Date pill ───────────────────────────────────────────
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.borderColor(context)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.calendar_today_rounded, size: 13, color: Color(0xFF64748B)),
+                  const SizedBox(width: 7),
+                  Text(
+                    dateStr,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+
+          const SizedBox(height: 16),
+
+          // ── 3 KPI Metric Cards ───────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: _buildBriefingCard(
+                  icon: Icons.favorite_rounded,
+                  iconBg: AppTheme.tropicalTeal.withValues(alpha: 0.12),
+                  iconColor: AppTheme.tropicalTeal,
+                  count: '$consultationsCount',
+                  label: 'Constantes',
+                  onTap: () => setState(() => _currentTab = 2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildBriefingCard(
+                  icon: Icons.hotel_rounded,
+                  iconBg: AppTheme.oceanMist.withValues(alpha: 0.12),
+                  iconColor: AppTheme.oceanMist,
+                  count: '$hospitalizedCount',
+                  label: 'Hospitalisés',
+                  onTap: () => setState(() => _currentTab = 3),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildBriefingCard(
+                  icon: Icons.science_rounded,
+                  iconBg: AppTheme.bondiBlue.withValues(alpha: 0.12),
+                  iconColor: AppTheme.bondiBlue,
+                  count: '$pendingExamsCount',
+                  label: 'Examens',
+                  onTap: _showPendingExamsModal,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Résumé de la journée (IA Card) ──────────────────────
+          InkWell(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BriefingDetailScreen(
+                  briefingData: dailyBriefing,
+                  onRefresh: _loadData,
+                  showSmartSummary: true,
+                ),
+              ),
+            ),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF16252C) : const Color(0xFFF0FDF9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.tropicalTeal.withValues(alpha: isDark ? 0.35 : 0.4)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.tropicalTeal.withValues(alpha: isDark ? 0.15 : 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, color: AppTheme.tropicalTeal, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Résumé IA & Conseils Soignants',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF0F3E48),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.tropicalTeal,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'IA',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.chevron_right_rounded, color: AppTheme.tropicalTeal, size: 20),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    aiSummaryPreview,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.45,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Prochain rendez-vous Card ───────────────────────────
+          InkWell(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NurseCareCalendarScreen())),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.borderColor(context)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.tropicalTeal.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.schedule_rounded, color: AppTheme.tropicalTeal, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Prochain soin programmé',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textColor(context),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.tropicalTeal.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          '09:00',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.tropicalTeal,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Administration traitement & constantes - Chambre 407',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textColor(context),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Surveillance post-opératoire et prise des constantes vitales',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // ── Button: Voir le planning complet ────────────────────
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NurseCareCalendarScreen())),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.tropicalTeal,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.calendar_month_rounded, size: 18, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Voir le planning des soins',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 22),
 
           const SizedBox(height: 20),
 
@@ -1278,38 +1697,86 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
           ),
 
           const SizedBox(height: 24),
-
-          // Dernières constantes
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Dernières Constantes Prises',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              TextButton(
-                onPressed: () => setState(() => _currentTab = 2),
-                child: const Text('Voir tout'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (vitalSigns.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Aucune constante saisie pour le moment', style: TextStyle(color: AppTheme.textMuted)),
-              ),
-            )
-          else
-            ...vitalSigns.take(4).map((v) => _vitalSignCard(v)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBriefingCard({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String count,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final isDark = AppTheme.isDarkMode(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: 116,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.borderColor(context)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  count,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textColor(context),
+                    height: 1.1,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
+              ],
+            ),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF64748B),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // --- ONGLET 1 : Patients & Dossiers ---
   Widget _buildPatientsTab() {
+    final isDark = AppTheme.isDarkMode(context);
     final filtered = patients.where((p) {
       if (_selectedDepartmentFilter != 'ALL') {
         final dept = (p['department'] ?? '').toString().toUpperCase();
@@ -1324,21 +1791,43 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
       return name.contains(q) || cin.contains(q) || dossier.contains(q);
     }).toList();
 
+    filtered.sort((a, b) {
+      final nameA = '${a['firstName'] ?? ''} ${a['lastName'] ?? ''}'.toLowerCase();
+      final nameB = '${b['firstName'] ?? ''} ${b['lastName'] ?? ''}'.toLowerCase();
+      return nameA.compareTo(nameB);
+    });
+
     return Column(
       children: [
-        // Barre de recherche
+        // Barre de recherche Figma style
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: 'Rechercher par nom, CIN, N° dossier...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.borderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            onChanged: (val) => setState(() => patientSearchQuery = val),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Rechercher par nom, CIN, N° dossier...',
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8),
+                ),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF059669), size: 20),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              onChanged: (val) => setState(() => patientSearchQuery = val),
+            ),
           ),
         ),
 
@@ -1358,7 +1847,7 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
 
         Expanded(
           child: RefreshIndicator(
@@ -1387,111 +1876,145 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
                           ? '${midwife['firstName'] ?? ''} ${midwife['lastName'] ?? ''}'.trim()
                           : null;
 
-                      return Card(
+                      return Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 1,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => _openPatientDossier(p),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    AvatarWidget(avatarUrl: p['avatarUrl'], name: name, radius: 22),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                          const SizedBox(height: 2),
-                                          Text('CIN: $cin  |  Groupe: $blood', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(4)),
-                                      child: Text(dossier, style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF0284C7))),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                // Tags Service & Équipe pluridisciplinaire
-                                Wrap(
-                                  spacing: 6,
-                                  runSpacing: 4,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: dept.toString().contains('Matern') ? const Color(0xFFFDF2F8) : const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: dept.toString().contains('Matern') ? const Color(0xFFFBCFE8) : const Color(0xFFE2E8F0),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        dept,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: dept.toString().contains('Matern') ? const Color(0xFFDB2777) : const Color(0xFF475569),
-                                        ),
-                                      ),
-                                    ),
-                                    if (docName != null && docName.isNotEmpty)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEFF6FF),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: const Color(0xFFBFDBFE)),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppTheme.borderColor(context)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => _openPatientDossier(p),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      AvatarWidget(avatarUrl: p['avatarUrl'], name: name, radius: 22),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            const Icon(Icons.person_pin, size: 12, color: Color(0xFF2563EB)),
-                                            const SizedBox(width: 4),
                                             Text(
-                                              docName,
-                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
+                                              name,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 15,
+                                                color: AppTheme.textColor(context),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              'CIN: $cin  •  Groupe: $blood',
+                                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    if (midwifeName != null && midwifeName.isNotEmpty)
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFDF4FF),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: const Color(0xFFF0ABFC)),
+                                          color: const Color(0xFFE0F2FE),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.favorite, size: 12, color: Color(0xFFC026D3)),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'SF: $midwifeName',
-                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9333EA)),
-                                            ),
-                                          ],
+                                        child: Text(
+                                          dossier,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontFamily: 'monospace',
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF0284C7),
+                                          ),
                                         ),
                                       ),
-                                  ],
-                                ),
-                                if (allergies.isNotEmpty && allergies.toLowerCase() != 'aucune')
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Text('⚠️ Allergies: $allergies', style: const TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.w600)),
+                                    ],
                                   ),
-                              ],
+                                  const SizedBox(height: 12),
+                                  // Tags Service & Équipe pluridisciplinaire
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: dept.toString().contains('Matern') ? const Color(0xFFFDF2F8) : const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: dept.toString().contains('Matern') ? const Color(0xFFFBCFE8) : const Color(0xFFE2E8F0),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          dept,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: dept.toString().contains('Matern') ? const Color(0xFFDB2777) : const Color(0xFF475569),
+                                          ),
+                                        ),
+                                      ),
+                                      if (docName != null && docName.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEFF6FF),
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(color: const Color(0xFFBFDBFE)),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.person_pin, size: 12, color: Color(0xFF2563EB)),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                docName,
+                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      if (midwifeName != null && midwifeName.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFDF4FF),
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(color: const Color(0xFFF0ABFC)),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.favorite, size: 12, color: Color(0xFFC026D3)),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'SF: $midwifeName',
+                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9333EA)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  if (allergies.isNotEmpty && allergies.toLowerCase() != 'aucune')
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text('⚠️ Allergies: $allergies', style: const TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.w600)),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -1506,25 +2029,53 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
 
   Widget _nurseFilterChip(String label, String value, IconData icon) {
     final isSelected = _selectedDepartmentFilter == value;
-    return ChoiceChip(
-      showCheckmark: false,
-      avatar: Icon(
-        icon,
-        size: 14,
-        color: isSelected ? Colors.white : const Color(0xFF64748B),
-      ),
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.white : const Color(0xFF334155),
+    final isDark = AppTheme.isDarkMode(context);
+    return InkWell(
+      onTap: () => setState(() => _selectedDepartmentFilter = value),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF059669)
+              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF059669)
+                : AppTheme.borderColor(context),
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF059669).withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: isSelected ? Colors.white : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? Colors.white : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
+              ),
+            ),
+          ],
         ),
       ),
-      selected: isSelected,
-      selectedColor: const Color(0xFF0D9488),
-      backgroundColor: const Color(0xFFF1F5F9),
-      onSelected: (_) => setState(() => _selectedDepartmentFilter = value),
     );
   }
 
@@ -1551,66 +2102,13 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
   }
 
   Widget _buildBedsTab() {
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: beds.isEmpty
-          ? const Center(child: Text('Aucun lit répertorié'))
-          : GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.1,
-              ),
-              itemCount: beds.length,
-              itemBuilder: (context, idx) {
-                final b = beds[idx];
-                final isOcc = b['isOccupied'] == true;
-                return Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.bed,
-                          size: 36,
-                          color: isOcc ? Colors.red : Colors.green,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Lit ${b['bedNumber'] ?? b['number'] ?? idx + 1}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: isOcc ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            isOcc ? 'Occupé' : 'Disponible',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: isOcc ? Colors.red[800] : Colors.green[800],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+    return RoomsAndBedsView(
+      onRefreshParent: _loadData,
     );
   }
 
-  Widget _vitalSignCard(dynamic v) {
+  Widget _vitalSignCard(Map<String, dynamic> v) {
+    final isDark = AppTheme.isDarkMode(context);
     final isFever = (v['temperature'] ?? 0) >= 38.5;
     final isHypox = (v['oxygenSaturation'] ?? 100) < 94;
     final isAbnormal = isFever || isHypox;
@@ -1722,22 +2220,36 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
           ],
         ),
       ),
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 10),
-        color: isAbnormal ? const Color(0xFFFFF1F2) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: isAbnormal ? const Color(0xFFFECDD3) : const Color(0xFFE2E8F0)),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isAbnormal
+              ? (isDark ? const Color(0xFF451A1A) : const Color(0xFFFFF1F2))
+              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isAbnormal
+                ? const Color(0xFFFECDD3)
+                : AppTheme.borderColor(context),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: patObj != null ? () => _openPatientDossier(patObj!) : null,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: patObj != null ? () => _openPatientDossier(patObj!) : null,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               // En-tête : Nom du patient + Numéro Dossier + Anomalie / Date
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1848,8 +2360,9 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
         ),
       ),
     ),
-    );
-  }
+  ),
+);
+}
 
 
   Widget _vitalMetricChip({
@@ -1888,24 +2401,7 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
     );
   }
 
-  Widget _badgeStat(String label, {VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: Colors.white24,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white30),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
+
 
   Widget _actionButton({
     required IconData icon,
