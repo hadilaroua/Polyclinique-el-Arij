@@ -36,6 +36,70 @@ export class HospitalizationService {
     return this.roomModel.find(filter).sort({ service: 1, number: 1 }).exec();
   }
 
+  async findAllRoomsWithBeds(service?: string): Promise<any[]> {
+    const filter: Record<string, any> = {};
+    if (service) filter.service = new RegExp(service.trim(), 'i');
+
+    const rooms = await this.roomModel
+      .find(filter)
+      .sort({ service: 1, number: 1 })
+      .lean()
+      .exec();
+
+    const beds = await this.bedModel
+      .find()
+      .populate('roomId', 'number service floor')
+      .lean()
+      .exec();
+
+    const activeStays = await this.stayModel
+      .find({ status: StayStatus.ACTIVE })
+      .populate('patientId', 'firstName lastName dossierNumber cin dateOfBirth bloodType allergies gender')
+      .populate('admittedByDoctorId', 'firstName lastName')
+      .lean()
+      .exec();
+
+    const stayByBedId = new Map<string, any>();
+    for (const stay of activeStays) {
+      if (stay.bedId) {
+        stayByBedId.set(stay.bedId.toString(), stay);
+      }
+    }
+
+    const bedsByRoomId = new Map<string, any[]>();
+    for (const bed of beds) {
+      const rid = (bed.roomId?._id || bed.roomId)?.toString();
+      if (!rid) continue;
+      const stay = stayByBedId.get(bed._id.toString());
+      const enrichedBed = {
+        ...bed,
+        currentStay: stay || null,
+        currentPatient: stay?.patientId || null,
+        isOccupied: bed.status === BedStatus.OCCUPIED || !!stay,
+      };
+      if (!bedsByRoomId.has(rid)) bedsByRoomId.set(rid, []);
+      bedsByRoomId.get(rid)!.push(enrichedBed);
+    }
+
+    return rooms.map(room => {
+      const roomBeds = bedsByRoomId.get(room._id.toString()) || [];
+      const totalBeds = roomBeds.length;
+      const occupiedBeds = roomBeds.filter(b => b.isOccupied).length;
+      const availableBeds = totalBeds - occupiedBeds;
+
+      return {
+        ...room,
+        beds: roomBeds,
+        totalBeds,
+        occupiedBeds,
+        availableBeds,
+        isFullyOccupied: totalBeds > 0 && occupiedBeds >= totalBeds,
+        isPartiallyOccupied: occupiedBeds > 0 && occupiedBeds < totalBeds,
+        isEmpty: occupiedBeds === 0,
+      };
+    });
+  }
+
   async findRoomById(id: string): Promise<RoomDocument> {
     const room = await this.roomModel.findById(id).exec();
     if (!room) throw new NotFoundException(`Chambre introuvable avec l'ID : ${id}`);
@@ -63,15 +127,40 @@ export class HospitalizationService {
     return (await this.bedModel.create(dto)).populate('roomId', 'number service floor');
   }
 
-  async findAllBeds(roomId?: string, status?: BedStatus): Promise<BedDocument[]> {
+  async findAllBeds(roomId?: string, status?: BedStatus): Promise<any[]> {
     const filter: Record<string, any> = {};
     if (roomId) filter.roomId = roomId;
     if (status) filter.status = status;
-    return this.bedModel
+    const beds = await this.bedModel
       .find(filter)
-      .populate('roomId', 'number service floor')
+      .populate('roomId', 'number service floor roomType capacity')
       .sort({ 'roomId': 1, number: 1 })
+      .lean()
       .exec();
+
+    const activeStays = await this.stayModel
+      .find({ status: StayStatus.ACTIVE })
+      .populate('patientId', 'firstName lastName dossierNumber cin dateOfBirth bloodType allergies gender')
+      .populate('admittedByDoctorId', 'firstName lastName')
+      .lean()
+      .exec();
+
+    const stayByBedId = new Map<string, any>();
+    for (const stay of activeStays) {
+      if (stay.bedId) {
+        stayByBedId.set(stay.bedId.toString(), stay);
+      }
+    }
+
+    return beds.map(bed => {
+      const stay = stayByBedId.get(bed._id.toString());
+      return {
+        ...bed,
+        currentStay: stay || null,
+        currentPatient: stay?.patientId || null,
+        isOccupied: bed.status === BedStatus.OCCUPIED || !!stay,
+      };
+    });
   }
 
   async findBedById(id: string): Promise<BedDocument> {
@@ -89,29 +178,50 @@ export class HospitalizationService {
     return bed;
   }
 
-  // --- HOSPITAL STAYS ---
+  async freeBed(bedId: string, notes?: string): Promise<{ success: boolean; message: string }> {
+    await this.bedModel.findByIdAndUpdate(bedId, { status: BedStatus.AVAILABLE });
+    await this.stayModel.updateMany(
+      { bedId, status: StayStatus.ACTIVE },
+      {
+        status: StayStatus.DISCHARGED,
+        dischargeDate: new Date(),
+        dischargeNotes: notes || 'Lit libéré par le personnel soignant',
+      },
+    );
+    return { success: true, message: 'Lit libéré avec succès' };
+  }
+
   async admitPatient(dto: CreateHospitalStayDto): Promise<HospitalStayDocument> {
-    // Vérifier que le lit est disponible
-    const bed = await this.findBedById(dto.bedId);
-    if (bed.status !== BedStatus.AVAILABLE) {
-      throw new BadRequestException(`Le lit ${bed.number} n'est pas disponible (statut: ${bed.status})`);
+    // 1. Verify the bed exists and is available
+    const bed = await this.bedModel.findById(dto.bedId).exec();
+    if (!bed) throw new NotFoundException(`Lit introuvable avec l'ID : ${dto.bedId}`);
+    if (bed.status === BedStatus.OCCUPIED) {
+      throw new BadRequestException('Ce lit est déjà occupé. Veuillez en choisir un autre.');
+    }
+    if (bed.status === BedStatus.MAINTENANCE) {
+      throw new BadRequestException('Ce lit est en maintenance et ne peut pas être attribué.');
     }
 
-    // Marquer le lit comme occupé
-    await this.bedModel.findByIdAndUpdate(dto.bedId, { status: BedStatus.OCCUPIED });
-
-    // Créer le séjour
+    // 2. Create the active stay
     const stay = await this.stayModel.create({
-      ...dto,
+      patientId: dto.patientId,
+      bedId: dto.bedId,
+      service: dto.service,
+      admittedByDoctorId: dto.admittedByDoctorId,
       admissionDate: new Date(dto.admissionDate),
+      admissionReason: dto.admissionReason,
+      status: StayStatus.ACTIVE,
     });
 
-    const result = await this.stayModel.findById(stay._id)
+    // 3. Mark the bed as occupied
+    await this.bedModel.findByIdAndUpdate(dto.bedId, { status: BedStatus.OCCUPIED });
+
+    // 4. Return the populated stay
+    return this.stayModel
+      .findById(stay._id)
       .populate('patientId', 'firstName lastName dossierNumber cin')
       .populate({ path: 'bedId', populate: { path: 'roomId', select: 'number service floor' } })
-      .exec();
-    if (!result) throw new NotFoundException(`Séjour introuvable`);
-    return result;
+      .exec() as Promise<HospitalStayDocument>;
   }
 
   async dischargePatient(id: string, dto: DischargePatientDto): Promise<HospitalStayDocument> {

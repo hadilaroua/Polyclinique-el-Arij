@@ -60,4 +60,3 @@ export const AuthorizedStaffSchema =
   SchemaFactory.createForClass(AuthorizedStaff);
 
 AuthorizedStaffSchema.index({ role: 1 });
-AuthorizedStaffSchema.index({ cin: 1 });

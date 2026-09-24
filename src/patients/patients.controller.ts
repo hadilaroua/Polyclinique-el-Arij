@@ -90,6 +90,82 @@ export class PatientsController {
   }
 
   /**
+   * Configuration des règles de constantes vitales (Smart Monitoring)
+   */
+  @Get('vital-rules/config')
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
+  @ApiOperation({ summary: 'Obtenir la liste des règles de seuils de surveillance des constantes' })
+  getVitalRulesConfig() {
+    return this.patientsService.getVitalRules();
+  }
+
+  /**
+   * Mettre à jour une règle de constante vitale
+   */
+  @Patch('vital-rules/config/:ruleId')
+  @Roles(Role.ADMIN, Role.DOCTOR)
+  @ApiOperation({ summary: 'Mettre à jour une règle de surveillance des constantes' })
+  updateVitalRuleConfig(
+    @Param('ruleId') ruleId: string,
+    @Body() updateDto: any,
+  ) {
+    return this.patientsService.updateVitalRule(ruleId, updateDto);
+  }
+
+  /**
+   * 🩺 Patient Timeline Intelligente : Récupérer le parcours chronologique unifié
+   */
+  @Get(':id/timeline')
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Obtenir la timeline chronologique intelligente du parcours patient' })
+  @ApiQuery({ name: 'filter', required: false, description: 'Filtre par type (ALL, CONSULTATIONS, EXAMS, PRESCRIPTIONS, RESULTS, VITALS, OBSERVATIONS)' })
+  @ApiQuery({ name: 'period', required: false, description: 'Filtre de période (ALL, TODAY, 7D, 30D, CUSTOM)' })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  getTimeline(
+    @Param('id') id: string,
+    @Query('filter') filter?: string,
+    @Query('period') period?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.patientsService.getTimeline(id, filter, period, startDate, endDate);
+  }
+
+  /**
+   * ✨ Résumer une période de la timeline avec l'IA
+   */
+  @Post(':id/timeline/summarize')
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
+  @ApiOperation({ summary: 'Générer un résumé IA structuré et factuel des événements d\'une période' })
+  summarizeTimeline(
+    @Param('id') id: string,
+    @Body() body: { eventIds?: string[]; period?: string; startDate?: string; endDate?: string },
+  ) {
+    return this.patientsService.summarizeTimelinePeriod(
+      id,
+      body.eventIds,
+      body.period || 'ALL',
+      body.startDate,
+      body.endDate,
+    );
+  }
+
+  /**
+   * 📊 Smart Patient Monitoring : Données longitudinales & détection de variations
+   */
+  @Get(':id/monitoring')
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
+  @ApiOperation({ summary: 'Obtenir le monitoring intelligent des constantes et les tendances du patient' })
+  @ApiQuery({ name: 'period', required: false, description: 'Période d\'analyse (24h, 7d, 30d)' })
+  getSmartMonitoring(
+    @Param('id') id: string,
+    @Query('period') period?: string,
+  ) {
+    return this.patientsService.getSmartMonitoring(id, period || '24h');
+  }
+
+  /**
    * Obtenir un patient par ID
    */
   @Get(':id')
@@ -139,3 +215,4 @@ export class PatientsController {
     return this.patientsService.remove(id);
   }
 }
+

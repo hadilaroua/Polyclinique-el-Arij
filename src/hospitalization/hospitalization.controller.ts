@@ -49,8 +49,16 @@ export class HospitalizationController {
     return this.hospitalizationService.findAllRooms(service);
   }
 
+  @Get('rooms-with-beds')
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
+  @ApiOperation({ summary: 'Lister les chambres groupées avec leurs lits et statuts d\'occupation' })
+  @ApiQuery({ name: 'service', required: false })
+  findRoomsWithBeds(@Query('service') service?: string) {
+    return this.hospitalizationService.findAllRoomsWithBeds(service);
+  }
+
   @Get('rooms/:id')
-  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE)
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
   @ApiOperation({ summary: 'Obtenir une chambre par ID' })
   findRoom(@Param('id') id: string) {
     return this.hospitalizationService.findRoomById(id);
@@ -80,7 +88,7 @@ export class HospitalizationController {
 
   @Get('beds')
   @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
-  @ApiOperation({ summary: 'Lister les lits avec filtres' })
+  @ApiOperation({ summary: 'Lister les lits avec filtres et informations d\'occupation' })
   @ApiQuery({ name: 'roomId', required: false })
   @ApiQuery({ name: 'status', required: false, enum: BedStatus })
   findBeds(
@@ -91,15 +99,22 @@ export class HospitalizationController {
   }
 
   @Patch('beds/:id')
-  @Roles(Role.ADMIN, Role.NURSE)
+  @Roles(Role.ADMIN, Role.NURSE, Role.DOCTOR, Role.MIDWIFE)
   @ApiOperation({ summary: 'Mettre à jour le statut d\'un lit' })
   updateBed(@Param('id') id: string, @Body() dto: UpdateBedDto) {
     return this.hospitalizationService.updateBed(id, dto);
   }
 
+  @Post('beds/:id/free')
+  @Roles(Role.ADMIN, Role.NURSE, Role.DOCTOR, Role.MIDWIFE)
+  @ApiOperation({ summary: 'Libérer un lit et clôturer le séjour actif' })
+  freeBed(@Param('id') id: string, @Body() body?: { notes?: string }) {
+    return this.hospitalizationService.freeBed(id, body?.notes);
+  }
+
   // --- HOSPITAL STAYS ---
   @Post('stays')
-  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE)
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
   @ApiOperation({ summary: 'Admettre un patient (crée un séjour et occupe le lit automatiquement)' })
   admitPatient(@Body() dto: CreateHospitalStayDto) {
     return this.hospitalizationService.admitPatient(dto);
@@ -127,15 +142,15 @@ export class HospitalizationController {
   }
 
   @Patch('stays/:id/discharge')
-  @Roles(Role.ADMIN, Role.DOCTOR)
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
   @ApiOperation({ summary: 'Sortie du patient (libère automatiquement le lit)' })
   dischargePatient(@Param('id') id: string, @Body() dto: DischargePatientDto) {
     return this.hospitalizationService.dischargePatient(id, dto);
   }
 
   @Get('stats/occupancy')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Statistiques d\'occupation des lits (Admin)' })
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
+  @ApiOperation({ summary: 'Statistiques d\'occupation des lits' })
   getOccupancyStats() {
     return this.hospitalizationService.getOccupancyStats();
   }
