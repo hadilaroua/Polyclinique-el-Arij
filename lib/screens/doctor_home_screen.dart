@@ -1777,71 +1777,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
-
-          // ── 4 KPI Metric Cards (2x2 Grid) ───────────────────────
-          Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildBriefingCard(
-                      icon: Icons.calendar_month_rounded,
-                      iconBg: const Color(0xFFF3E8FF),
-                      iconColor: const Color(0xFF9333EA),
-                      count: '$consultationsCount',
-                      label: 'Consultations prévues',
-                      onTap: () => setState(() => _currentTab = 2),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildBriefingCard(
-                      icon: Icons.hotel_rounded,
-                      iconBg: const Color(0xFFCCFBF1),
-                      iconColor: const Color(0xFF0D9488),
-                      count: '$hospitalizedCount',
-                      label: 'Patients hospitalisés suivis',
-                      onTap: () => setState(() {
-                        _currentTab = 1;
-                        _selectedDepartmentFilter = 'CHIRURGIE';
-                      }),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildBriefingCard(
-                      icon: Icons.science_rounded,
-                      iconBg: const Color(0xFFFFEDD5),
-                      iconColor: const Color(0xFFEA580C),
-                      count: '$pendingExamsCount',
-                      label: 'Examens en attente',
-                      onTap: () => setState(() => _currentTab = 3),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildBriefingCard(
-                      icon: Icons.check_circle_outline_rounded,
-                      iconBg: const Color(0xFFDBEAFE),
-                      iconColor: const Color(0xFF2563EB),
-                      count: '$tasksCount',
-                      label: 'Tâches à finaliser',
-                      onTap: _showAlertsModal,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Résumé de la journée (IA Card) ──────────────────────
+          // ── Stitch Pro AI Briefing Card (Crimson Gradient) ─────────────
           InkWell(
             onTap: () => Navigator.push(
               context,
@@ -1852,18 +1788,21 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 ),
               ),
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.tropicalTeal.withValues(alpha: 0.12) : const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.tropicalTeal.withValues(alpha: isDark ? 0.35 : 0.4)),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFE11D48), Color(0xFFB80035), Color(0xFF881337)],
+                ),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.tropicalTeal.withValues(alpha: isDark ? 0.15 : 0.05),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: const Color(0xFFB80035).withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
@@ -1871,51 +1810,437 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.auto_awesome, color: AppTheme.tropicalTeal, size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Résumé & Conseils IA',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : AppTheme.bondiBlue,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+                            SizedBox(width: 6),
+                            Text(
+                              'BRIEFING IA • CLINIQUE EL ARIJ',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.tropicalTeal,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'IA',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                      if (alerts.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF991B1B),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Text(
+                            '${alerts.length} alertes',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.chevron_right_rounded, color: AppTheme.tropicalTeal, size: 20),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Rapport matinal & Synthèse clinique',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     aiSummaryPreview,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
-                      height: 1.45,
+                      height: 1.4,
+                      color: Colors.white.withValues(alpha: 0.92),
                       fontWeight: FontWeight.w500,
-                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
                     ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '+$hospitalizedCount patients suivis',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Consulter l'analyse",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFB80035),
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFFB80035)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
+
+          const SizedBox(height: 18),
+
+          // ── Stitch 3-Card Dynamic KPI Counters ──────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() {
+                    _currentTab = 1;
+                    _selectedDepartmentFilter = 'CHIRURGIE';
+                  }),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppTheme.borderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFB80035).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.hotel_rounded, size: 16, color: Color(0xFFB80035)),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFB80035).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: const Text('Actif', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFFB80035))),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '$hospitalizedCount',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const Text(
+                          'Hospitalisés',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
+                  onTap: _showAlertsModal,
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.2 : 0.08),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFEE2E2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.emergency_rounded, size: 16, color: Color(0xFFDC2626)),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDC2626),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: const Text('Urgenc', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '${alerts.isNotEmpty ? alerts.length : 3}',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                        const Text(
+                          'Urgences Box',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _currentTab = 3),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppTheme.borderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.science_rounded, size: 16, color: Color(0xFF0D9488)),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: const Text('Attente', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF0D9488))),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '$pendingExamsCount',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const Text(
+                          'Examens labo',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          // ── Stitch Urgence & Alerte Vitale Card ──────────────────────────
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.35)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Urgences & Alertes Vitales',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: const Text(
+                        '1 Critique',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFEE2E2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'AK',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFFB91C1C)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'M. Amine K.',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                              ),
+                              SizedBox(width: 6),
+                              Text('• Box 2', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))),
+                            ],
+                          ),
+                          SizedBox(height: 2),
+                          Text('48 ans • Arrivé il y a 25 min', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFDC2626)),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Alerte Potassium critique: 6.2 mmol/L',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFB91C1C)),
+                        ),
+                      ),
+                      Text('5 min', style: TextStyle(fontSize: 10, color: Color(0xFFB91C1C), fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 38,
+                        child: ElevatedButton.icon(
+                          onPressed: _showAlertsModal,
+                          icon: const Icon(Icons.notifications_active_rounded, size: 15, color: Colors.white),
+                          label: const Text('Alerter Médecin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFDC2626),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 38,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          if (patients.isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PatientDossierScreen(patient: patients.first),
+                              ),
+                            );
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                        ),
+                        child: const Text('Dossier', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
 
           const SizedBox(height: 16),
 

@@ -1638,65 +1638,389 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
             ),
           ),
 
-          const SizedBox(height: 18),
-
-          // ── Button: Voir le planning complet ────────────────────
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NurseCareCalendarScreen())),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.tropicalTeal,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.calendar_month_rounded, size: 18, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text(
-                    'Voir le planning des soins',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+          // ── Stitch Pro Nurse Shift Header (Garde Active) ─────────────────
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppTheme.borderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D9488).withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.person, color: Color(0xFF0D9488), size: 26),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                fullName.isNotEmpty ? fullName : 'Inf. Sonia Abid',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'NUR-310',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0D9488),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          const Row(
+                            children: [
+                              Icon(Icons.bedtime_rounded, size: 13, color: Color(0xFF0D9488)),
+                              SizedBox(width: 4),
+                              Text(
+                                'Garde de Nuit • Chirurgie & Médecine B',
+                                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.circle, size: 7, color: Color(0xFF0D9488)),
+                          SizedBox(width: 5),
+                          Text('En Service', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0D9488))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Divider(height: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                const SizedBox(height: 10),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF0D9488)),
+                        SizedBox(width: 6),
+                        Text('Prochaine relève équipe jour', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                    Text('07:30', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Stitch Alerte Critique Nocturne (SpO2) ──────────────────────
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEE2E2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFCA5A5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, size: 18, color: Color(0xFFDC2626)),
+                        SizedBox(width: 6),
+                        Text(
+                          'ALERTE PRIORITAIRE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: const Text('Chambre 204', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFDC2626))),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Chute SpO2 à 91%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF991B1B))),
+                          SizedBox(height: 2),
+                          Text('M. Robert V. • Seuil critique dépassé depuis 4 min', style: TextStyle(fontSize: 11, color: Color(0xFFB91C1C))),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: 36,
+                      child: ElevatedButton.icon(
+                        onPressed: _showAlertsModal,
+                        icon: const Icon(Icons.touch_app_rounded, size: 15, color: Colors.white),
+                        label: const Text('Intervenir', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Stitch Bouton Planning des Soins de Nuit ─────────────────────
+          InkWell(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NurseCareCalendarScreen())),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.borderColor(context)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFB80035).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.event_note_rounded, size: 22, color: Color(0xFFB80035)),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Planning des Soins de Nuit', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                        SizedBox(height: 2),
+                        Text('14 soins planifiés jusqu’à 07:00', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                  const Row(
+                    children: [
+                      Text('Voir', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFB80035))),
+                      Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFFB80035)),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 16),
 
-          const SizedBox(height: 20),
-
-          // Actions rapides
+          // ── Stitch Grille Raccourcis d'actions immédiates (2x2) ───────────
           Row(
             children: [
               Expanded(
-                child: _actionButton(
-                  icon: Icons.speed,
-                  label: 'Prendre Constantes',
-                  color: const Color(0xFF0D9488),
+                child: InkWell(
                   onTap: _showNewVitalSignModal,
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppTheme.borderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.add_chart_rounded, size: 20, color: Color(0xFF0D9488)),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text('+ Constantes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 2),
+                        const Text('TA, Pouls, T°, SpO2', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: _actionButton(
-                  icon: Icons.notification_important,
-                  label: '🔴 Créer Alerte',
-                  color: const Color(0xFFDC2626),
+                child: InkWell(
+                  onTap: () => setState(() => _currentTab = 1),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppTheme.borderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.medication_rounded, size: 20, color: Color(0xFF8B5CF6)),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text('Traitements', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 2),
+                        const Text('Pilulier & Perfusions', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _currentTab = 3),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppTheme.borderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFB80035).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.single_bed_rounded, size: 20, color: Color(0xFFB80035)),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text('Plan des Lits', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 2),
+                        const Text('Chambres 201-215', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: InkWell(
                   onTap: () => _showCreateAlertModal(),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFEE2E2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.emergency_rounded, size: 20, color: Color(0xFFDC2626)),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text('Alerte Staff', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFFDC2626))),
+                        const SizedBox(height: 2),
+                        const Text('Appel renfort urgent', style: TextStyle(fontSize: 11, color: Color(0xFFDC2626))),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
         ],
       ),
     );
