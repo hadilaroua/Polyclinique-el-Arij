@@ -32,7 +32,7 @@ export class ConsultationsController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE)
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE, Role.TECHNICIAN, Role.PATIENT)
   @ApiOperation({ summary: 'Lister les consultations avec filtres' })
   @ApiQuery({ name: 'patientId', required: false })
   @ApiQuery({ name: 'doctorId', required: false })
@@ -44,14 +44,14 @@ export class ConsultationsController {
   }
 
   @Get('patient/:patientId')
-  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE)
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE, Role.TECHNICIAN, Role.PATIENT)
   @ApiOperation({ summary: 'Obtenir l\'historique des consultations d\'un patient' })
   findByPatient(@Param('patientId') patientId: string) {
     return this.consultationsService.findByPatient(patientId);
   }
 
   @Get('doctor/:doctorId')
-  @Roles(Role.ADMIN, Role.DOCTOR)
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Obtenir les consultations d\'un médecin' })
   @ApiQuery({ name: 'date', required: false, description: 'Filtrer par date (YYYY-MM-DD)' })
   findByDoctor(
@@ -62,7 +62,7 @@ export class ConsultationsController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE)
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE, Role.TECHNICIAN, Role.PATIENT)
   @ApiOperation({ summary: 'Obtenir une consultation par ID' })
   findOne(@Param('id') id: string) {
     return this.consultationsService.findById(id);
@@ -76,8 +76,8 @@ export class ConsultationsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Supprimer une consultation (Admin uniquement)' })
+  @Roles(Role.ADMIN, Role.DOCTOR)
+  @ApiOperation({ summary: 'Supprimer une consultation' })
   remove(@Param('id') id: string) {
     return this.consultationsService.remove(id);
   }

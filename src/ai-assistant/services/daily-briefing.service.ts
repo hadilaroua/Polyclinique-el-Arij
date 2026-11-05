@@ -9,6 +9,7 @@ import { Alert, AlertDocument } from '../../alerts/schemas/alert.schema';
 import { Doctor, DoctorDocument } from '../../doctors/schemas/doctor.schema';
 import { Patient, PatientDocument } from '../../patients/schemas/patient.schema';
 import { VitalSign, VitalSignDocument } from '../../vital-signs/schemas/vital-sign.schema';
+import { Consultation, ConsultationDocument } from '../../consultations/schemas/consultation.schema';
 import { AiProviderService } from './ai-provider.service';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class DailyBriefingService {
 
   constructor(
     @InjectModel(Appointment.name) private appointmentModel: Model<AppointmentDocument>,
+    @InjectModel(Consultation.name) private consultationModel: Model<ConsultationDocument>,
     @InjectModel(HospitalStay.name) private stayModel: Model<HospitalStayDocument>,
     @InjectModel(Exam.name) private examModel: Model<ExamDocument>,
     @InjectModel(Alert.name) private alertModel: Model<AlertDocument>,
@@ -39,10 +41,22 @@ export class DailyBriefingService {
     const userId = user._id || user.id || user.sub;
     const userRole = (user.role || 'STAFF').toUpperCase();
 
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTimeStr = `${currentHour}h${currentMinutes}`;
+
+    let shiftPeriod = 'Garde du matin (07h00 - 14h00)';
+    if (currentHour >= 14 && currentHour < 20) {
+      shiftPeriod = "Service de l'après-midi (14h00 - 20h00)";
+    } else if (currentHour >= 20 || currentHour < 7) {
+      shiftPeriod = 'Garde de nuit & Urgences (20h00 - 07h00)';
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().split('T')[0];
-    const frenchDate = this.formatFrenchDate(new Date());
+    const frenchDate = this.formatFrenchDate(now);
 
     let doctorRecord: any = null;
     if (userRole === Role.DOCTOR) {
@@ -53,13 +67,10 @@ export class DailyBriefingService {
 
     // ── 1. Données Cliniques Réelles selon le Rôle ─────────────────────────────
 
-    // A. Consultations / Rendez-vous
+    // A. Consultations & Rendez-vous réels
     let realAppointments: any[] = [];
     try {
       const apptQuery: any = { date: todayStr };
-      if (userRole === Role.DOCTOR) {
-        apptQuery.doctorId = { $in: docIds };
-      }
       realAppointments = await this.appointmentModel
         .find(apptQuery)
         .populate('patientId', 'firstName lastName cin dossierNumber')
@@ -68,10 +79,22 @@ export class DailyBriefingService {
         .exec();
     } catch (_) {}
 
+    let realConsultations: any[] = [];
+    try {
+      const consQuery: any = {};
+      realConsultations = await this.consultationModel
+        .find(consQuery)
+        .populate('patientId', 'firstName lastName cin dossierNumber')
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean()
+        .exec();
+    } catch (_) {}
+
     let consultationsList: any[] = [];
     if (realAppointments.length > 0) {
       consultationsList = realAppointments.map((a: any, idx: number) => ({
-        time: a.timeSlot || '09:00',
+        time: a.timeSlot || `${0x9 + idx}:00`,
         title: a.reason ? `Consultation - ${a.reason}` : 'Consultation - Médecine Interne',
         room: `Salle ${(idx % 3) + 1}`,
         specialty: a.reason || 'Médecine Interne',
@@ -80,15 +103,28 @@ export class DailyBriefingService {
         cin: a.patientId?.cin || '—',
         dossierNumber: a.patientId?.dossierNumber || '—',
       }));
-    } else {
+    } else if (realConsultations.length > 0) {
+      consultationsList = realConsultations.map((c: any, idx: number) => {
+        const p = c.patientId;
+        const patName = p ? `${p.firstName || ''} ${p.lastName || ''}`.trim() : `Patient #${idx + 1}`;
+        return {
+          time: c.date ? (c.date.includes(':') ? c.date : `${0x9 + (idx % 8)}:30`) : `${0x9 + (idx % 8)}:30`,
+          title: c.motive ? `Consultation - ${c.motive}` : 'Consultation Clinique',
+          room: `Salle ${(idx % 4) + 1}`,
+          specialty: c.diagnostic || 'Médecine Générale',
+          isUrgent: idx === 0,
+          patientName: patName,
+          cin: p?.cin || '—',
+          dossierNumber: p?.dossierNumber || '—',
+        };
+      });
+    }
+
+    if (consultationsList.length === 0) {
       consultationsList = [
-        { time: '09:30', title: 'Consultation - Médecine Interne', room: 'Salle 3', specialty: 'Médecine Interne', isUrgent: true, patientName: 'Ahmed Ben Salah', cin: '08945612', dossierNumber: 'PAT-001' },
-        { time: '11:00', title: 'Consultation - Cardiologie', room: 'Salle 1', specialty: 'Cardiologie', isUrgent: false, patientName: 'Fatma Triki', cin: '04856123', dossierNumber: 'PAT-002' },
-        { time: '14:00', title: 'Consultation - Pneumologie', room: 'Salle 2', specialty: 'Pneumologie', isUrgent: true, patientName: 'Moncef Trabelsi', cin: '09234512', dossierNumber: 'PAT-003' },
-        { time: '15:15', title: 'Consultation - Contrôle diabète', room: 'Salle 3', specialty: 'Médecine Interne', isUrgent: false, patientName: 'Samia Mabrouk', cin: '07123984', dossierNumber: 'PAT-004' },
-        { time: '16:00', title: 'Consultation - Suivi cardiologique', room: 'Salle 1', specialty: 'Cardiologie', isUrgent: false, patientName: 'Kamel Dridi', cin: '05678129', dossierNumber: 'PAT-005' },
-        { time: '16:45', title: 'Consultation - Bilan biologique', room: 'Salle 3', specialty: 'Médecine Interne', isUrgent: false, patientName: 'Rim Ben Salem', cin: '06129845', dossierNumber: 'PAT-006' },
-        { time: '17:30', title: 'Consultation - Avis pneumologique', room: 'Salle 2', specialty: 'Pneumologie', isUrgent: false, patientName: 'Hédi Zouari', cin: '04918273', dossierNumber: 'PAT-007' },
+        { time: '09:30', title: 'Consultation - Suivi Post-Opératoire', room: 'Cabinet 2', specialty: 'Chirurgie', isUrgent: true, patientName: 'Amine Khelifi', cin: '08765432', dossierNumber: 'PAT-2026-0407' },
+        { time: '10:15', title: 'Consultation - Bilan Général & Tension', room: 'Cabinet 2', specialty: 'Médecine Générale', isUrgent: false, patientName: 'Sonia Mansour', cin: '09812345', dossierNumber: 'PAT-2026-0112' },
+        { time: '11:00', title: 'Consultation - Évaluation Neurologique', room: 'Cabinet 1', specialty: 'Neurologie', isUrgent: false, patientName: 'Mourad Ben Ali', cin: '07123894', dossierNumber: 'PAT-2026-0089' },
       ];
     }
 
@@ -96,19 +132,10 @@ export class DailyBriefingService {
     let realStays: any[] = [];
     try {
       let stayQuery: any = { status: StayStatus.ACTIVE };
-      if (userRole === Role.DOCTOR) {
-        const docService = doctorRecord?.service || user.service;
-        const orConds: any[] = [{ attendingDoctorId: { $in: docIds } }];
-        if (docService) orConds.push({ service: docService });
-        stayQuery = { status: StayStatus.ACTIVE, $or: orConds };
-      } else if (userRole === Role.MIDWIFE) {
-        stayQuery = { status: StayStatus.ACTIVE, service: 'Maternité' };
-      }
       realStays = await this.stayModel
         .find(stayQuery)
         .populate('patientId', 'firstName lastName cin dossierNumber')
         .populate('bedId')
-        .populate('roomId')
         .limit(10)
         .lean()
         .exec();
@@ -135,11 +162,12 @@ export class DailyBriefingService {
           reason: s.admissionReason || 'Surveillance clinique',
         };
       });
-    } else {
+    }
+
+    if (hospitalizedList.length === 0) {
       hospitalizedList = [
-        { room: 'Chambre 101 (Lit 101-A)', service: 'Maternité', status: 'Stable', statusColor: 'green', patientName: 'Nadia Trabelsi', cin: '07123984', reason: 'Surveillance post-partum' },
-        { room: 'Chambre 201 (Lit 201-A)', service: 'Chirurgie', status: 'À surveiller', statusColor: 'orange', patientName: 'Kamel Dridi', cin: '05678129', reason: 'J+1 Post-cholécystectomie' },
-        { room: 'Chambre 301 (Lit 301-A)', service: 'Soins Intensifs & Réa', status: 'En cours', statusColor: 'blue', patientName: 'Salem Ghrissi', cin: '04918273', reason: 'Détresse respiratoire stabilisée' },
+        { room: 'Chambre 201 (Lit 1)', service: 'Médecine Interne', status: 'À surveiller', statusColor: 'orange', patientName: 'Mourad Ben Ali', cin: '07123894', reason: 'Pneumopathie & Surveillance SpO2' },
+        { room: 'Chambre 204 (Lit 2)', service: 'Chirurgie', status: 'Stable', statusColor: 'green', patientName: 'Fatma Trabelsi', cin: '05432198', reason: 'Post-Opératoire J+2' },
       ];
     }
 
@@ -174,11 +202,12 @@ export class DailyBriefingService {
           isUrgent: e.priority === 'URGENT' || e.priority === 'HIGH',
         };
       });
-    } else {
+    }
+
+    if (pendingExamsList.length === 0) {
       pendingExamsList = [
-        { title: 'Scanner thoracique', patientName: 'Salem Ghrissi', department: 'Radiologie', status: 'En attente', priority: 'URGENT', isUrgent: true },
-        { title: 'Bilan Hémostase & Bio', patientName: 'Kamel Dridi', department: 'Laboratoire', status: 'En attente', priority: 'HIGH', isUrgent: true },
-        { title: 'Échographie pelvienne', patientName: 'Nadia Trabelsi', department: 'Radiologie', status: 'En attente', priority: 'MEDIUM', isUrgent: false },
+        { title: 'Bilan sanguin complet & CRP', patientName: 'Amine Khelifi', department: 'Laboratoire', status: 'En attente', priority: 'URGENT', isUrgent: true },
+        { title: 'Scanner Thoracique sans injection', patientName: 'Mourad Ben Ali', department: 'Radiologie', status: 'En attente', priority: 'HIGH', isUrgent: true },
       ];
     }
 
@@ -202,12 +231,12 @@ export class DailyBriefingService {
         isCompleted: false,
         isPriority: a.severity === 'HIGH' || a.severity === 'CRITICAL' || idx === 0,
       }));
-    } else {
+    }
+
+    if (tasksList.length === 0) {
       tasksList = [
-        { id: 't1', title: 'Revue bilan post-opératoire', location: 'Chambre 201', time: '10:30', isCompleted: false, isPriority: true },
-        { id: 't2', title: 'Prise de constantes & glycémie', location: 'Chambre 101', time: '11:00', isCompleted: false, isPriority: false },
-        { id: 't3', title: 'Validation des résultats de Scanner', location: 'Radiologie', time: '14:30', isCompleted: false, isPriority: true },
-        { id: 't4', title: 'Transmission infirmière de relève', location: 'Salle de soins', time: '17:00', isCompleted: false, isPriority: false },
+        { id: 't1', title: 'Valider le scanner de contrôle', location: 'Chambre 201', time: '10:30', isCompleted: false, isPriority: true },
+        { id: 't2', title: 'Contrôle tensionnel H+4', location: 'Chambre 204', time: '11:15', isCompleted: false, isPriority: false },
       ];
     }
 
@@ -266,20 +295,34 @@ export class DailyBriefingService {
     const systemPrompt = `Tu es Arij Clinical AI, l'assistant médical intelligent en chef de la Polyclinique Arij Djerba.
 Tu génères un briefing clinique ultra-pertinent, structuré et opérationnel pour le professionnel de santé connecté.
 
-RÔLE DU DESTINATAIRE : ${userRole} (${userDisplayName})
+HEURE EXACTE DE LA DEMANDE : ${currentTimeStr} (${shiftPeriod})
 DATE : ${frenchDate}
+DESTINATAIRE : ${userDisplayName}
+RÔLE CLÉ : ${userRole} (${roleTitles[userRole] || userRole})
 
-DONNÉES CLINIQUES DU JOUR :
-- Consultations prévues : ${consultationsCount} (dont ${urgentConsultationsCount} urgentes)
+CONTEXTE OPÉRATIONNEL SELON LE RÔLE :
+${userRole === Role.DOCTOR ? '- Focus Médecin : Consultations médicales du créneau actuel, diagnostic des cas complexes, validation des examens critiques et réévaluation des patients hospitalisés.' : ''}
+${userRole === Role.NURSE ? '- Focus Infirmier : Administration des traitements à heure fixe, surveillance des constantes (TA, SpO2, glycémie), pansements et suivi post-opératoire immédiat.' : ''}
+${userRole === Role.MIDWIFE ? '- Focus Sage-Femme : Surveillance du travail en salle de naissance, monitorings RCF, soins post-partum mère/nouveau-né et urgences obstétricales.' : ''}
+${userRole === Role.TECHNICIAN ? `- Focus Technicien : File d'attente des bilans urgents à ${currentTimeStr}, analyses biochimiques, examens radiologiques et validation technique.` : ''}
+
+DONNÉES CLINIQUES ACTUELLES :
+- Consultations / Rendez-vous : ${consultationsCount} (dont ${urgentConsultationsCount} urgentes)
 - Patients hospitalisés sous surveillance : ${hospitalizedCount} (dont ${toMonitorHospitalizedCount} à surveiller prioritairement)
 - Examens en attente : ${pendingExamsCount}
-- Tâches et alertes à traiter : ${tasksCount} (dont ${urgentTasksCount} urgentes)
-${hospitalizedList.length > 0 ? `- Patients clés : ${hospitalizedList.map(h => `${h.patientName} (${h.room} - ${h.status} - ${h.reason})`).join(', ')}` : ''}
+- Tâches et alertes actives : ${tasksCount} (dont ${urgentTasksCount} urgentes)
+${hospitalizedList.length > 0 ? `- Patients hospitalisés : ${hospitalizedList.map(h => `${h.patientName} (${h.room} - Statut: ${h.status} - Motif: ${h.reason})`).join(', ')}` : ''}
+${consultationsList.length > 0 ? `- Actes/Consultations prévus : ${consultationsList.slice(0, 5).map(c => `${c.patientName} (${c.time} - ${c.title})`).join(', ')}` : ''}
+
+CONSIGNE CHRONOLOGIQUE ET DE RÉDACTION :
+1. Dans le champ "summary", ancre DIRECTEMENT ton texte à l'heure actuelle (${currentTimeStr}) et à la période (${shiftPeriod}). Fais référence aux patients réels et donne une orientation claire et bienveillante pour les heures à venir.
+2. Dans "taskOrder", les horaires des tâches doivent débuter à partir de l'heure actuelle (${currentTimeStr}) ou s'échelonner de manière réaliste dans le service.
+3. Rends les recommandations cliniques très concrètes et adaptées au rôle ${userRole}.
 
 INSTRUCTIONS STRICTES :
 Réponds UNIQUEMENT sous forme d'un objet JSON strict avec la structure suivante :
 {
-  "summary": "Texte fluide de 3 à 4 phrases résumant chaleureusement la charge du jour, les priorités absolues et les vigilances cliniques pour ce rôle spécifique.",
+  "summary": "Texte fluide de 3 à 4 phrases débutant par une référence à ${currentTimeStr} et résumant chaleureusement la charge de soins, les priorités absolues et les vigilances cliniques pour ce rôle.",
   "recommendations": [
     {
       "title": "Titre du conseil clinique",
@@ -291,7 +334,7 @@ Réponds UNIQUEMENT sous forme d'un objet JSON strict avec la structure suivante
   "taskOrder": [
     {
       "order": 1,
-      "time": "08:30",
+      "time": "${currentTimeStr}",
       "title": "Action / Tâche recommandée",
       "target": "Patient ou Lieu concerné",
       "reason": "Justification clinique de cette priorité",
@@ -299,27 +342,45 @@ Réponds UNIQUEMENT sous forme d'un objet JSON strict avec la structure suivante
     }
   ]
 }
-Assure-toi que les 3 recommandations et les 4 tâches ordonnées sont parfaitement adaptées au rôle ${userRole}. Ne renvoie rien d'autre que du JSON valide.`;
+Ne renvoie rien d'autre que du JSON valide.`;
 
     let aiSummary = '';
     let aiRecommendations: any[] = [];
     let aiTaskOrder: any[] = [];
+    let isRealAi = false;
 
     try {
-      const rawAiResponse = await this.aiProvider.generateResponse(
+      const aiResponse = await this.aiProvider.generateResponseWithProvider(
         systemPrompt,
-        `Role: ${userRole}\nData: consultations=${consultationsCount}, hospitalized=${hospitalizedCount}, exams=${pendingExamsCount}, tasks=${tasksCount}`,
+        `Heure: ${currentTimeStr}\nRole: ${userRole}\nData: consultations=${consultationsCount}, hospitalized=${hospitalizedCount}, exams=${pendingExamsCount}, tasks=${tasksCount}`,
         'Génère le briefing intelligent JSON.',
       );
+      const rawAiResponse = aiResponse.text;
 
       if (rawAiResponse && rawAiResponse.trim().length > 0) {
         // Extraction du JSON depuis d'éventuels backticks markdown ```json ... ```
         const jsonMatch = rawAiResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.summary) aiSummary = parsed.summary;
-          if (Array.isArray(parsed.recommendations)) aiRecommendations = parsed.recommendations;
-          if (Array.isArray(parsed.taskOrder)) aiTaskOrder = parsed.taskOrder;
+          try {
+            // Nettoyage des trailing commas avant accolades ou crochets fermants
+            const cleanedJson = jsonMatch[0]
+              .replace(/,\s*([}\]])/g, '$1')
+              .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]+/g, '');
+            const parsed = JSON.parse(cleanedJson);
+            if (typeof parsed.summary === 'string' && parsed.summary.trim().length >= 20) {
+              aiSummary = parsed.summary.trim();
+              isRealAi = aiResponse.provider === 'gemini';
+            }
+            if (Array.isArray(parsed.recommendations)) aiRecommendations = parsed.recommendations;
+            if (Array.isArray(parsed.taskOrder)) aiTaskOrder = parsed.taskOrder;
+          } catch (parseErr) {
+            // Extraction résiliente par Regex au cas où une virgule pose problème
+            const summaryMatch = jsonMatch[0].match(/"summary"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/);
+            if (summaryMatch && summaryMatch[1]) {
+              aiSummary = summaryMatch[1].replace(/\\"/g, '"');
+              isRealAi = aiResponse.provider === 'gemini' && aiSummary.trim().length >= 20;
+            }
+          }
         }
       }
     } catch (e) {
@@ -494,8 +555,12 @@ Assure-toi que les 3 recommandations et les 4 tâches ordonnées sont parfaiteme
     return {
       date: frenchDate,
       rawDate: todayStr,
+      currentTime: currentTimeStr,
+      shiftPeriod,
+      userRole,
+      userDisplayName,
       greeting: `Bonjour, ${userDisplayName} 👋`,
-      subGreeting: 'Voici votre briefing clinique du jour',
+      subGreeting: `Briefing clinique en direct • ${currentTimeStr}`,
       serviceName: user.service || 'Polyclinique El Arij',
       weather: {
         temp: '26°C',
@@ -512,6 +577,8 @@ Assure-toi que les 3 recommandations et les 4 tâches ordonnées sont parfaiteme
       hospitalizedList,
       pendingExamsList,
       tasksList,
+      aiProvider: isRealAi ? 'gemini' : 'local',
+      isRealAi,
     };
   }
 }

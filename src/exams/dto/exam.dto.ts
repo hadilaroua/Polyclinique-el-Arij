@@ -10,18 +10,18 @@ import { ExamPriority, ExamStatus } from '../schemas/exam.schema';
 
 export class CreateExamDto {
   @ApiProperty({ example: '60c72b2f9b1d8b2bad8e9a12', description: 'ID du patient' })
-  @IsMongoId()
+  @IsString()
   @IsNotEmpty()
   patientId: string;
 
   @ApiPropertyOptional({ example: '60c72b2f9b1d8b2bad8e9a13', description: 'ID du médecin prescripteur (optionnel)' })
   @IsOptional()
-  @IsMongoId()
+  @IsString()
   requestingDoctorId?: string;
 
   @ApiPropertyOptional({ example: '60c72b2f9b1d8b2bad8e9a14', description: 'ID du technicien ciblé (optionnel)' })
   @IsOptional()
-  @IsMongoId()
+  @IsString()
   assignedTechnicianId?: string;
 
   @ApiProperty({ example: 'Scanner thoracique sans injection', description: 'Type d\'examen demandé' })
@@ -46,7 +46,7 @@ export class CreateExamDto {
 
 export class AssignExamDto {
   @ApiProperty({ example: '60c72b2f9b1d8b2bad8e9a14', description: 'ID du technicien assigné' })
-  @IsMongoId()
+  @IsString()
   @IsNotEmpty()
   technicianId: string;
 }
@@ -71,7 +71,7 @@ export class CompleteExamDto {
 export class UpdateExamDto {
   @ApiPropertyOptional({ example: '60c72b2f9b1d8b2bad8e9a14' })
   @IsOptional()
-  @IsMongoId()
+  @IsString()
   assignedTechnicianId?: string;
 
   @ApiPropertyOptional({ enum: ExamStatus })

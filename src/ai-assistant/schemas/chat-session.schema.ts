@@ -9,7 +9,7 @@ export enum ChatMessageRole {
 
 @Schema({ timestamps: true })
 export class ChatMessage {
-  @Prop({ required: true, enum: ChatMessageRole })
+  @Prop({ type: String, required: true, enum: ChatMessageRole })
   role: ChatMessageRole;
 
   @Prop({ required: true })

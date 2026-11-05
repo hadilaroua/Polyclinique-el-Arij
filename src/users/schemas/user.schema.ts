@@ -24,7 +24,7 @@ export class User {
   @Prop({ trim: true, default: null })
   cin?: string;
 
-  @Prop({ required: true, enum: Role, default: Role.PATIENT })
+  @Prop({ type: String, required: true, enum: Role, default: Role.PATIENT })
   role: Role;
 
   @Prop({ default: null })

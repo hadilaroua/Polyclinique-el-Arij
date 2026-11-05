@@ -2,9 +2,15 @@ import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/ge
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+export interface AiGenerationResult {
+  text: string;
+  provider: 'gemini' | 'local';
+}
+
 @Injectable()
 export class AiProviderService {
   private readonly logger = new Logger(AiProviderService.name);
+  private readonly modelName = 'gemini-3.6-flash';
   private genAI?: GoogleGenerativeAI;
   private isConfigured = false;
 
@@ -32,64 +38,55 @@ export class AiProviderService {
     userMessage: string,
     history: any[] = [],
   ): Promise<string> {
+    const result = await this.generateResponseWithProvider(systemPrompt, context, userMessage, history);
+    return result.text;
+  }
+
+  async generateResponseWithProvider(
+    systemPrompt: string,
+    context: string,
+    userMessage: string,
+    history: any[] = [],
+  ): Promise<AiGenerationResult> {
+    // Keep the timeout bounded so an unavailable provider does not stall the briefing.
     if (this.isConfigured && this.genAI) {
+      let timeoutHandle: NodeJS.Timeout | undefined;
       try {
         const model = this.genAI.getGenerativeModel({
-          model: 'gemini-2.5-flash',
-          safetySettings: [
-            {
-              category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-              threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-              category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-              threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-              category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-              threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-              category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-              threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-          ],
-          systemInstruction: systemPrompt,
+          model: this.modelName,
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 1000,
+          },
         });
 
-        const geminiHistory = history.map((msg) => ({
-          role: msg.role === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.content }],
-        }));
+        const promptText = `${systemPrompt}\n\n[CONTEXTE CLINIQUEDONNÉES RÉELLES MONGO DB]\n${context}\n\n[DEMANDE]\n${userMessage}`;
 
-        const contextualMessage = context
-          ? `[CONTEXTE MÉDICAL RESTREINT - À UTILISER POUR TA RÉPONSE]\n${context}\n\n[QUESTION DE L'UTILISATEUR]\n${userMessage}`
-          : userMessage;
+        const callPromise = model.generateContent(promptText).then((res) => res.response.text());
+        const timeoutPromise = new Promise<string>((_, reject) =>
+          timeoutHandle = setTimeout(() => reject(new Error('Timeout Gemini API (5s)')), 5000),
+        );
 
-        const chat = model.startChat({
-          history: geminiHistory,
-        });
-
-        const result = await chat.sendMessage(contextualMessage);
-        const response = await result.response;
-        const text = response.text();
-        if (text && text.trim().length > 0) {
-          return text;
+        const reply = await Promise.race([callPromise, timeoutPromise]);
+        if (reply && reply.trim().length > 0) {
+          return { text: reply.trim(), provider: 'gemini' };
         }
-      } catch (error) {
-        this.logger.error('Erreur API Gemini (Bascule automatique en mode Smart Fallback):', error);
+      } catch (err: any) {
+        this.logger.warn(`Appel Gemini API non disponible ou clé invalide (${err?.message || err}). Utilisation du moteur de synthèse clinique local.`);
+      } finally {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
       }
     }
 
-    // --- Mode IA Clinique Intelligente (Fallback local structuré) ---
-    return this.generateSmartFallbackResponse(systemPrompt, context, userMessage);
+    return {
+      text: this.generateSmartFallbackResponse(systemPrompt, context, userMessage),
+      provider: 'local',
+    };
   }
 
   private generateSmartFallbackResponse(systemPrompt: string, context: string, userMessage: string): string {
     const lowerMsg = userMessage.toLowerCase();
-
-    // Extraire les lignes informatives du contexte
-    const lines = (context || '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const lines = (context || '').split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
 
     // 1. Brouillon de consultation
     if (lowerMsg.includes('brouillon') || lowerMsg.includes('compte-rendu') || lowerMsg.includes('notes brutes')) {
@@ -107,31 +104,94 @@ ${cleanNotes.length > 0 ? cleanNotes : 'Consultation clinique et évaluation des
 * 🔬 Surveillance continue des constantes.`;
     }
 
-    // Si nous avons des données réelles dans le contexte, présentons-les de manière lisible
-    const alertLines = lines.filter(l => l.startsWith('🚨') || l.includes('⚠️') || l.toLowerCase().includes('alerte'));
-    const examLines = lines.filter(l => l.includes('Examen') || l.includes('Statut:') || l.includes('Bilan'));
-    const stayLines = lines.filter(l => l.includes('Admission:') || l.includes('Service:') || l.includes('HOSPITALIS'));
-    const patientLines = lines.filter(l => l.includes('Patient:') || l.includes('Dossier:'));
+    // 2. Synthèse patient complète (Dossier, Résumé, Récapitulatif PDF)
+    if (
+      lowerMsg.includes('résumé') ||
+      lowerMsg.includes('resume') ||
+      lowerMsg.includes('synthèse') ||
+      lowerMsg.includes('synthese') ||
+      lowerMsg.includes('recapitulatif') ||
+      lowerMsg.includes('dossier')
+    ) {
+      const patientName = lines.find((l) => l.startsWith('Nom et Prénom'))?.split(':')[1]?.trim() || 'Patient';
+      const dossierNum = lines.find((l) => l.startsWith('N° Dossier'))?.split(':')[1]?.trim() || 'N/A';
+      const ageSex = lines.find((l) => l.startsWith('Date de Naissance')) || '';
+      const allergies = lines.find((l) => l.startsWith('Allergies'))?.split(':')[1]?.trim() || 'Aucune';
+      const chronic = lines.find((l) => l.startsWith('Antécédents'))?.split(':')[1]?.trim() || 'Aucun';
+      const stay = lines.find((l) => l.startsWith('Service :'))?.split(':')[1]?.trim();
+      const stayReason = lines.find((l) => l.startsWith("Motif d'admission"))?.split(':')[1]?.trim();
 
-    // 2. Alertes
+      const vitalsLines = lines.filter((l) => l.startsWith('•') && (l.includes('T°:') || l.includes('Tension')));
+      const examLines = lines.filter((l) => /^\d+\.\s*\[.*\]\s*Examen:/.test(l));
+      const consultLines = lines.filter((l) => /^\d+\.\s*\[.*\]\s*Motif:/.test(l));
+      const alertLines = lines.filter((l) => l.startsWith('⚠️') || l.startsWith('🚨'));
+
+      let summary = `### 📋 Synthèse Clinique & Antécédents
+* **Patient** : ${patientName} (Dossier #${dossierNum})
+* **Terrain & Facteurs de Risque** : ${chronic !== 'Aucune' && chronic !== 'Aucun' ? chronic : 'Pas d’antécédent lourd renseigné'}.
+* **Allergies Signalées** : ${allergies !== 'Aucune' ? `⚠️ **${allergies}**` : 'Aucune allergie connue'}.
+`;
+
+      if (stay) {
+        summary += `\n### 🏥 Séjour Hospitalier Actif
+* **Département** : ${stay}
+* **Motif d'Admission** : ${stayReason || 'Prise en charge spécialisée'}
+`;
+      }
+
+      if (vitalsLines.length > 0) {
+        summary += `\n### 🩺 Relevés des Constantes Récentes
+${vitalsLines.slice(0, 3).join('\n')}
+`;
+      }
+
+      if (consultLines.length > 0) {
+        summary += `\n### 📝 Dernières Observations Médicales
+${consultLines.slice(0, 2).join('\n')}
+`;
+      }
+
+      if (examLines.length > 0) {
+        summary += `\n### 🔬 Bilans & Clichés
+${examLines.slice(0, 3).join('\n')}
+`;
+      }
+
+      if (alertLines.length > 0) {
+        summary += `\n### 🚨 Vigilance & Alertes
+${alertLines.join('\n')}
+`;
+      } else {
+        summary += `\n### 💡 Conduite à Tenir
+* Poursuivre la surveillance rapprochée des paramètres vitaux.
+* Respecter strictement les précautions relatives aux allergies mentionnées.`;
+      }
+
+      return summary;
+    }
+
+    // 3. Alertes
+    const alertLines = lines.filter((l) => l.startsWith('🚨') || l.includes('⚠️') || l.toLowerCase().includes('alerte'));
     if (lowerMsg.includes('alerte') || lowerMsg.includes('urgence') || lowerMsg.includes('priorité')) {
       return `### ⚡ Alertes & Priorités Clés
 ${alertLines.length > 0 ? alertLines.join('\n') : '* Aucune alerte critique enregistrée pour vos patients.'}`;
     }
 
-    // 3. Examens
+    // 4. Examens
+    const examLines = lines.filter((l) => l.includes('Examen') || l.includes('Statut:') || l.includes('Bilan'));
     if (lowerMsg.includes('examen') || lowerMsg.includes('bilan') || lowerMsg.includes('analyse') || lowerMsg.includes('radio')) {
       return `### 🔬 Examens & Bilans Médicaux
 ${examLines.length > 0 ? examLines.join('\n') : '* Aucun examen en attente ou récent trouvé.'}`;
     }
 
-    // 4. Hospitalisations
+    // 5. Hospitalisations
+    const stayLines = lines.filter((l) => l.includes('Admission:') || l.includes('Service:') || l.includes('HOSPITALIS'));
     if (lowerMsg.includes('hospitalis') || lowerMsg.includes('chambre') || lowerMsg.includes('lit')) {
       return `### 🏥 Hospitalisations & Séjours
 ${stayLines.length > 0 ? stayLines.join('\n') : '* Aucune hospitalisation active en ce moment.'}`;
     }
 
-    // 5. Synthèse générale
+    // 6. Synthèse par défaut
     return `### 🩺 Synthèse Clinique
 ${lines.slice(0, 15).join('\n')}`;
   }

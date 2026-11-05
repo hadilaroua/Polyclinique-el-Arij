@@ -18,7 +18,7 @@ export class Bed {
   @Prop({ type: Types.ObjectId, ref: Room.name, required: true })
   roomId: Types.ObjectId;
 
-  @Prop({ required: true, enum: BedStatus, default: BedStatus.AVAILABLE })
+  @Prop({ type: String, required: true, enum: BedStatus, default: BedStatus.AVAILABLE })
   status: BedStatus;
 
   @Prop({ default: '', trim: true })

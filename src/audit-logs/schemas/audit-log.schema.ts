@@ -20,7 +20,7 @@ export class AuditLog {
   @Prop({ required: true, trim: true })
   actorName: string; // Ex: 'Dr. Rachid Aroua'
 
-  @Prop({ required: true, enum: Role })
+  @Prop({ type: String, required: true, enum: Role })
   actorRole: Role;
 
   @Prop({ type: Types.ObjectId, ref: Patient.name, default: null })

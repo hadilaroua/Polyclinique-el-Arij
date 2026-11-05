@@ -136,8 +136,15 @@ export class UsersService {
     return query.exec();
   }
 
-  async findByCin(cin: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ cin: cin.trim() }).exec();
+  async findByCin(
+    cin: string,
+    includePassword = false,
+  ): Promise<UserDocument | null> {
+    const query = this.userModel.findOne({ cin: cin.trim() });
+    if (includePassword) {
+      query.select('+password');
+    }
+    return query.exec();
   }
 
   async assignCinToUser(email: string, cin: string): Promise<void> {

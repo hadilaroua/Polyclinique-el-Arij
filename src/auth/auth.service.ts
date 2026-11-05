@@ -36,7 +36,11 @@ export class AuthService {
    * Retourne JWT + infos utilisateur + rôle + profil métier.
    */
   async login(loginDto: LoginDto) {
-    const user = await this.usersService.findByEmail(loginDto.email, true);
+    const identifier = (loginDto.email || '').trim();
+    let user = await this.usersService.findByEmail(identifier, true);
+    if (!user) {
+      user = await this.usersService.findByCin(identifier, true);
+    }
 
     if (!user || !user.password) {
       throw new UnauthorizedException('Identifiants de connexion incorrects');
