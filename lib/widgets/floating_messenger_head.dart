@@ -27,6 +27,7 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
   final api = ApiService();
   double xPos = 20.0;
   double yPos = 120.0;
+  bool _isPositionInitialized = false;
   bool isDragging = false;
   bool isCallModalOpen = false;
   Timer? _callCheckTimer;
@@ -162,6 +163,11 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
+    if (!_isPositionInitialized) {
+      xPos = screenSize.width - 70;
+      yPos = screenSize.height - 250; // Well above bottom nav and FAB to prevent overlap
+      _isPositionInitialized = true;
+    }
 
     return Stack(
       children: [
@@ -201,10 +207,10 @@ class _FloatingMessengerHeadState extends State<FloatingMessengerHead> {
                         height: 58,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFF6E56EB),
+                          color: const Color(0xFFFF7A00),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF6E56EB).withValues(alpha: 0.35),
+                              color: const Color(0xFFFF7A00).withValues(alpha: 0.38),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),

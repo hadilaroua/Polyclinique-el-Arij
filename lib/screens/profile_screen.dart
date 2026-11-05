@@ -1,9 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../utils/app_logger.dart';
 import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/photo_picker_dialog.dart';
-import '../widgets/theme_toggle_button.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback? onProfileUpdated;
@@ -22,6 +23,16 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final api = ApiService();
   bool isUpdating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AppLogger.logInterface(
+      'Profil Professionnel',
+      fileName: 'profile_screen.dart',
+      details: 'Consultation profil soignant',
+    );
+  }
 
   void _changePhoto() {
     PhotoPickerDialog.show(
@@ -73,7 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Annuler'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.evergreen),
             onPressed: () async {
               Navigator.pop(ctx);
               setState(() => isUpdating = true);
@@ -122,18 +133,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Mon Profil Professionnel'),
-        actions: [
-          const ThemeToggleButton(),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Actualiser',
-            onPressed: () async {
-              setState(() => isUpdating = true);
-              await api.fetchProfile();
-              setState(() => isUpdating = false);
-            },
+        backgroundColor: AppTheme.evergreen,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.evergreen, AppTheme.darkTeal],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
+        ),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Mon Profil Professionnel',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Déconnexion',
+            icon: const Icon(CupertinoIcons.power, color: Color(0xFFFF453A), size: 22),
+            onPressed: widget.onLogout,
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: isUpdating
@@ -147,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      color: isDark ? AppTheme.darkSurface : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: isDark ? AppTheme.darkBorder : AppTheme.border),
                       boxShadow: [
@@ -177,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                           ),
                           style: TextButton.styleFrom(
-                            foregroundColor: isDark ? AppTheme.darkPrimary : AppTheme.primary,
+                            foregroundColor: isDark ? AppTheme.darkPrimary : AppTheme.evergreen,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -240,7 +265,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'Téléphone de contact',
                         value: phone,
                         action: IconButton(
-                          icon: Icon(Icons.edit, size: 16, color: isDark ? AppTheme.darkPrimary : AppTheme.primary),
+                          icon: Icon(Icons.edit, size: 16, color: isDark ? AppTheme.darkPrimary : AppTheme.evergreen),
                           onPressed: _editPhone,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -252,36 +277,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Section Préférences & Ambiance Thématique
-                  _sectionCard(
-                    context,
-                    title: 'Ambiance visuelle & Thème',
-                    icon: Icons.palette_outlined,
-                    children: [
-                      const ThemeSettingsRow(),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // Bouton Déconnexion
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 44,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.danger,
-                        side: const BorderSide(color: Color(0xFFFECACA)),
-                        backgroundColor: isDark ? const Color(0xFF451A1A) : const Color(0xFFFEF2F2),
+                        foregroundColor: AppTheme.alertRed,
+                        side: BorderSide(color: isDark ? AppTheme.darkBorder : AppTheme.dustGrey),
+                        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.background,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       onPressed: widget.onLogout,
-                      icon: const Icon(Icons.logout, size: 18),
+                      icon: const Icon(CupertinoIcons.power, size: 18),
                       label: const Text(
                         'Se déconnecter',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                        style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -311,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: AppTheme.primaryColor(context)),
+              Icon(icon, size: 18, color: AppTheme.evergreen),
               const SizedBox(width: 8),
               Text(
                 title,

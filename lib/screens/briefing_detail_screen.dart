@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import '../utils/app_logger.dart';
 import '../utils/theme.dart';
+
+const Color briefingPrimary = AppTheme.evergreen;
 
 class BriefingDetailScreen extends StatefulWidget {
   final Map<String, dynamic> briefingData;
@@ -32,6 +35,11 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
   @override
   void initState() {
     super.initState();
+    AppLogger.logInterface(
+      'Détail du Briefing Clinique',
+      fileName: 'briefing_detail_screen.dart',
+      details: 'Consultation du détail par catégorie',
+    );
     _selectedTab = widget.initialTabIndex;
     _data = Map<String, dynamic>.from(widget.briefingData);
     _tasks = List<dynamic>.from(_data['tasksList'] ?? []);
@@ -60,35 +68,40 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
     final exams = (_data['pendingExamsList'] as List?) ?? [];
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.background,
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        backgroundColor: AppTheme.evergreen,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.evergreen, AppTheme.darkTeal],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppTheme.textColor(context), size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'Détail du briefing',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textColor(context),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.ios_share_rounded,
-                color: AppTheme.textColor(context), size: 22),
+            icon: const Icon(Icons.ios_share_rounded,
+                color: Colors.white, size: 22),
             onPressed: _shareBriefing,
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: AppTheme.borderColor(context)),
-        ),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -151,21 +164,21 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.calendar_today_rounded, size: 15, color: Color(0xFF64748B)),
+          const Icon(Icons.calendar_today_rounded, size: 15, color: Color(0xFF6B7E72)),
           const SizedBox(width: 8),
           Text(
             dateStr,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+              color: isDark ? AppTheme.dustGrey : AppTheme.darkElevated,
             ),
           ),
         ],
@@ -178,23 +191,23 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0FDF4),
+        color: isDark ? AppTheme.darkSurface : AppTheme.background,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFBBF7D0)),
+        border: Border.all(color: isDark ? AppTheme.darkElevated : AppTheme.dustGrey),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome_rounded, color: Color(0xFF16A34A), size: 18),
+              const Icon(Icons.auto_awesome_rounded, color: AppTheme.evergreen, size: 18),
               const SizedBox(width: 8),
               Text(
                 'Résumé Intelligent IA',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF166534),
+                  color: isDark ? AppTheme.dustGrey : AppTheme.evergreen,
                 ),
               ),
             ],
@@ -218,7 +231,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+        color: isDark ? AppTheme.darkSurface : AppTheme.background,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -231,13 +244,13 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: _selectedTab == 0
-                      ? AppTheme.tropicalTeal
+                      ? AppTheme.evergreen
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: _selectedTab == 0
                       ? [
                           BoxShadow(
-                            color: AppTheme.tropicalTeal.withValues(alpha: 0.3),
+                            color: AppTheme.evergreen.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -250,7 +263,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: _selectedTab == 0 ? Colors.white : const Color(0xFF64748B),
+                    color: _selectedTab == 0 ? Colors.white : const Color(0xFF6B7E72),
                   ),
                 ),
               ),
@@ -264,13 +277,13 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: _selectedTab == 1
-                      ? AppTheme.tropicalTeal
+                      ? AppTheme.evergreen
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: _selectedTab == 1
                       ? [
                           BoxShadow(
-                            color: AppTheme.tropicalTeal.withValues(alpha: 0.3),
+                            color: AppTheme.evergreen.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -283,7 +296,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: _selectedTab == 1 ? Colors.white : const Color(0xFF64748B),
+                    color: _selectedTab == 1 ? Colors.white : const Color(0xFF6B7E72),
                   ),
                 ),
               ),
@@ -315,7 +328,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
               label: Text(cat['label']!),
               selected: isSelected,
               onSelected: (_) => setState(() => _categoryFilter = cat['id']!),
-              selectedColor: AppTheme.tropicalTeal,
+              selectedColor: AppTheme.evergreen,
               labelStyle: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -343,7 +356,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
@@ -389,7 +402,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.tropicalTeal,
+                        color: AppTheme.evergreen,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -409,7 +422,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                 child: Text(
                   _expandConsultations ? 'Réduire' : 'Voir tout',
                   style: const TextStyle(
-                    color: AppTheme.tropicalTeal,
+                    color: AppTheme.evergreen,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -437,11 +450,11 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.tropicalTeal,
+                        color: AppTheme.evergreen,
                       ),
                     ),
                     const Spacer(),
-                    const Icon(Icons.chevron_right_rounded, color: AppTheme.tropicalTeal, size: 18),
+                    const Icon(Icons.chevron_right_rounded, color: AppTheme.evergreen, size: 18),
                   ],
                 ),
               ),
@@ -467,11 +480,11 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
+              color: AppTheme.darkBackground,
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF94A3B8)),
+          const Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.drySage),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -492,7 +505,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF64748B),
+                    color: Color(0xFF6B7E72),
                   ),
                 ),
               ],
@@ -510,7 +523,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
@@ -531,10 +544,10 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFCCFBF1),
+                  color: const Color(0xFFEDF2EA),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.hotel_rounded, color: Color(0xFF0D9488), size: 20),
+                child: const Icon(Icons.hotel_rounded, color: AppTheme.evergreen, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -556,7 +569,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0D9488),
+                        color: AppTheme.evergreen,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -574,7 +587,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
               const Text(
                 'Voir tout',
                 style: TextStyle(
-                  color: AppTheme.tropicalTeal,
+                  color: AppTheme.evergreen,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
@@ -600,11 +613,11 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
     Color bgColor;
     Color textColor;
     if (status == 'Stable' || statusColor == 'green') {
-      bgColor = const Color(0xFFDCFCE7);
-      textColor = const Color(0xFF16A34A);
+      bgColor = const Color(0xFFEDF2EA);
+      textColor = AppTheme.evergreen;
     } else if (status == 'En cours' || statusColor == 'blue') {
-      bgColor = const Color(0xFFDBEAFE);
-      textColor = const Color(0xFF2563EB);
+      bgColor = const Color(0xFFEDF2EA);
+      textColor = AppTheme.evergreen;
     } else {
       bgColor = const Color(0xFFFFEDD5);
       textColor = const Color(0xFFEA580C);
@@ -614,7 +627,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
       padding: const EdgeInsets.symmetric(vertical: 9),
       child: Row(
         children: [
-          const Icon(Icons.hotel_outlined, size: 18, color: Color(0xFF0D9488)),
+          const Icon(Icons.hotel_outlined, size: 18, color: AppTheme.evergreen),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -653,7 +666,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
@@ -717,7 +730,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
               const Text(
                 'Voir tout',
                 style: TextStyle(
-                  color: AppTheme.tropicalTeal,
+                  color: AppTheme.evergreen,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
@@ -760,13 +773,13 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
+                    const Icon(Icons.location_on_outlined, size: 12, color: AppTheme.drySage),
                     const SizedBox(width: 3),
                     Text(
                       dept,
                       style: const TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF64748B),
+                        color: Color(0xFF6B7E72),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -802,7 +815,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
@@ -823,10 +836,10 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFDBEAFE),
+                  color: const Color(0xFFEDF2EA),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF2563EB), size: 20),
+                child: const Icon(Icons.check_circle_outline_rounded, color: AppTheme.evergreen, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -848,7 +861,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.tropicalTeal,
+                        color: AppTheme.evergreen,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -866,7 +879,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
               const Text(
                 'Voir tout',
                 style: TextStyle(
-                  color: AppTheme.tropicalTeal,
+                  color: AppTheme.evergreen,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
@@ -908,10 +921,10 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: isDone ? AppTheme.tropicalTeal : Colors.transparent,
+                color: isDone ? AppTheme.evergreen : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isDone ? AppTheme.tropicalTeal : const Color(0xFF94A3B8),
+                  color: isDone ? AppTheme.evergreen : AppTheme.drySage,
                   width: 1.8,
                 ),
               ),
@@ -932,7 +945,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                     fontWeight: FontWeight.w600,
                     decoration: isDone ? TextDecoration.lineThrough : null,
                     color: isDone
-                        ? const Color(0xFF94A3B8)
+                        ? AppTheme.drySage
                         : AppTheme.textColor(context),
                   ),
                 ),
@@ -940,7 +953,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
                   location,
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF64748B),
+                    color: Color(0xFF6B7E72),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -952,7 +965,7 @@ class _BriefingDetailScreenState extends State<BriefingDetailScreen> {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF64748B),
+              color: Color(0xFF6B7E72),
             ),
           ),
         ],

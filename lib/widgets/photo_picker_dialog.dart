@@ -98,7 +98,7 @@ class _PhotoPickerDialogState extends State<PhotoPickerDialog> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: AppTheme.dustGrey,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -163,7 +163,7 @@ class _PhotoPickerDialogState extends State<PhotoPickerDialog> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: isSelected ? AppTheme.primary : Colors.transparent,
+                              color: isSelected ? AppTheme.evergreen : Colors.transparent,
                               width: 2.5,
                             ),
                           ),
@@ -178,7 +178,7 @@ class _PhotoPickerDialogState extends State<PhotoPickerDialog> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? AppTheme.primary : AppTheme.textMuted,
+                            color: isSelected ? AppTheme.evergreen : AppTheme.textMuted,
                           ),
                         ),
                       ],
@@ -208,7 +208,7 @@ class _PhotoPickerDialogState extends State<PhotoPickerDialog> {
                 hintText: 'https://...',
                 prefixIcon: const Icon(Icons.link, size: 18),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.check_circle, color: AppTheme.primary),
+                  icon: const Icon(Icons.check_circle, color: AppTheme.evergreen),
                   onPressed: () {
                     if (customUrlController.text.trim().isNotEmpty) {
                       setState(() {
@@ -234,7 +234,7 @@ class _PhotoPickerDialogState extends State<PhotoPickerDialog> {
               height: 48,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: AppTheme.evergreen,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

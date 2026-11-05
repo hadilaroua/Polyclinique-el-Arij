@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../utils/app_logger.dart';
+import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
 
 class CallOverlayScreen extends StatefulWidget {
@@ -32,6 +34,13 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
   @override
   void initState() {
     super.initState();
+    final name = widget.contact['name'] ??
+        '${widget.contact['firstName'] ?? ''} ${widget.contact['lastName'] ?? ''}'.trim();
+    AppLogger.logInterface(
+      'Appel Audio/Vidéo HD Staff',
+      fileName: 'call_overlay_screen.dart',
+      details: 'Appel ${widget.callType} avec $name',
+    );
     isVideoEnabled = widget.callType == 'VIDEO';
 
     if (!widget.isCaller) {
@@ -80,7 +89,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
     final avatarUrl = widget.contact['avatarUrl'];
 
     return Scaffold(
-      backgroundColor: isVideoEnabled ? const Color(0xFF0F172A) : const Color(0xFF1E293B),
+      backgroundColor: isVideoEnabled ? AppTheme.darkBackground : AppTheme.darkSurface,
       body: SafeArea(
         child: Stack(
           children: [
@@ -130,8 +139,8 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                   const SizedBox(height: 4),
                   Text(
                     role,
-                    style: TextStyle(
-                      color: Colors.cyanAccent.shade100,
+                    style: const TextStyle(
+                      color: AppTheme.drySage,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -149,7 +158,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                         Icon(
                           isConnected ? Icons.fiber_manual_record : Icons.phone_forwarded,
                           size: 12,
-                          color: isConnected ? Colors.greenAccent : Colors.orangeAccent,
+                          color: isConnected ? Colors.greenAccent : AppTheme.pastelOrange,
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -202,7 +211,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                       _callActionButton(
                         icon: isMuted ? Icons.mic_off : Icons.mic,
                         label: isMuted ? 'Mute ON' : 'Micro',
-                        color: isMuted ? Colors.amber : Colors.white24,
+                        color: isMuted ? AppTheme.pastelOrange : Colors.white24,
                         iconColor: isMuted ? Colors.black : Colors.white,
                         onTap: () => setState(() => isMuted = !isMuted),
                       ),
@@ -229,10 +238,10 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Bouton Raccrocher (Rouge)
+                  // Bouton Raccrocher (Alert Red #C62828)
                   FloatingActionButton.large(
                     heroTag: 'end_call_fab',
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppTheme.alertRed,
                     onPressed: widget.onEndCall,
                     child: const Icon(Icons.call_end, color: Colors.white, size: 36),
                   ),

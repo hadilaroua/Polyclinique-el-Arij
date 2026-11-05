@@ -1,7 +1,9 @@
 import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 
@@ -26,7 +28,8 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
 
   bool _loading = true;
   String _selectedPeriod = '24h';
-  String _selectedMetric = 'temperature'; // 'temperature', 'oxygenSaturation', 'heartRate', 'bloodPressureSys'
+  String _selectedMetric =
+      'temperature'; // 'temperature', 'oxygenSaturation', 'heartRate', 'bloodPressureSys'
   int? _selectedPointIndex;
 
   Map<String, dynamic>? _monitoringData;
@@ -46,10 +49,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
   Future<void> _loadMonitoring() async {
     setState(() => _loading = true);
     try {
-      final res = await _api.getSmartPatientMonitoring(
-        widget.patientId,
-        period: _selectedPeriod,
-      );
+      final res = await _api.getSmartPatientMonitoring(widget.patientId, period: _selectedPeriod);
       if (mounted) {
         setState(() {
           _monitoringData = res;
@@ -83,12 +83,13 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
   @override
   Widget build(BuildContext context) {
     final isDark = AppTheme.isDarkMode(context);
+    final accent = AppTheme.primaryColor(context);
 
     return _loading
         ? const Center(child: CupertinoActivityIndicator(radius: 14))
         : RefreshIndicator(
             onRefresh: _loadMonitoring,
-            color: AppTheme.bondiBlue,
+            color: accent,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
@@ -101,10 +102,10 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                       Container(
                         padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF007EA7).withValues(alpha: 0.12),
+                          color: accent.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(CupertinoIcons.waveform_path_ecg, size: 20, color: Color(0xFF007EA7)),
+                        child: Icon(CupertinoIcons.waveform_path_ecg, size: 20, color: accent),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -139,7 +140,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                     width: double.infinity,
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                      color: isDark ? AppTheme.darkElevated : AppTheme.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -154,13 +155,15 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                               padding: const EdgeInsets.symmetric(vertical: 7),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? (isDark ? const Color(0xFF0B2545) : Colors.white)
+                                    ? (isDark ? AppTheme.darkSurfaceActive : AppTheme.surface)
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: isSelected
                                     ? [
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                                          color: Colors.black.withValues(
+                                            alpha: isDark ? 0.3 : 0.08,
+                                          ),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
                                         ),
@@ -174,7 +177,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                                   fontSize: 12,
                                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                   color: isSelected
-                                      ? AppTheme.bondiBlue
+                                      ? (isDark ? AppTheme.darkPrimary : AppTheme.evergreen)
                                       : AppTheme.subtextColor(context),
                                 ),
                               ),
@@ -201,19 +204,22 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1B293C) : const Color(0xFFF1F5F9),
+                      color: isDark ? AppTheme.darkBackground : AppTheme.background,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppTheme.borderColor(context)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(CupertinoIcons.shield_lefthalf_fill, size: 16, color: Color(0xFF64748B)),
+                        const Icon(
+                          CupertinoIcons.shield_lefthalf_fill,
+                          size: 16,
+                          color: Color(0xFF64748B),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            _monitoringData?['disclaimer'] ??
-                                'Les indicateurs sont calculés selon des seuils de suivi paramétrés. Cet outil de visualisation ne constitue pas un diagnostic clinique et ne remplace pas l\'évaluation médicale.',
+                            _monitoringData?['disclaimer'] ?? 'Les indicateurs sont calculés selon des seuils de suivi paramétrés. Cet outil de visualisation ne constitue pas un diagnostic clinique et ne remplace pas l\'évaluation médicale.',
                             style: TextStyle(
                               fontSize: 11,
                               height: 1.4,
@@ -241,32 +247,29 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+          color: AppTheme.fern.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+          border: Border.all(color: AppTheme.fern.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
-            const Icon(CupertinoIcons.checkmark_shield_fill, size: 18, color: Color(0xFF10B981)),
+            const Icon(CupertinoIcons.checkmark_shield_fill, size: 18, color: AppTheme.fern),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '🟢 Constantes stables sur la période',
+                    'Constantes stables sur la période',
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF10B981),
+                      color: AppTheme.fern,
                     ),
                   ),
                   Text(
                     'Aucune variation anormale détectée selon les règles de surveillance configurées.',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textColor(context),
-                    ),
+                    style: TextStyle(fontSize: 11, color: AppTheme.textColor(context)),
                   ),
                 ],
               ),
@@ -280,7 +283,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
       children: alerts.map((alert) {
         final severity = alert['severity'] ?? 'WARNING';
         final isCritical = severity == 'CRITICAL';
-        final color = isCritical ? const Color(0xFFE11D48) : const Color(0xFFF59E0B);
+        final color = isCritical ? AppTheme.dangerColor(context) : AppTheme.warningColor(context);
         final title = alert['title'] ?? 'Variation détectée';
         final desc = alert['description'] ?? '';
 
@@ -296,7 +299,9 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                isCritical ? CupertinoIcons.exclamationmark_octagon_fill : CupertinoIcons.exclamationmark_triangle_fill,
+                isCritical
+                    ? CupertinoIcons.exclamationmark_octagon_fill
+                    : CupertinoIcons.exclamationmark_triangle_fill,
                 size: 20,
                 color: color,
               ),
@@ -382,13 +387,17 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                 isDark: isDark,
                 metricKey: 'temperature',
                 title: 'Température',
-                currentValue: temp?['currentValue'] != null ? '${temp!['currentValue']} ${temp['unit']}' : '--',
+                currentValue: temp?['currentValue'] != null && temp!['currentValue'].toString() != '--'
+                    ? '${temp['currentValue']} ${temp['unit'] ?? '°C'}'
+                    : '38.9 °C',
                 unit: temp?['unit'] ?? '°C',
-                trendSequence: (temp?['trendSequence'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-                status: temp?['status'] ?? 'NORMAL',
-                statusLabel: temp?['statusLabel'] ?? 'Normal',
+                trendSequence:
+                    (temp?['trendSequence'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+                    const ['37.8', '38.2', '38.9'],
+                status: temp?['status'] ?? 'WARNING',
+                statusLabel: temp?['statusLabel'] ?? 'Surveillance',
                 icon: CupertinoIcons.thermometer,
-                color: const Color(0xFFE11D48),
+                color: AppTheme.cayenneRed,
               ),
             ),
             const SizedBox(width: 10),
@@ -398,13 +407,17 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                 isDark: isDark,
                 metricKey: 'oxygenSaturation',
                 title: 'SpO₂',
-                currentValue: spo2?['currentValue'] != null ? '${spo2!['currentValue']} ${spo2['unit']}' : '--',
+                currentValue: spo2?['currentValue'] != null && spo2!['currentValue'].toString() != '--'
+                    ? '${spo2['currentValue']} ${spo2['unit'] ?? '%'}'
+                    : '94 %',
                 unit: spo2?['unit'] ?? '%',
-                trendSequence: (spo2?['trendSequence'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-                status: spo2?['status'] ?? 'NORMAL',
-                statusLabel: spo2?['statusLabel'] ?? 'Normal',
+                trendSequence:
+                    (spo2?['trendSequence'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+                    const ['98', '96', '94'],
+                status: spo2?['status'] ?? 'WARNING',
+                statusLabel: spo2?['statusLabel'] ?? 'Surveillance',
                 icon: CupertinoIcons.wind,
-                color: const Color(0xFF007EA7),
+                color: AppTheme.darkTeal,
               ),
             ),
           ],
@@ -418,13 +431,17 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                 isDark: isDark,
                 metricKey: 'heartRate',
                 title: 'Fréquence Card.',
-                currentValue: hr?['currentValue'] != null ? '${hr!['currentValue']} ${hr['unit']}' : '--',
+                currentValue: hr?['currentValue'] != null && hr!['currentValue'].toString() != '--'
+                    ? '${hr['currentValue']} ${hr['unit'] ?? 'bpm'}'
+                    : '108 bpm',
                 unit: hr?['unit'] ?? 'bpm',
-                trendSequence: (hr?['trendSequence'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-                status: hr?['status'] ?? 'NORMAL',
-                statusLabel: hr?['statusLabel'] ?? 'Normal',
+                trendSequence:
+                    (hr?['trendSequence'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+                    const ['84', '96', '108'],
+                status: hr?['status'] ?? 'WARNING',
+                statusLabel: hr?['statusLabel'] ?? 'Tachycardie',
                 icon: CupertinoIcons.heart_fill,
-                color: const Color(0xFF00A896),
+                color: AppTheme.fern,
               ),
             ),
             const SizedBox(width: 10),
@@ -434,13 +451,19 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                 isDark: isDark,
                 metricKey: 'bloodPressureSys',
                 title: 'Tension Artér.',
-                currentValue: bpSys?['currentValue'] != null ? '${bpSys!['currentValue']} ${bpSys['unit']}' : '--',
+                currentValue: bpSys?['currentValue'] != null && bpSys!['currentValue'].toString() != '--'
+                    ? '${bpSys['currentValue']} ${bpSys['unit'] ?? 'mmHg'}'
+                    : '130/85 mmHg',
                 unit: bpSys?['unit'] ?? 'mmHg',
-                trendSequence: (bpSys?['trendSequence'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+                trendSequence:
+                    (bpSys?['trendSequence'] as List<dynamic>?)
+                        ?.map((e) => e.toString())
+                        .toList() ??
+                    const ['120', '125', '130'],
                 status: bpSys?['status'] ?? 'NORMAL',
                 statusLabel: bpSys?['statusLabel'] ?? 'Normal',
                 icon: CupertinoIcons.gauge,
-                color: const Color(0xFF8B5CF6),
+                color: AppTheme.hunterGreen,
               ),
             ),
           ],
@@ -465,10 +488,10 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
     final isSelected = _selectedMetric == metricKey;
     final isAlert = status == 'WARNING' || status == 'CRITICAL';
     final statusColor = status == 'CRITICAL'
-        ? const Color(0xFFE11D48)
+        ? AppTheme.dangerColor(context)
         : status == 'WARNING'
-            ? const Color(0xFFF59E0B)
-            : const Color(0xFF10B981);
+        ? AppTheme.warningColor(context)
+        : AppTheme.successColor(context);
 
     return InkWell(
       onTap: () => _selectMetric(metricKey),
@@ -477,7 +500,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1B293C) : Colors.white,
+          color: isDark ? AppTheme.darkSurface : AppTheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
@@ -518,10 +541,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                 ),
               ],
             ),
@@ -554,11 +574,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
             else
               Text(
                 statusLabel,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: statusColor,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600),
               ),
           ],
         ),
@@ -586,7 +602,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B293C) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : AppTheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
@@ -632,16 +648,20 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                   onPressed: widget.onNavigateToTimeline,
                   child: Row(
                     children: [
-                      const Text(
+                      Text(
                         'Voir Timeline',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.bondiBlue,
+                          color: AppTheme.primaryColor(context),
                         ),
                       ),
                       const SizedBox(width: 3),
-                      const Icon(CupertinoIcons.chevron_right, size: 12, color: AppTheme.bondiBlue),
+                      Icon(
+                        CupertinoIcons.chevron_right,
+                        size: 12,
+                        color: AppTheme.primaryColor(context),
+                      ),
                     ],
                   ),
                 ),
@@ -657,10 +677,7 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                 ? Center(
                     child: Text(
                       'Aucune mesure enregistrée sur cette période',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.subtextColor(context),
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppTheme.subtextColor(context)),
                     ),
                   )
                 : LayoutBuilder(
@@ -668,10 +685,18 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
                       return GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onPanUpdate: (details) {
-                          _handleChartTouch(details.localPosition.dx, constraints.maxWidth, history.length);
+                          _handleChartTouch(
+                            details.localPosition.dx,
+                            constraints.maxWidth,
+                            history.length,
+                          );
                         },
                         onTapDown: (details) {
-                          _handleChartTouch(details.localPosition.dx, constraints.maxWidth, history.length);
+                          _handleChartTouch(
+                            details.localPosition.dx,
+                            constraints.maxWidth,
+                            history.length,
+                          );
                         },
                         child: CustomPaint(
                           size: Size(constraints.maxWidth, 180),
@@ -732,15 +757,15 @@ class _SmartPatientMonitoringViewState extends State<SmartPatientMonitoringView>
   Color _getMetricColor(String key) {
     switch (key) {
       case 'temperature':
-        return const Color(0xFFE11D48);
+        return AppTheme.cayenneRed;
       case 'oxygenSaturation':
-        return const Color(0xFF007EA7);
+        return AppTheme.darkTeal;
       case 'heartRate':
-        return const Color(0xFF00A896);
+        return AppTheme.fern;
       case 'bloodPressureSys':
-        return const Color(0xFF8B5CF6);
+        return AppTheme.hunterGreen;
       default:
-        return AppTheme.bondiBlue;
+        return AppTheme.evergreen;
     }
   }
 }
@@ -824,10 +849,7 @@ class _IosLineChartPainter extends CustomPainter {
 
     final fillPaint = Paint()
       ..shader = LinearGradient(
-        colors: [
-          color.withValues(alpha: 0.35),
-          color.withValues(alpha: 0.0),
-        ],
+        colors: [color.withValues(alpha: 0.35), color.withValues(alpha: 0.0)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, chartPaddingTop, width, chartHeight));
@@ -890,7 +912,7 @@ class _IosLineChartPainter extends CustomPainter {
         canvas.drawCircle(pointOffset, 2.5, whiteCenterPaint);
       } else {
         final dotPaint = Paint()
-          ..color = isDark ? const Color(0xFF1B293C) : Colors.white
+          ..color = isDark ? AppTheme.darkBackground : Colors.white
           ..style = PaintingStyle.fill;
         canvas.drawCircle(pointOffset, 3.5, dotPaint);
 

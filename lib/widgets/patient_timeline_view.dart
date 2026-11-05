@@ -32,6 +32,7 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
   // Filtres par type
   final List<Map<String, dynamic>> _filterOptions = [
     {'id': 'ALL', 'label': 'Tout', 'icon': CupertinoIcons.square_grid_2x2},
+    {'id': 'EVENTS', 'label': 'Interventions', 'icon': CupertinoIcons.calendar},
     {'id': 'CONSULTATIONS', 'label': 'Consultations', 'icon': CupertinoIcons.person_crop_circle_badge_checkmark},
     {'id': 'EXAMS', 'label': 'Examens', 'icon': CupertinoIcons.lab_flask},
     {'id': 'PRESCRIPTIONS', 'label': 'Prescriptions', 'icon': CupertinoIcons.bandage},
@@ -62,10 +63,37 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
         filter: _selectedFilter,
         period: _selectedPeriod,
       );
+
+      final clinicalList = await _api.getClinicalEvents(patientId: widget.patientId);
+      final mappedClinicalEvents = clinicalList.map((ce) {
+        return {
+          'id': ce['_id'] ?? ce['id'] ?? 'ce_${DateTime.now().millisecondsSinceEpoch}',
+          'type': 'CLINICAL_EVENT',
+          'category': 'EVENTS',
+          'title': '${ce['procedureTitle'] ?? ce['procedureType'] ?? 'Intervention'} — ${ce['roomName'] ?? 'Bloc'}',
+          'date': ce['date'] ?? DateTime.now().toIso8601String(),
+          'time': '${ce['startTime'] ?? '09:00'} - ${ce['endTime'] ?? '10:30'}',
+          'author': ce['doctorName'] ?? 'Médecin Traitant',
+          'doctor': ce['doctorName'] ?? 'Médecin Traitant',
+          'location': ce['roomName'] ?? 'Bloc opératoire',
+          'status': ce['status'] ?? 'SCHEDULED',
+          'notes': ce['notes'] ?? '',
+          'raw': ce,
+        };
+      }).toList();
+
       if (mounted) {
         setState(() {
-          _events = (res['events'] as List<dynamic>?) ?? [];
-          _totalEvents = res['total'] ?? _events.length;
+          final timelineEvents = (res['events'] as List<dynamic>?) ?? [];
+          final combined = [...mappedClinicalEvents, ...timelineEvents];
+          if (_selectedFilter == 'EVENTS') {
+            _events = mappedClinicalEvents;
+          } else if (_selectedFilter != 'ALL') {
+            _events = timelineEvents;
+          } else {
+            _events = combined;
+          }
+          _totalEvents = _events.length;
           _loading = false;
         });
       }
@@ -126,14 +154,15 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final isDark = AppTheme.isDarkMode(context);
 
     return Column(
       children: [
-        // ── Barre Supérieure Intelligente : Périodes & Bouton IA ─────────────
+        // ── Barre Supérieure Unifiée & Allégée ──────────────────────────────────
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
           decoration: BoxDecoration(
             color: AppTheme.surfaceColor(context),
             border: Border(
@@ -143,37 +172,32 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Ligne 1 : Titre + Nombre + Bouton Synthèse IA
               Row(
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.evergreen.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(CupertinoIcons.waveform_path_badge_plus, size: 17, color: AppTheme.evergreen),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: AppTheme.bondiBlue.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(CupertinoIcons.waveform_path_badge_plus, size: 16, color: AppTheme.bondiBlue),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Parcours Chronologique',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textColor(context),
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                          ],
+                        const Text(
+                          'Parcours Chronologique',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
-                          '$_totalEvents événement${_totalEvents > 1 ? 's' : ''} au dossier',
+                          '$_totalEvents événement${_totalEvents > 1 ? 's' : ''} ordonnés',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
@@ -183,141 +207,114 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
                       ],
                     ),
                   ),
-
-                  // Bouton IA Résumer cette période
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: _events.isEmpty ? null : _openAiSummaryModal,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF007EA7), Color(0xFF00A896)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF007EA7).withValues(alpha: 0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(CupertinoIcons.sparkles, color: Colors.white, size: 14),
-                          SizedBox(width: 6),
-                          Text(
-                            'Résumer cette période',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 10),
 
-              // Segment Période iOS
+              // Ligne 2 : Filtres combinés (Périodes + Catégories) en une seule rangée fluide
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 child: Row(
-                  children: _periodOptions.map((period) {
-                    final isSelected = _selectedPeriod == period['id'];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: InkWell(
-                        onTap: () => _onPeriodChanged(period['id']!),
-                        borderRadius: BorderRadius.circular(16),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? (isDark ? AppTheme.primaryNavy : const Color(0xFFE0F2FE))
-                                : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
+                  children: [
+                    // Segment Périodes
+                    ..._periodOptions.map((period) {
+                      final isSelected = _selectedPeriod == period['id'];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: InkWell(
+                          onTap: () => _onPeriodChanged(period['id']!),
+                          borderRadius: BorderRadius.circular(16),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppTheme.bondiBlue
-                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                              width: isSelected ? 1.4 : 0.8,
+                                  ? AppTheme.darkTeal
+                                  : (isDark ? AppTheme.darkSurface : AppTheme.background),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppTheme.darkTeal
+                                    : (isDark ? AppTheme.darkElevated : AppTheme.dustGrey),
+                                width: isSelected ? 1.2 : 0.8,
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            period['label']!,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              color: isSelected ? AppTheme.bondiBlue : AppTheme.subtextColor(context),
+                            child: Text(
+                              period['label']!,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                color: isSelected ? Colors.white : AppTheme.subtextColor(context),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }),
+
+                    // Séparateur vertical discret
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      height: 18,
+                      width: 1.2,
+                      color: AppTheme.borderColor(context),
+                    ),
+
+                    // Catégories d'événements
+                    ..._filterOptions.map((f) {
+                      final isSelected = _selectedFilter == f['id'];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: InkWell(
+                          onTap: () => _onFilterChanged(f['id'] as String),
+                          borderRadius: BorderRadius.circular(16),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppTheme.evergreen
+                                  : (isDark ? AppTheme.darkSurface : AppTheme.background),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppTheme.evergreen
+                                    : (isDark ? AppTheme.darkElevated : AppTheme.dustGrey),
+                                width: isSelected ? 1.2 : 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  f['icon'] as IconData,
+                                  size: 12,
+                                  color: isSelected ? AppTheme.evergreen : AppTheme.subtextColor(context),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  f['label'] as String,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    color: isSelected ? Colors.white : AppTheme.textColor(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
                 ),
               ),
             ],
           ),
         ),
 
-        // ── Filtres de Type d'événement ──────────────────────────────────
-        Container(
-          color: AppTheme.surfaceColor(context),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: _filterOptions.map((f) {
-                final isSelected = _selectedFilter == f['id'];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    showCheckmark: false,
-                    avatar: Icon(
-                      f['icon'] as IconData,
-                      size: 13,
-                      color: isSelected ? Colors.white : AppTheme.subtextColor(context),
-                    ),
-                    label: Text(
-                      f['label'] as String,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppTheme.textColor(context),
-                      ),
-                    ),
-                    selected: isSelected,
-                    onSelected: (_) => _onFilterChanged(f['id'] as String),
-                    backgroundColor: isDark ? const Color(0xFF1B293C) : const Color(0xFFF8FAFC),
-                    selectedColor: AppTheme.bondiBlue,
-                    side: BorderSide(
-                      color: isSelected
-                          ? AppTheme.bondiBlue
-                          : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                      width: 0.8,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-
-        // ── Timeline List ────────────────────────────────────────────────
+        // ── Timeline List Ordonnée & Épurée ──────────────────────────────
         Expanded(
           child: _loading
               ? const Center(child: CupertinoActivityIndicator(radius: 14))
@@ -325,19 +322,27 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
                   ? _buildEmptyState()
                   : RefreshIndicator(
                       onRefresh: _loadTimeline,
-                      color: AppTheme.bondiBlue,
+                      color: AppTheme.evergreen,
                       child: ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
                         itemCount: _events.length,
                         itemBuilder: (context, index) {
                           final event = _events[index] as Map<String, dynamic>;
                           final isFirst = index == 0;
                           final isLast = index == _events.length - 1;
+                          final currentDate = event['dateFormatted']?.toString() ?? '';
+                          final prevDate = index > 0
+                              ? (_events[index - 1] as Map<String, dynamic>)['dateFormatted']?.toString() ?? ''
+                              : '';
+                          final showDateHeader = index == 0 || (currentDate.isNotEmpty && currentDate != prevDate);
+
                           return _TimelineItemTile(
                             event: event,
                             isFirst: isFirst,
                             isLast: isLast,
+                            showDateHeader: showDateHeader,
+                            dateHeaderLabel: currentDate,
                             onTap: () => _openEventDetail(event),
                             onVitalTap: widget.onNavigateToMonitoring,
                           );
@@ -359,10 +364,10 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: AppTheme.bondiBlue.withValues(alpha: 0.08),
+                color: AppTheme.evergreen.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(CupertinoIcons.clock_fill, size: 36, color: AppTheme.bondiBlue),
+              child: const Icon(CupertinoIcons.clock_fill, size: 36, color: AppTheme.evergreen),
             ),
             const SizedBox(height: 16),
             Text(
@@ -385,7 +390,7 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
             const SizedBox(height: 16),
             CupertinoButton(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: AppTheme.bondiBlue,
+              color: AppTheme.evergreen,
               borderRadius: BorderRadius.circular(16),
               onPressed: () {
                 setState(() {
@@ -404,13 +409,15 @@ class _PatientTimelineViewState extends State<PatientTimelineView> {
 }
 
 // =============================================================================
-// ── ITEM TILE DE LA TIMELINE VERTICALE ───────────────────────────────────────
+// ── ITEM TILE DE LA TIMELINE VERTICALE ÉPURÉE ─────────────────────────────────
 // =============================================================================
 
 class _TimelineItemTile extends StatelessWidget {
   final Map<String, dynamic> event;
   final bool isFirst;
   final bool isLast;
+  final bool showDateHeader;
+  final String? dateHeaderLabel;
   final VoidCallback onTap;
   final VoidCallback? onVitalTap;
 
@@ -418,6 +425,8 @@ class _TimelineItemTile extends StatelessWidget {
     required this.event,
     required this.isFirst,
     required this.isLast,
+    this.showDateHeader = false,
+    this.dateHeaderLabel,
     required this.onTap,
     this.onVitalTap,
   });
@@ -428,7 +437,6 @@ class _TimelineItemTile extends StatelessWidget {
     final type = event['type']?.toString() ?? 'OTHER';
     final meta = _getEventMeta(type);
 
-    final dateStr = event['dateFormatted'] ?? '';
     final timeStr = event['timeFormatted'] ?? '';
     final title = event['title'] ?? 'Événement';
     final summary = event['summary'] ?? '';
@@ -436,39 +444,24 @@ class _TimelineItemTile extends StatelessWidget {
     final service = event['service'] ?? '';
     final isVital = type == 'VITALS';
 
-    return IntrinsicHeight(
+    final tileWidget = IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Colonne Date / Heure
+          // 1. Colonne Heure épurée
           SizedBox(
-            width: 76,
+            width: 48,
             child: Padding(
-              padding: const EdgeInsets.only(top: 2, right: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    dateStr.toUpperCase(),
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textColor(context),
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    timeStr,
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: meta.color,
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.only(top: 6, right: 6),
+              child: Text(
+                timeStr,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? AppTheme.dustGrey : AppTheme.darkElevated,
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
           ),
@@ -479,7 +472,6 @@ class _TimelineItemTile extends StatelessWidget {
             child: Stack(
               alignment: Alignment.topCenter,
               children: [
-                // Ligne verticale
                 Positioned.fill(
                   child: Align(
                     alignment: Alignment.topCenter,
@@ -489,15 +481,14 @@ class _TimelineItemTile extends StatelessWidget {
                         top: isFirst ? 14 : 0,
                         bottom: isLast ? 24 : 0,
                       ),
-                      color: isDark ? const Color(0xFF2D3E53) : const Color(0xFFE2E8F0),
+                      color: isDark ? AppTheme.darkElevated : AppTheme.borderColor(context),
                     ),
                   ),
                 ),
-                // Bulle icône iOS
                 Container(
                   margin: const EdgeInsets.only(top: 2),
-                  width: 28,
-                  height: 28,
+                  width: 26,
+                  height: 26,
                   decoration: BoxDecoration(
                     color: meta.color.withValues(alpha: 0.14),
                     shape: BoxShape.circle,
@@ -505,39 +496,39 @@ class _TimelineItemTile extends StatelessWidget {
                     boxShadow: [
                       BoxShadow(
                         color: meta.color.withValues(alpha: 0.2),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
-                  child: Icon(meta.icon, size: 14, color: meta.color),
+                  child: Icon(meta.icon, size: 13, color: meta.color),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
 
-          // 3. Carte de l'événement
+          // 3. Carte Événement Stitch Pro
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.only(bottom: 12),
               child: InkWell(
                 onTap: onTap,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  padding: const EdgeInsets.all(13),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   decoration: BoxDecoration(
                     color: AppTheme.surfaceColor(context),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: meta.color.withValues(alpha: 0.25),
+                      color: meta.color.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -548,23 +539,18 @@ class _TimelineItemTile extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
                               color: meta.color.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  meta.label,
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: meta.color,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              meta.label,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: meta.color,
+                              ),
                             ),
                           ),
                           const Spacer(),
@@ -581,37 +567,38 @@ class _TimelineItemTile extends StatelessWidget {
                           Icon(CupertinoIcons.chevron_right, size: 12, color: AppTheme.subtextColor(context)),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 5),
 
                       // Titre
                       Text(
                         title,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textColor(context),
                           letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: 4),
 
-                      // Résumé court
-                      Text(
-                        summary,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.35,
-                          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-                          fontWeight: FontWeight.w400,
+                      if (summary.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          summary,
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.3,
+                            color: isDark ? AppTheme.dustGrey : AppTheme.darkElevated,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      ),
+                      ],
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
 
                       // Bas de carte : Auteur + Action rapide si Constante
                       Row(
                         children: [
-                          Icon(CupertinoIcons.person_crop_circle, size: 13, color: AppTheme.subtextColor(context)),
+                          Icon(CupertinoIcons.person_crop_circle, size: 12, color: AppTheme.subtextColor(context)),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -620,7 +607,7 @@ class _TimelineItemTile extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w500,
                                 color: AppTheme.subtextColor(context),
                               ),
                             ),
@@ -628,24 +615,24 @@ class _TimelineItemTile extends StatelessWidget {
                           if (isVital && onVitalTap != null)
                             InkWell(
                               onTap: onVitalTap,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE11D48).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: AppTheme.evergreen.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(CupertinoIcons.waveform_path_ecg, size: 11, color: Color(0xFFE11D48)),
+                                    Icon(CupertinoIcons.waveform_path_ecg, size: 11, color: AppTheme.evergreen),
                                     SizedBox(width: 3),
                                     Text(
-                                      'Voir Surveillance',
+                                      'Surveillance →',
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFFE11D48),
+                                        color: AppTheme.evergreen,
                                       ),
                                     ),
                                   ],
@@ -663,6 +650,43 @@ class _TimelineItemTile extends StatelessWidget {
         ],
       ),
     );
+
+    if (showDateHeader) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 48, top: 12, bottom: 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkSurface : AppTheme.softLinen,
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: AppTheme.borderColor(context)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(CupertinoIcons.calendar, size: 12, color: AppTheme.darkTeal),
+                  const SizedBox(width: 5),
+                  Text(
+                    dateHeaderLabel ?? '',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : AppTheme.darkTeal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          tileWidget,
+        ],
+      );
+    }
+
+    return tileWidget;
   }
 
   _EventMeta _getEventMeta(String type) {
@@ -670,44 +694,50 @@ class _TimelineItemTile extends StatelessWidget {
       case 'ADMISSION':
         return _EventMeta(
           label: 'Admission',
-          color: const Color(0xFF007EA7),
+          color: AppTheme.evergreen,
           icon: CupertinoIcons.building_2_fill,
         );
       case 'CONSULTATION':
         return _EventMeta(
           label: 'Consultation',
-          color: const Color(0xFF00A896),
+          color: AppTheme.darkTeal,
           icon: CupertinoIcons.person_crop_circle_badge_checkmark,
         );
       case 'PRESCRIPTION':
         return _EventMeta(
           label: 'Prescription',
-          color: const Color(0xFF8B5CF6),
+          color: AppTheme.darkTeal,
           icon: CupertinoIcons.bandage_fill,
         );
       case 'EXAM_REQUEST':
         return _EventMeta(
           label: 'Demande Examen',
-          color: const Color(0xFFF59E0B),
+          color: const Color(0xFFFF7A00),
           icon: CupertinoIcons.lab_flask_solid,
         );
       case 'EXAM_RESULT':
         return _EventMeta(
           label: 'Résultat Validé',
-          color: const Color(0xFF10B981),
+          color: AppTheme.evergreen,
           icon: CupertinoIcons.doc_checkmark_fill,
         );
       case 'VITALS':
         return _EventMeta(
           label: 'Constantes Vitales',
-          color: const Color(0xFFE11D48),
+          color: AppTheme.darkTeal,
           icon: CupertinoIcons.heart_fill,
+        );
+      case 'ALERT':
+        return _EventMeta(
+          label: 'Alerte Clinique',
+          color: AppTheme.cayenneRed,
+          icon: CupertinoIcons.exclamationmark_triangle_fill,
         );
       case 'OBSERVATION':
       default:
         return _EventMeta(
           label: 'Observation',
-          color: const Color(0xFF64748B),
+          color: const Color(0xFF6B7E72),
           icon: CupertinoIcons.doc_plaintext,
         );
     }
@@ -750,7 +780,7 @@ class _TimelineEventDetailSheet extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF121E2E) : Colors.white,
+        color: isDark ? AppTheme.darkBackground : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -769,7 +799,7 @@ class _TimelineEventDetailSheet extends StatelessWidget {
               width: 38,
               height: 4.5,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white24 : Colors.black12,
+                color: AppTheme.dustGrey,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -799,7 +829,7 @@ class _TimelineEventDetailSheet extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.bondiBlue,
+                        color: AppTheme.evergreen,
                       ),
                     ),
                   ],
@@ -817,7 +847,7 @@ class _TimelineEventDetailSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1B293C) : const Color(0xFFF8FAFC),
+              color: isDark ? AppTheme.darkBackground : AppTheme.background,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppTheme.borderColor(context)),
             ),
@@ -825,8 +855,8 @@ class _TimelineEventDetailSheet extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: AppTheme.bondiBlue.withValues(alpha: 0.15),
-                  child: const Icon(CupertinoIcons.person_fill, size: 18, color: AppTheme.bondiBlue),
+                  backgroundColor: AppTheme.evergreen.withValues(alpha: 0.15),
+                  child: const Icon(CupertinoIcons.person_fill, size: 18, color: AppTheme.evergreen),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -870,7 +900,7 @@ class _TimelineEventDetailSheet extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1B293C) : const Color(0xFFF1F5F9),
+              color: isDark ? AppTheme.darkBackground : AppTheme.background,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
@@ -901,13 +931,13 @@ class _TimelineEventDetailSheet extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: isDark ? AppTheme.darkSurface : Colors.white,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppTheme.borderColor(context)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(CupertinoIcons.doc_text_fill, size: 16, color: AppTheme.bondiBlue),
+                    const Icon(CupertinoIcons.doc_text_fill, size: 16, color: AppTheme.evergreen),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -919,7 +949,7 @@ class _TimelineEventDetailSheet extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Icon(CupertinoIcons.arrow_down_circle, size: 16, color: AppTheme.bondiBlue),
+                    const Icon(CupertinoIcons.arrow_down_circle, size: 16, color: AppTheme.evergreen),
                   ],
                 ),
               );
@@ -933,7 +963,7 @@ class _TimelineEventDetailSheet extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: CupertinoButton(
-                color: const Color(0xFFE11D48),
+                color: AppTheme.evergreen,
                 borderRadius: BorderRadius.circular(14),
                 onPressed: onNavigateToMonitoring,
                 child: const Row(
@@ -1026,7 +1056,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF121E2E) : Colors.white,
+        color: isDark ? AppTheme.darkBackground : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -1044,7 +1074,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
               width: 38,
               height: 4.5,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white24 : Colors.black12,
+                color: AppTheme.dustGrey,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -1058,7 +1088,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF007EA7), Color(0xFF00A896)],
+                    colors: [AppTheme.evergreen, AppTheme.evergreen],
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -1134,10 +1164,10 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1B293C) : const Color(0xFFF8FAFC),
+                            color: isDark ? AppTheme.darkBackground : AppTheme.background,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: AppTheme.bondiBlue.withValues(alpha: 0.25),
+                              color: AppTheme.evergreen.withValues(alpha: 0.25),
                             ),
                           ),
                           child: SelectableText(
@@ -1155,15 +1185,15 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.bondiBlue.withValues(alpha: 0.08),
+                            color: AppTheme.evergreen.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppTheme.bondiBlue.withValues(alpha: 0.2),
+                              color: AppTheme.evergreen.withValues(alpha: 0.2),
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(CupertinoIcons.info_circle_fill, size: 16, color: AppTheme.bondiBlue),
+                              const Icon(CupertinoIcons.info_circle_fill, size: 16, color: AppTheme.evergreen),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -1192,7 +1222,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                                   Icon(
                                     _showSources ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
                                     size: 14,
-                                    color: AppTheme.bondiBlue,
+                                    color: AppTheme.evergreen,
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
@@ -1200,7 +1230,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                                     style: const TextStyle(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w700,
-                                      color: AppTheme.bondiBlue,
+                                      color: AppTheme.evergreen,
                                     ),
                                   ),
                                 ],
@@ -1212,7 +1242,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                               margin: const EdgeInsets.only(top: 6),
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                color: isDark ? AppTheme.darkSurface : AppTheme.background,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -1221,7 +1251,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                                   padding: const EdgeInsets.symmetric(vertical: 3),
                                   child: Row(
                                     children: [
-                                      const Icon(CupertinoIcons.check_mark_circled_solid, size: 12, color: AppTheme.emerald),
+                                      const Icon(CupertinoIcons.check_mark_circled_solid, size: 12, color: AppTheme.evergreen),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
@@ -1251,7 +1281,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                 Expanded(
                   child: CupertinoButton(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    color: isDark ? AppTheme.darkSurface : AppTheme.background,
                     borderRadius: BorderRadius.circular(14),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: _summary));
@@ -1284,7 +1314,7 @@ class _AiTimelineSummarySheetState extends State<_AiTimelineSummarySheet> {
                 Expanded(
                   child: CupertinoButton(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    color: AppTheme.bondiBlue,
+                    color: AppTheme.evergreen,
                     borderRadius: BorderRadius.circular(14),
                     onPressed: () => Navigator.pop(context),
                     child: const Text(

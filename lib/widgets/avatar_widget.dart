@@ -87,7 +87,7 @@ class AvatarWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary,
+                  color: const Color(0xFFD97746), // Touche d'orange signature Arij
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [

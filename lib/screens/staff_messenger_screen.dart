@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/api_service.dart';
+import '../utils/app_logger.dart';
 import '../utils/theme.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/arj_ui.dart';
@@ -27,16 +29,26 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
   String _filter = 'Tous'; // Tous, Non lus, Équipes
   String _sortMode = 'Récents'; // Récents, A-Z, Par rôle
 
+  static const List<Map<String, String>> _initialDefaultGroups = [
+    {'id': 'GARDE_URGENCES', 'name': 'Canal Urgences & Garde', 'description': 'Canal prioritaire de garde & urgences'},
+    {'id': 'LABO_RADIO', 'name': 'Canal Plateau Technique', 'description': 'Transmission des résultats labo & imagerie'},
+  ];
+
   List<dynamic> staffList = [];
   List<dynamic> conversations = [];
-  List<dynamic> groups = [];
-  bool isLoading = true;
+  List<dynamic> groups = List.from(_initialDefaultGroups);
+  bool isLoading = false;
 
   Timer? _realtimeTimer;
 
   @override
   void initState() {
     super.initState();
+    AppLogger.logInterface(
+      'Messagerie Canaux Cliniques',
+      fileName: 'staff_messenger_screen.dart',
+      details: 'Chargement des canaux soignants',
+    );
     _loadConversations();
     _startRealtimeSync();
   }
@@ -57,27 +69,38 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
         if (!mounted) return;
         setState(() {
           staffList = data['staffList'] ?? [];
-          conversations = data['conversations'] ?? [];
-          groups = data['groups'] ?? [];
+          groups = (data['groups'] as List<dynamic>?) ?? [];
+          conversations = (data['conversations'] as List<dynamic>?) ?? [];
         });
       } catch (_) {}
     });
   }
+
+  final List<dynamic> _defaultGroups = const [
+    {'id': 'GARDE_URGENCES', 'name': 'Canal Urgences & Garde', 'description': 'Canal prioritaire de garde & urgences'},
+    {'id': 'LABO_RADIO', 'name': 'Canal Plateau Technique', 'description': 'Transmission des résultats labo & imagerie'},
+  ];
 
   Future<void> _loadConversations() async {
     setState(() => isLoading = true);
     try {
       final data = await api.getConversations();
       if (mounted) {
+        final apiGroups = (data['groups'] as List<dynamic>?) ?? [];
         setState(() {
           staffList = data['staffList'] ?? [];
           conversations = data['conversations'] ?? [];
-          groups = data['groups'] ?? [];
+          groups = apiGroups.isNotEmpty ? apiGroups : _defaultGroups;
           isLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          groups = _defaultGroups;
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -119,7 +142,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
           height: MediaQuery.of(context).size.height * 0.82,
           decoration: BoxDecoration(
             color: AppTheme.surfaceColor(context),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: EdgeInsets.fromLTRB(
               20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 20),
@@ -153,7 +176,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 decoration: InputDecoration(
                   labelText: 'Nom du groupe',
                   prefixIcon: Icon(Icons.group_outlined,
-                      color: AppTheme.purpleColor(context)),
+                      color: AppTheme.evergreen),
                 ),
               ),
               const SizedBox(height: 12),
@@ -162,7 +185,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 decoration: InputDecoration(
                   labelText: 'Description (optionnelle)',
                   prefixIcon: Icon(Icons.description_outlined,
-                      color: AppTheme.purpleColor(context)),
+                      color: AppTheme.evergreen),
                 ),
               ),
               const SizedBox(height: 16),
@@ -191,7 +214,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                     final isChecked = selectedUserIds.contains(id);
 
                     return CheckboxListTile(
-                      activeColor: AppTheme.purpleColor(context),
+                      activeColor: AppTheme.evergreen,
                       value: isChecked,
                       onChanged: (val) {
                         setModalState(() {
@@ -223,7 +246,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                 context,
                 label: 'Créer le groupe',
                 icon: Icons.check_rounded,
-                color: AppTheme.purpleColor(context),
+                color: AppTheme.evergreen,
                 onTap: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
                   if (selectedUserIds.isEmpty) return;
@@ -273,7 +296,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
             decoration: BoxDecoration(
               color: AppTheme.surfaceColor(context),
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(28)),
+                  const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             child: Column(
@@ -339,18 +362,18 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppTheme.purpleColor(context).withValues(alpha: 0.12),
+                      color: AppTheme.evergreen.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.group_add_rounded,
-                        color: AppTheme.purpleColor(context), size: 22),
+                        color: AppTheme.evergreen, size: 22),
                   ),
                   title: Text(
                     'Nouveau groupe d\'équipe',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
-                      color: AppTheme.purpleColor(context),
+                      color: AppTheme.evergreen,
                     ),
                   ),
                   subtitle: Text(
@@ -393,507 +416,499 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = api.currentUser?['id'] ?? api.currentUser?['_id'];
-    final user = api.currentUser;
-    final userRole = user?['role'];
-    final fullName =
-        '${user?['firstName'] ?? ''} ${user?['lastName'] ?? ''}'.trim();
-    final roleColor = AppTheme.getRoleColor(userRole);
+    final isDark = AppTheme.isDarkMode(context);
+    final currentUserId = api.currentUser?['id']?.toString() ?? api.currentUser?['_id']?.toString();
+
+    // Channel items definition (removed mock data to eliminate redundancy)
+    final priorityChannels = <Map<String, dynamic>>[];
+
+    // Direct message items definition (removed mock data to eliminate redundancy)
+    final directMessages = <Map<String, dynamic>>[];
 
     // Filter logic
-    List<dynamic> filteredConversations;
-    if (_filter == 'Non lus') {
-      filteredConversations = conversations.where((c) {
-        final unreadMap = c['unreadCounts'] as Map<String, dynamic>?;
-        final unread = currentUserId != null && unreadMap != null
-            ? (unreadMap[currentUserId.toString()] ?? 0)
-            : 0;
-        return unread > 0;
-      }).toList();
-    } else if (_filter == 'Équipes') {
-      filteredConversations = [];
-    } else {
-      filteredConversations = conversations;
-    }
+    final filteredChannels = priorityChannels.where((c) {
+      if (_filter == 'DIRECT') return false;
+      if (_filter == 'URGENT' && c['isUrgent'] != true) return false;
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase();
+        final title = (c['title'] as String).toLowerCase();
+        final sub = (c['subtitle'] as String).toLowerCase();
+        return title.contains(q) || sub.contains(q);
+      }
+      return true;
+    }).toList();
 
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      filteredConversations = filteredConversations.where((c) {
-        final lastMsg = (c['lastMessageContent'] ?? '').toString().toLowerCase();
-        final participants = (c['participants'] as List?) ?? [];
-        final hasMatch = participants.any((p) {
-          if (p is Map) {
-            final fn = (p['firstName'] ?? '').toString().toLowerCase();
-            final ln = (p['lastName'] ?? '').toString().toLowerCase();
-            return fn.contains(q) || ln.contains(q);
-          }
-          return false;
-        });
-        return hasMatch || lastMsg.contains(q);
-      }).toList();
-    }
+    final filteredDirects = directMessages.where((d) {
+      if (_filter == 'CHANNELS') return false;
+      if (_filter == 'URGENT' && (d['unreadCount'] as int) == 0) return false;
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase();
+        final name = (d['name'] as String).toLowerCase();
+        final msg = (d['message'] as String).toLowerCase();
+        return name.contains(q) || msg.contains(q);
+      }
+      return true;
+    }).toList();
 
-    // ── Sort conversations ──────────────────────────────────────
-    if (_sortMode == 'A-Z') {
-      filteredConversations.sort((a, b) {
-        String nameOf(dynamic conv) {
-          final parts = (conv['participants'] as List?) ?? [];
-          for (var p in parts) {
-            if (p is Map) {
-              final pid = (p['_id'] ?? p['id'])?.toString();
-              if (pid != null && pid != currentUserId?.toString()) {
-                return '${p['lastName'] ?? ''} ${p['firstName'] ?? ''}'.trim();
-              }
-            }
-          }
-          return '';
-        }
-        return nameOf(a).toLowerCase().compareTo(nameOf(b).toLowerCase());
-      });
-    } else if (_sortMode == 'Par rôle') {
-      const roleOrder = ['DOCTOR', 'NURSE', 'MIDWIFE', 'TECHNICIAN'];
-      filteredConversations.sort((a, b) {
-        String roleOf(dynamic conv) {
-          final parts = (conv['participants'] as List?) ?? [];
-          for (var p in parts) {
-            if (p is Map) {
-              final pid = (p['_id'] ?? p['id'])?.toString();
-              if (pid != null && pid != currentUserId?.toString()) {
-                return (p['role'] ?? '').toString();
-              }
-            }
-          }
-          return '';
-        }
-        final ia = roleOrder.indexOf(roleOf(a));
-        final ib = roleOrder.indexOf(roleOf(b));
-        return (ia < 0 ? 99 : ia).compareTo(ib < 0 ? 99 : ib);
-      });
-    }
-    // 'Récents' keeps server order (already sorted by lastMessageAt)
-
-    final showGroups = _filter == 'Tous' || _filter == 'Équipes';
-
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: AppTheme.backgroundColor(context),
-      drawer: AppDrawer(
-        onSelectTab: (_) {},
-        onOpenProfile: _openProfile,
-        onLogout: widget.onLogout,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
       ),
-      body: SafeArea(
-        child: Column(
+      child: Scaffold(
+        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.background,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: FloatingActionButton.extended(
+          heroTag: 'messenger_fab',
+          backgroundColor: AppTheme.pastelOrange,
+          onPressed: _showSelectContactModal,
+          icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
+          label: const Text('Nouveau Message', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        ),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Figma Header ─────────────────────────────────────────────
-            FigmaHeader(
-              roleName: 'MESSAGES',
-              roleColor: roleColor,
-              onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
-              onThemeToggle: AppTheme.toggleTheme,
-              onNotificationsPressed: () {},
-              profileImageUrl: user?['avatarUrl'],
-              userName: fullName,
-            ),
-
-            // ── Page title ────────────────────────────────────────────────
-            // ── Page title & Action ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            // ── En-tête Méditerranéen Clinique (Evergreen & DarkTeal Gradient) ──
+            Container(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                MediaQuery.of(context).padding.top > 0 ? MediaQuery.of(context).padding.top + 6 : 12,
+                16,
+                12,
+              ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppTheme.evergreen, AppTheme.darkTeal],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      'Boîte de réception',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textColor(context),
-                        letterSpacing: -0.8,
-                      ),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                    tooltip: 'Retour',
+                    onPressed: () => Navigator.maybePop(context),
                   ),
-                  GestureDetector(
-                    onTap: _showSelectContactModal,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryBondi,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.secondaryBondi.withValues(alpha: 0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
+                  const SizedBox(width: 4),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Messagerie Staff',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
                           ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add_rounded, color: Colors.white, size: 16),
-                          SizedBox(width: 4),
-                          Text(
-                            'Nouveau',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
+                        ),
+                        Text(
+                          'Polyclinique El Arij • Canaux & Discussions',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white70,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 12),
-
-            // ── Search bar & Filter Dropdown ──────────────────────────────
+            // ── Search Bar ──────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceColor(context),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppTheme.borderColor(context)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(CupertinoIcons.search, size: 18, color: AppTheme.subtextColor(context)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              onChanged: (val) => setState(() => _searchQuery = val),
-                              style: TextStyle(fontSize: 14, color: AppTheme.textColor(context)),
-                              decoration: InputDecoration(
-                                hintText: 'Rechercher une conversation...',
-                                hintStyle: TextStyle(fontSize: 14, color: AppTheme.subtextColor(context)),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                          if (_searchQuery.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                              child: Icon(Icons.close_rounded, size: 18, color: AppTheme.subtextColor(context)),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // Dropdown Filter Button
-                  PopupMenuButton<String>(
-                    onSelected: (val) {
-                      setState(() {
-                        if (val.startsWith('filter:')) {
-                          _filter = val.replaceFirst('filter:', '');
-                        } else if (val.startsWith('sort:')) {
-                          _sortMode = val.replaceFirst('sort:', '');
-                        }
-                      });
-                    },
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    color: AppTheme.isDarkMode(context) ? AppTheme.darkCard : Colors.white,
-                    elevation: 8,
-                    itemBuilder: (ctx) => [
-                      PopupMenuItem<String>(
-                        enabled: false,
-                        height: 28,
-                        child: Text(
-                          'FILTRE DE LECTURE',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.subtextColor(context),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      _buildPopupOption('filter:Tous', 'Toutes les discussions', _filter == 'Tous', CupertinoIcons.chat_bubble_2_fill),
-                      _buildPopupOption('filter:Non lus', 'Messages non lus', _filter == 'Non lus', CupertinoIcons.bell_fill),
-                      _buildPopupOption('filter:Équipes', 'Canaux d\'équipe uniquement', _filter == 'Équipes', CupertinoIcons.person_3_fill),
-                      const PopupMenuDivider(),
-                      PopupMenuItem<String>(
-                        enabled: false,
-                        height: 28,
-                        child: Text(
-                          'ORDRE DE TRI',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.subtextColor(context),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      _buildPopupOption('sort:Récents', 'Plus récents d\'abord', _sortMode == 'Récents', CupertinoIcons.clock_fill),
-                      _buildPopupOption('sort:A-Z', 'Nom alphabétique (A-Z)', _sortMode == 'A-Z', CupertinoIcons.textformat_abc),
-                      _buildPopupOption('sort:Par rôle', 'Par profession / rôle', _sortMode == 'Par rôle', CupertinoIcons.briefcase_fill),
-                    ],
-                    child: Container(
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: (_filter != 'Tous' || _sortMode != 'Récents')
-                            ? AppTheme.secondaryBondi.withValues(alpha: 0.12)
-                            : AppTheme.surfaceColor(context),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: (_filter != 'Tous' || _sortMode != 'Récents')
-                              ? AppTheme.secondaryBondi
-                              : AppTheme.borderColor(context),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            CupertinoIcons.slider_horizontal_3,
-                            size: 18,
-                            color: (_filter != 'Tous' || _sortMode != 'Récents')
-                                ? AppTheme.secondaryBondi
-                                : AppTheme.textColor(context),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _filter == 'Tous' ? _sortMode : _filter,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: (_filter != 'Tous' || _sortMode != 'Récents')
-                                  ? AppTheme.secondaryBondi
-                                  : AppTheme.textColor(context),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 16,
-                            color: (_filter != 'Tous' || _sortMode != 'Récents')
-                                ? AppTheme.secondaryBondi
-                                : AppTheme.subtextColor(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // ── Active filter tag (if not default) ──────────────────────────
-            if (_filter != 'Tous' || _sortMode != 'Récents')
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20).copyWith(bottom: 10),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryBondi.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.secondaryBondi.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Filtre : $_filter • Tri : $_sortMode',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.secondaryBondi,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          GestureDetector(
-                            onTap: () => setState(() {
-                              _filter = 'Tous';
-                              _sortMode = 'Récents';
-                            }),
-                            child: const Icon(Icons.cancel_rounded, size: 14, color: AppTheme.secondaryBondi),
-                          ),
-                        ],
-                      ),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.darkElevated : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? AppTheme.darkBorder : AppTheme.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-              ),
-
-            // ── Conversation list ───────────────────────────────────────────
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CupertinoActivityIndicator(radius: 14))
-                  : RefreshIndicator(
-                      color: AppTheme.secondaryBondi,
-                      onRefresh: _loadConversations,
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        children: [
-                          if (filteredConversations.isEmpty && _filter != 'Équipes')
-                            Padding(
-                              padding: const EdgeInsets.only(top: 40),
-                              child: ArjUi.emptyState(
-                                context,
-                                icon: Icons.chat_bubble_outline_rounded,
-                                title: 'Aucune conversation',
-                                subtitle:
-                                    'Démarrez une nouvelle discussion avec un collègue.',
-                                action: GestureDetector(
-                                  onTap: _showSelectContactModal,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.secondaryBondi,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: const Text(
-                                      'Nouveau message',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          // Conversations
-                          ...filteredConversations.map((c) =>
-                              _buildConversationTile(
-                                  c, currentUserId?.toString())),
-
-                          // Groups section
-                          if (showGroups && groups.isNotEmpty) ...[
-                            const SizedBox(height: 12),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 6),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    'Canaux d\'équipe',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.textColor(context),
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  GestureDetector(
-                                    onTap: _showCreateGroupModal,
-                                    child: Text(
-                                      '+ Créer',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.secondaryBondi,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            ...groups.map((g) => _buildGroupTile(g)),
-                          ],
-
-                          const SizedBox(height: 80),
-                        ],
+                child: Row(
+                  children: [
+                    const Icon(Icons.search_rounded, size: 20, color: Color(0xFF6B7E72)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                        style: TextStyle(fontSize: 14, color: AppTheme.textColor(context)),
+                        decoration: const InputDecoration(
+                          hintText: 'Rechercher un canal, un collègue...',
+                          hintStyle: TextStyle(fontSize: 13, color: Color(0xFF6B7E72)),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 8),
+                        ),
                       ),
                     ),
+                    if (_searchQuery.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                        child: const Icon(Icons.close_rounded, size: 18, color: Colors.grey),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Filter Pills ─────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: [
+                    _buildFilterPill('Tous', 'Tous', isDark),
+                    const SizedBox(width: 8),
+                    _buildFilterPill('Urgences 🚨', 'URGENT', isDark),
+                    const SizedBox(width: 8),
+                    _buildFilterPill('Canaux 🔬', 'CHANNELS', isDark),
+                    const SizedBox(width: 8),
+                    _buildFilterPill('Discussions 💬', 'DIRECT', isDark),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // ── List of Channels, Direct Discussions & Staff ──────────────────
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  final filteredStaff = staffList.where((s) {
+                    if (s is! Map) return false;
+                    final fn = (s['firstName'] ?? '').toString().toLowerCase();
+                    final ln = (s['lastName'] ?? '').toString().toLowerCase();
+                    final role = (s['role'] ?? '').toString().toLowerCase();
+                    final dept = (s['department'] ?? s['service'] ?? '').toString().toLowerCase();
+                    final q = _searchQuery.toLowerCase();
+                    return fn.contains(q) || ln.contains(q) || role.contains(q) || dept.contains(q) || '$fn $ln'.contains(q);
+                  }).toList();
+
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    children: [
+                      // ── Mode Recherche Active ──
+                      if (_searchQuery.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            ' Personnel disponible (${filteredStaff.length})',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.subtextColor(context)),
+                          ),
+                        ),
+                        if (filteredStaff.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Center(
+                              child: Text('Aucun soignant ne correspond à "$_searchQuery"', style: TextStyle(color: AppTheme.subtextColor(context))),
+                            ),
+                          )
+                        else
+                          ...filteredStaff.map((s) {
+                            final sMap = Map<String, dynamic>.from(s);
+                            return InkWell(
+                              onTap: () => _openChat(sMap, isGroup: false),
+                              borderRadius: BorderRadius.circular(16),
+                              child: _buildStaffTile(sMap, currentUserId),
+                            );
+                          }),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // ── Groups / Channels ──
+                      if (groups.isNotEmpty && _filter != 'DIRECT') ...[
+                        ...groups.map((g) => _buildGroupTile(g)),
+                      ],
+
+                      // ── Active Conversations ──
+                      if (conversations.isNotEmpty && _filter != 'CHANNELS') ...[
+                        ...conversations.map((c) => _buildConversationTile(c, currentUserId)),
+                      ],
+
+                      // ── Tout le Personnel de la Clinique (Quand pas de recherche) ──
+                      if (_searchQuery.isEmpty && staffList.isNotEmpty && _filter != 'CHANNELS') ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Icon(Icons.people_alt_rounded, size: 16, color: AppTheme.evergreen),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Tout le personnel & Soignants (${staffList.length})',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.evergreen),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...staffList.map((s) {
+                          if (s is! Map) return const SizedBox.shrink();
+                          final sMap = Map<String, dynamic>.from(s);
+                          return InkWell(
+                            onTap: () => _openChat(sMap, isGroup: false),
+                            borderRadius: BorderRadius.circular(16),
+                            child: _buildStaffTile(sMap, currentUserId),
+                          );
+                        }),
+                      ],
+
+                      if (groups.isEmpty && conversations.isEmpty && staffList.isEmpty && !isLoading)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 40),
+                          child: Center(
+                            child: Text(
+                              'Aucune conversation.',
+                              style: TextStyle(color: AppTheme.subtextColor(context)),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 30),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: IosBottomNavBar(
-        selectedIndex: 3,
-        onItemSelected: (idx) {
-          if (idx != 3) {
-            Navigator.pop(context);
-          }
-        },
-        activeColor: AppTheme.secondaryBondi,
-        items: const [
-          IosBottomNavItem(
-            icon: CupertinoIcons.house,
-            selectedIcon: CupertinoIcons.house_fill,
-            label: 'Accueil',
+    );
+  }
+
+  Widget _buildFilterPill(String label, String key, bool isDark) {
+    final isSelected = _filter == key;
+    return InkWell(
+      onTap: () => setState(() => _filter = key),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.darkTeal
+              : (isDark ? AppTheme.darkElevated : const Color(0xFFEDF2EA)),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.darkTeal : (isDark ? AppTheme.darkBorder : AppTheme.border),
+            width: isSelected ? 1.2 : 0.8,
           ),
-          IosBottomNavItem(
-            icon: CupertinoIcons.person_2,
-            selectedIcon: CupertinoIcons.person_2_fill,
-            label: 'Patients',
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? Colors.white : (isDark ? AppTheme.dustGrey : AppTheme.evergreen),
           ),
-          IosBottomNavItem(
-            icon: CupertinoIcons.doc_text,
-            selectedIcon: CupertinoIcons.doc_text_fill,
-            label: 'Activités',
-          ),
-          IosBottomNavItem(
-            icon: CupertinoIcons.chat_bubble_2,
-            selectedIcon: CupertinoIcons.chat_bubble_2_fill,
-            label: 'Messages',
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  PopupMenuItem<String> _buildPopupOption(
-      String value, String label, bool isSelected, IconData icon) {
-    return PopupMenuItem<String>(
-      value: value,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: isSelected ? AppTheme.secondaryBondi : AppTheme.subtextColor(context),
+  Widget _buildPriorityChannel({
+    required bool isDark,
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    required String title,
+    required String time,
+    required String subtitle,
+    required Color tagColor,
+    required Color tagTextColor,
+    required String tagText,
+    required bool hasDot,
+    String? author,
+    bool isUrgent = false,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isUrgent
+                ? AppTheme.alertRed.withValues(alpha: 0.3)
+                : (isDark ? AppTheme.darkBorder : AppTheme.border),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppTheme.secondaryBondi : AppTheme.textColor(context),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textColor(context))),
+                      Text(time, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7E72))),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 13, color: AppTheme.subtextColor(context)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: tagColor, borderRadius: BorderRadius.circular(16)),
+                        child: Row(
+                          children: [
+                            if (hasDot) ...[
+                              Container(width: 6, height: 6, decoration: BoxDecoration(color: isUrgent ? AppTheme.alertRed : tagTextColor, shape: BoxShape.circle)),
+                              const SizedBox(width: 4),
+                            ],
+                            Text(tagText, style: TextStyle(fontSize: 11, color: tagTextColor)),
+                          ],
+                        ),
+                      ),
+                      if (author != null) ...[
+                        const SizedBox(width: 8),
+                        Text(author, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7E72))),
+                      ],
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
-          if (isSelected)
-            const Icon(
-              Icons.check_rounded,
-              size: 18,
-              color: AppTheme.secondaryBondi,
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  Widget _buildDirectMessage({
+    required bool isDark,
+    required String imageUrl,
+    required String name,
+    required String time,
+    required String message,
+    required int unreadCount,
+    required Color statusColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDark ? AppTheme.darkBorder : AppTheme.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                ClipOval(
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppTheme.evergreen.withValues(alpha: 0.2),
+                        alignment: Alignment.center,
+                        child: Text(
+                          name.isNotEmpty ? name[0] : '?',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.evergreen, fontSize: 18),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: isDark ? AppTheme.darkSurface : Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textColor(context))),
+                      Text(time, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7E72))),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(message, style: TextStyle(fontSize: 13, color: AppTheme.subtextColor(context)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            if (unreadCount > 0) ...[
+              const SizedBox(width: 16),
+              Container(
+                width: 20,
+                height: 20,
+                decoration: const BoxDecoration(color: AppTheme.evergreen, shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: Text(unreadCount.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildConversationTile(
       Map<String, dynamic> conv, String? currentUserId) {
@@ -950,7 +965,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: hasUnread
-              ? AppTheme.secondaryBondi.withValues(alpha: 0.08)
+              ? AppTheme.evergreen.withValues(alpha: 0.08)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
@@ -1011,7 +1026,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           color: hasUnread
-                              ? AppTheme.secondaryBondi
+                              ? AppTheme.evergreen
                               : AppTheme.subtextColor(context),
                           fontWeight: hasUnread
                               ? FontWeight.w600
@@ -1069,7 +1084,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: const BoxDecoration(
-                  color: AppTheme.secondaryBondi,
+                  color: AppTheme.evergreen,
                   shape: BoxShape.circle,
                 ),
                 child: Text(
@@ -1103,7 +1118,7 @@ class _StaffMessengerScreenState extends State<StaffMessengerScreen> {
       icon = CupertinoIcons.heart_fill;
       badgeText = 'Priorité Urgences';
     } else if (id == 'LABO_RADIO') {
-      themeCol = AppTheme.secondaryBondi;
+      themeCol = AppTheme.evergreen;
       icon = CupertinoIcons.lab_flask_solid;
       badgeText = 'Plateau Tech.';
     } else {
