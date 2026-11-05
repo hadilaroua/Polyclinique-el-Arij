@@ -11,13 +11,13 @@ import {
 
 export class CreateVitalSignDto {
   @ApiProperty({ example: '60c72b2f9b1d8b2bad8e9a12', description: 'ID du patient' })
-  @IsMongoId()
+  @IsString()
   @IsNotEmpty()
   patientId: string;
 
   @ApiPropertyOptional({ example: '60c72b2f9b1d8b2bad8e9a15', description: 'ID de l\'infirmier/sage-femme' })
   @IsOptional()
-  @IsMongoId()
+  @IsString()
   recordedByUserId?: string;
 
   @ApiPropertyOptional({ example: '2026-09-09T10:30:00Z', description: 'Date et heure de la mesure' })

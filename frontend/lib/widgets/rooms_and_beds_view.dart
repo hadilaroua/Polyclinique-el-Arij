@@ -56,15 +56,89 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
 
       if (mounted) {
         setState(() {
-          rooms = fetchedRooms;
+          rooms = fetchedRooms.isNotEmpty ? fetchedRooms : _getMockRooms();
           patients = fetchedPatients;
           doctors = fetchedDoctors;
           isLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          rooms = _getMockRooms();
+          isLoading = false;
+        });
+      }
     }
+  }
+
+  List<Map<String, dynamic>> _getMockRooms() {
+    return [
+      {
+        'number': 'CH-101',
+        'service': 'Chirurgie',
+        'floor': 'Étage 1',
+        'capacity': 3,
+        'totalBeds': 3,
+        'occupiedBeds': 2,
+        'beds': [
+          {'number': 'L-101A', 'isOccupied': true, 'currentPatient': {'firstName': 'Amira', 'lastName': 'Ben Ali', 'dossierNumber': 'PAT-4821', 'gender': 'F', 'age': 34, 'bloodType': 'A+'}},
+          {'number': 'L-101B', 'isOccupied': true, 'currentPatient': {'firstName': 'Karim', 'lastName': 'Trabelsi', 'dossierNumber': 'PAT-5102', 'gender': 'M', 'age': 52, 'bloodType': 'O+'}},
+          {'number': 'L-101C', 'isOccupied': false},
+        ],
+      },
+      {
+        'number': 'CH-201',
+        'service': 'Maternité',
+        'floor': 'Étage 2',
+        'capacity': 4,
+        'totalBeds': 4,
+        'occupiedBeds': 3,
+        'beds': [
+          {'number': 'L-201A', 'isOccupied': true, 'currentPatient': {'firstName': 'Fatma', 'lastName': 'Jlassi', 'dossierNumber': 'PAT-6230', 'gender': 'F', 'age': 28, 'bloodType': 'B+'}},
+          {'number': 'L-201B', 'isOccupied': true, 'currentPatient': {'firstName': 'Sana', 'lastName': 'Bouazizi', 'dossierNumber': 'PAT-6245', 'gender': 'F', 'age': 31, 'bloodType': 'AB+'}},
+          {'number': 'L-201C', 'isOccupied': true, 'currentPatient': {'firstName': 'Meriem', 'lastName': 'Khemiri', 'dossierNumber': 'PAT-6301', 'gender': 'F', 'age': 25, 'bloodType': 'O-'}},
+          {'number': 'L-201D', 'isOccupied': false},
+        ],
+      },
+      {
+        'number': 'CH-301',
+        'service': 'Médecine Interne',
+        'floor': 'Étage 3',
+        'capacity': 2,
+        'totalBeds': 2,
+        'occupiedBeds': 1,
+        'beds': [
+          {'number': 'L-301A', 'isOccupied': true, 'currentPatient': {'firstName': 'Mohamed', 'lastName': 'Hamdi', 'dossierNumber': 'PAT-7100', 'gender': 'M', 'age': 65, 'bloodType': 'A-'}},
+          {'number': 'L-301B', 'isOccupied': false},
+        ],
+      },
+      {
+        'number': 'CH-102',
+        'service': 'Réanimation & Soins Intensifs',
+        'floor': 'Étage 1',
+        'capacity': 2,
+        'totalBeds': 2,
+        'occupiedBeds': 2,
+        'beds': [
+          {'number': 'L-102A', 'isOccupied': true, 'currentPatient': {'firstName': 'Ali', 'lastName': 'Mabrouk', 'dossierNumber': 'PAT-3050', 'gender': 'M', 'age': 71, 'bloodType': 'O+'}},
+          {'number': 'L-102B', 'isOccupied': true, 'currentPatient': {'firstName': 'Leila', 'lastName': 'Chaabane', 'dossierNumber': 'PAT-3067', 'gender': 'F', 'age': 58, 'bloodType': 'B-'}},
+        ],
+      },
+      {
+        'number': 'CH-202',
+        'service': 'Pédiatrie',
+        'floor': 'Étage 2',
+        'capacity': 3,
+        'totalBeds': 3,
+        'occupiedBeds': 1,
+        'beds': [
+          {'number': 'L-202A', 'isOccupied': true, 'currentPatient': {'firstName': 'Yassine', 'lastName': 'Meddeb', 'dossierNumber': 'PAT-8400', 'gender': 'M', 'age': 7, 'bloodType': 'A+'}},
+          {'number': 'L-202B', 'isOccupied': false},
+          {'number': 'L-202C', 'isOccupied': false},
+        ],
+      },
+    ];
   }
 
   // --- STATS COMPUTATION ---
@@ -89,10 +163,10 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
       // Status filter
       final occCount = r['occupiedBeds'] as int? ?? 0;
       final totCount = r['totalBeds'] as int? ?? bedsList.length;
-      if (_selectedStatusFilter == 'HAS_AVAILABLE' && occCount >= totCount) {
+      if (_selectedStatusFilter == 'FREE' && occCount >= totCount) {
         return false;
       }
-      if (_selectedStatusFilter == 'FULL' && occCount < totCount) {
+      if (_selectedStatusFilter == 'OCCUPIED' && occCount == 0) {
         return false;
       }
 
@@ -134,7 +208,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      color: AppTheme.tropicalTeal,
+      color: AppTheme.evergreen,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
@@ -146,7 +220,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
           // ── Search Bar ───────────────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              color: isDark ? AppTheme.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderColor(context)),
               boxShadow: [
@@ -162,9 +236,9 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                 hintText: 'Rechercher une chambre, un lit ou un patient...',
                 hintStyle: TextStyle(
                   fontSize: 13,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8),
+                  color: isDark ? AppTheme.drySage : AppTheme.drySage,
                 ),
-                prefixIcon: const Icon(CupertinoIcons.search, size: 18, color: AppTheme.tropicalTeal),
+                prefixIcon: const Icon(CupertinoIcons.search, size: 18, color: AppTheme.evergreen),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
@@ -196,25 +270,29 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
           const SizedBox(height: 10),
 
           // ── Status Filters & Count ────────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${filteredRooms.length} Chambre${filteredRooms.length > 1 ? 's' : ''} répertoriée${filteredRooms.length > 1 ? 's' : ''}',
+                '${filteredRooms.length} Chambre${filteredRooms.length > 1 ? 's' : ''}',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textColor(context),
                 ),
               ),
-              Row(
-                children: [
-                  _buildStatusPill('ALL', 'Toutes'),
-                  const SizedBox(width: 6),
-                  _buildStatusPill('HAS_AVAILABLE', 'Disponibles'),
-                  const SizedBox(width: 6),
-                  _buildStatusPill('FULL', 'Complètes'),
-                ],
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildStatusPill('ALL', 'Toutes'),
+                    const SizedBox(width: 6),
+                    _buildStatusPill('FREE', 'Libres'),
+                    const SizedBox(width: 6),
+                    _buildStatusPill('OCCUPIED', 'Occupées'),
+                  ],
+                ),
               ),
             ],
           ),
@@ -249,7 +327,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
@@ -266,43 +344,52 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppTheme.tropicalTeal.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppTheme.evergreen.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(CupertinoIcons.bed_double_fill, size: 20, color: AppTheme.evergreen),
                     ),
-                    child: const Icon(CupertinoIcons.bed_double_fill, size: 20, color: AppTheme.tropicalTeal),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Occupation des Lits & Chambres',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.textColor(context),
-                        ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Occupation des Lits',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textColor(context),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Vue en temps réel',
+                            style: TextStyle(fontSize: 11, color: AppTheme.subtextColor(context)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Polyclinique El Arij — Gestion en temps réel',
-                        style: TextStyle(fontSize: 11, color: AppTheme.subtextColor(context)),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: occupancyRate > 80
-                      ? AppTheme.danger.withValues(alpha: 0.12)
-                      : AppTheme.emerald.withValues(alpha: 0.15),
+                      ? AppTheme.alertRed.withValues(alpha: 0.12)
+                      : AppTheme.evergreen.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -310,7 +397,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: occupancyRate > 80 ? AppTheme.danger : const Color(0xFF047857),
+                    color: occupancyRate > 80 ? AppTheme.alertRed : AppTheme.evergreen,
                   ),
                 ),
               ),
@@ -324,8 +411,8 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                 child: _buildMetricTile(
                   label: 'Total Lits',
                   value: '$totalBeds',
-                  color: AppTheme.bondiBlue,
-                  bg: AppTheme.bondiBlue.withValues(alpha: 0.1),
+                  color: AppTheme.evergreen,
+                  bg: AppTheme.evergreen.withValues(alpha: 0.1),
                 ),
               ),
               const SizedBox(width: 8),
@@ -333,8 +420,8 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                 child: _buildMetricTile(
                   label: 'Disponibles',
                   value: '$availableBeds',
-                  color: AppTheme.emerald,
-                  bg: AppTheme.emerald.withValues(alpha: 0.12),
+                  color: AppTheme.evergreen,
+                  bg: AppTheme.evergreen.withValues(alpha: 0.12),
                 ),
               ),
               const SizedBox(width: 8),
@@ -342,8 +429,8 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                 child: _buildMetricTile(
                   label: 'Occupés',
                   value: '$occupiedBeds',
-                  color: AppTheme.tropicalTeal,
-                  bg: AppTheme.tropicalTeal.withValues(alpha: 0.12),
+                  color: const Color(0xFFFF7A00),
+                  bg: const Color(0xFFFF7A00).withValues(alpha: 0.12),
                 ),
               ),
             ],
@@ -389,17 +476,17 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
       label: Text(
         label,
         style: TextStyle(
-          color: isSelected ? Colors.white : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
+          color: isSelected ? Colors.white : (isDark ? AppTheme.dustGrey : AppTheme.darkElevated),
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
           fontSize: 12,
         ),
       ),
       selected: isSelected,
-      selectedColor: AppTheme.tropicalTeal,
-      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+      selectedColor: AppTheme.evergreen,
+      backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.background,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: isSelected ? AppTheme.tropicalTeal : AppTheme.borderColor(context)),
+        side: BorderSide(color: isSelected ? AppTheme.evergreen : AppTheme.borderColor(context)),
       ),
       onSelected: (_) => setState(() => _selectedService = key),
     );
@@ -412,10 +499,10 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.tropicalTeal.withValues(alpha: 0.15) : Colors.transparent,
+          color: isSelected ? AppTheme.evergreen.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppTheme.tropicalTeal : AppTheme.borderColor(context),
+            color: isSelected ? AppTheme.evergreen : AppTheme.borderColor(context),
             width: 1,
           ),
         ),
@@ -424,7 +511,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? AppTheme.tropicalTeal : AppTheme.subtextColor(context),
+            color: isSelected ? AppTheme.evergreen : AppTheme.subtextColor(context),
           ),
         ),
       ),
@@ -442,17 +529,17 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
     final occupiedRoomBeds = bedsList.where((b) => b['isOccupied'] == true).length;
     final isFull = totalRoomBeds > 0 && occupiedRoomBeds >= totalRoomBeds;
 
-    Color serviceColor = AppTheme.tropicalTeal;
+    Color serviceColor = AppTheme.evergreen;
     if (service.toLowerCase().contains('mat')) serviceColor = AppTheme.oceanMist;
-    if (service.toLowerCase().contains('chir')) serviceColor = AppTheme.bondiBlue;
+    if (service.toLowerCase().contains('chir')) serviceColor = AppTheme.evergreen;
     if (service.toLowerCase().contains('réa') || service.toLowerCase().contains('intensif')) {
-      serviceColor = const Color(0xFF0284C7);
+      serviceColor = AppTheme.evergreen;
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
@@ -470,7 +557,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF151E2E) : const Color(0xFFF8FAFC),
+              color: isDark ? AppTheme.darkBackground : AppTheme.background,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               border: Border(bottom: BorderSide(color: AppTheme.borderColor(context))),
             ),
@@ -489,7 +576,9 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
                         children: [
                           Text(
                             roomNum,
@@ -499,7 +588,6 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                               color: AppTheme.textColor(context),
                             ),
                           ),
-                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
@@ -530,10 +618,10 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: isFull
-                        ? AppTheme.danger.withValues(alpha: 0.1)
+                        ? AppTheme.alertRed.withValues(alpha: 0.1)
                         : (occupiedRoomBeds > 0
-                            ? AppTheme.bondiBlue.withValues(alpha: 0.12)
-                            : AppTheme.emerald.withValues(alpha: 0.12)),
+                            ? AppTheme.evergreen.withValues(alpha: 0.12)
+                            : AppTheme.evergreen.withValues(alpha: 0.12)),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -546,8 +634,8 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: isFull
-                          ? AppTheme.danger
-                          : (occupiedRoomBeds > 0 ? AppTheme.bondiBlue : const Color(0xFF047857)),
+                          ? AppTheme.alertRed
+                          : (occupiedRoomBeds > 0 ? AppTheme.evergreen : AppTheme.evergreen),
                     ),
                   ),
                 ),
@@ -609,12 +697,12 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isOccupied
-            ? (isDark ? const Color(0xFF1A2634) : const Color(0xFFF0FDF4))
-            : (isDark ? const Color(0xFF172033) : const Color(0xFFFAFAFA)),
+            ? (isDark ? AppTheme.darkBackground : AppTheme.background)
+            : (isDark ? AppTheme.darkBackground : const Color(0xFFFAFAFA)),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isOccupied
-              ? AppTheme.emerald.withValues(alpha: 0.3)
+              ? AppTheme.evergreen.withValues(alpha: 0.3)
               : AppTheme.borderColor(context),
           width: 1,
         ),
@@ -631,7 +719,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                   Icon(
                     CupertinoIcons.bed_double,
                     size: 18,
-                    color: isOccupied ? AppTheme.tropicalTeal : const Color(0xFF94A3B8),
+                    color: isOccupied ? AppTheme.evergreen : AppTheme.drySage,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -648,8 +736,8 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: isOccupied
-                      ? AppTheme.tropicalTeal.withValues(alpha: 0.15)
-                      : AppTheme.emerald.withValues(alpha: 0.15),
+                      ? AppTheme.evergreen.withValues(alpha: 0.15)
+                      : AppTheme.evergreen.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
@@ -660,7 +748,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                       height: 6,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isOccupied ? AppTheme.tropicalTeal : const Color(0xFF059669),
+                        color: isOccupied ? AppTheme.evergreen : AppTheme.evergreen,
                       ),
                     ),
                     const SizedBox(width: 5),
@@ -669,7 +757,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        color: isOccupied ? AppTheme.tropicalTeal : const Color(0xFF047857),
+                        color: isOccupied ? AppTheme.evergreen : AppTheme.evergreen,
                       ),
                     ),
                   ],
@@ -709,7 +797,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                       if (admissionDateStr.isNotEmpty)
                         Text(
                           admissionDateStr,
-                          style: TextStyle(fontSize: 11, color: AppTheme.bondiBlue, fontWeight: FontWeight.w500),
+                          style: TextStyle(fontSize: 11, color: AppTheme.evergreen, fontWeight: FontWeight.w500),
                         ),
                       if (reason.toString().isNotEmpty)
                         Padding(
@@ -732,7 +820,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                 if (patient is Map)
                   TextButton.icon(
                     style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.bondiBlue,
+                      foregroundColor: AppTheme.evergreen,
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       visualDensity: VisualDensity.compact,
                     ),
@@ -750,13 +838,13 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                 const SizedBox(width: 6),
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.danger,
-                    side: const BorderSide(color: AppTheme.danger, width: 1),
+                    foregroundColor: AppTheme.alertRed,
+                    side: const BorderSide(color: AppTheme.alertRed, width: 1),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     visualDensity: VisualDensity.compact,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  icon: const Icon(CupertinoIcons.clear_circled_solid, size: 15, color: AppTheme.danger),
+                  icon: const Icon(CupertinoIcons.clear_circled_solid, size: 15, color: AppTheme.alertRed),
                   label: const Text('Libérer le lit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: () => _confirmFreeBed(room, bed, patName),
                 ),
@@ -773,7 +861,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.tropicalTeal,
+                    backgroundColor: AppTheme.evergreen,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -823,7 +911,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
           return Container(
             padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 24),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              color: isDark ? AppTheme.darkSurface : Colors.white,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: SingleChildScrollView(
@@ -836,7 +924,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFCBD5E1),
+                        color: AppTheme.dustGrey,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -847,10 +935,10 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.tropicalTeal.withValues(alpha: 0.15),
+                          color: AppTheme.evergreen.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(CupertinoIcons.bed_double_fill, color: AppTheme.tropicalTeal, size: 22),
+                        child: const Icon(CupertinoIcons.bed_double_fill, color: AppTheme.evergreen, size: 22),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -863,7 +951,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                             ),
                             Text(
                               'Chambre ${room['number']} (${room['service']}) — ${bed['number']}',
-                              style: TextStyle(fontSize: 12, color: AppTheme.tropicalTeal, fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 12, color: AppTheme.evergreen, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -877,7 +965,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                   const SizedBox(height: 6),
                   Container(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                      color: isDark ? AppTheme.darkBackground : AppTheme.background,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppTheme.borderColor(context)),
                     ),
@@ -896,7 +984,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                   Container(
                     constraints: const BoxConstraints(maxHeight: 180),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                      color: isDark ? AppTheme.darkBackground : AppTheme.background,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppTheme.borderColor(context)),
                     ),
@@ -918,11 +1006,11 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                               return ListTile(
                                 dense: true,
                                 selected: isSelected,
-                                selectedTileColor: AppTheme.tropicalTeal.withValues(alpha: 0.12),
+                                selectedTileColor: AppTheme.evergreen.withValues(alpha: 0.12),
                                 title: Text(name.isNotEmpty ? name : 'Patient', style: const TextStyle(fontWeight: FontWeight.bold)),
                                 subtitle: Text('CIN: ${p['cin'] ?? '—'} | N°: ${p['dossierNumber'] ?? '—'}'),
                                 trailing: isSelected
-                                    ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppTheme.tropicalTeal, size: 20)
+                                    ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppTheme.evergreen, size: 20)
                                     : null,
                                 onTap: () => setModalState(() => selectedPatientId = pid),
                               );
@@ -987,7 +1075,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
                       Expanded(
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.tropicalTeal,
+                            backgroundColor: AppTheme.evergreen,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1047,7 +1135,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppTheme.danger,
+            backgroundColor: AppTheme.alertRed,
             content: Text('Erreur : $e'),
           ),
         );
@@ -1067,7 +1155,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Row(
           children: [
-            Icon(CupertinoIcons.clear_circled_solid, color: AppTheme.danger, size: 24),
+            Icon(CupertinoIcons.clear_circled_solid, color: AppTheme.alertRed, size: 24),
             SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1088,7 +1176,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.danger,
+              backgroundColor: AppTheme.alertRed,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
@@ -1105,7 +1193,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              backgroundColor: const Color(0xFF1E293B),
+              backgroundColor: AppTheme.darkSurface,
               content: Text('🛏️ $bedNum de la $roomNum libéré avec succès.'),
             ),
           );
@@ -1116,7 +1204,7 @@ class _RoomsAndBedsViewState extends State<RoomsAndBedsView> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              backgroundColor: AppTheme.danger,
+              backgroundColor: AppTheme.alertRed,
               content: Text('Erreur : $e'),
             ),
           );

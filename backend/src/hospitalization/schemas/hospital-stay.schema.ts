@@ -38,7 +38,7 @@ export class HospitalStay {
   @Prop({ default: '', trim: true })
   dischargeNotes: string;
 
-  @Prop({ required: true, enum: StayStatus, default: StayStatus.ACTIVE })
+  @Prop({ type: String, required: true, enum: StayStatus, default: StayStatus.ACTIVE })
   status: StayStatus;
 }
 

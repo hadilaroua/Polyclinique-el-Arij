@@ -45,10 +45,10 @@ export class Exam {
   @Prop({ default: '', trim: true })
   service: string; // Service qui prend en charge
 
-  @Prop({ required: true, enum: ExamPriority, default: ExamPriority.MEDIUM })
+  @Prop({ type: String, required: true, enum: ExamPriority, default: ExamPriority.MEDIUM })
   priority: ExamPriority;
 
-  @Prop({ required: true, enum: ExamStatus, default: ExamStatus.PENDING })
+  @Prop({ type: String, required: true, enum: ExamStatus, default: ExamStatus.PENDING })
   status: ExamStatus;
 
   @Prop({ default: '', trim: true })

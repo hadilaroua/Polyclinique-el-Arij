@@ -1,11 +1,19 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
 import '../screens/daily_briefing_screen.dart';
 import '../screens/staff_messenger_screen.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import 'avatar_widget.dart';
 import 'dark_ambient_background.dart';
+import '../main.dart';
+import '../screens/doctor_home_screen.dart';
+import '../screens/technician_home_screen.dart';
+import '../screens/nurse_home_screen.dart';
+import '../screens/midwife_home_screen.dart';
+import '../screens/calendar/clinical_calendar_screen.dart';
+import 'floating_messenger_head.dart';
 import 'rooms_and_beds_view.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -38,7 +46,8 @@ class AppDrawer extends StatelessWidget {
     // Extraction du service ou spécialité selon le profil
     String serviceText = 'Polyclinique El Arij';
     if (profile != null) {
-      serviceText = profile['specialty'] ??
+      serviceText =
+          profile['specialty'] ??
           profile['service'] ??
           profile['department'] ??
           profile['technicalDepartment'] ??
@@ -46,27 +55,21 @@ class AppDrawer extends StatelessWidget {
     }
 
     return Drawer(
-      backgroundColor: isDark ? const Color(0xFF0D141F) : Colors.white,
+      backgroundColor: isDark ? AppTheme.darkBackground : Colors.white,
       child: SafeArea(
         top: false,
         child: Column(
           children: [
             // ── En-tête professionnel iOS avec dégradé et profil soignant ──
             Container(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                MediaQuery.of(context).padding.top + 16,
-                20,
-                20,
-              ),
+              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    roleColor.withValues(alpha: isDark ? 0.9 : 1.0),
-                    isDark ? const Color(0xFF090E17) : AppTheme.primaryDark,
-                  ],
+                  colors: isDark
+                      ? [AppTheme.darkTopBar, AppTheme.darkSurfaceSecondary]
+                      : [AppTheme.evergreen, AppTheme.darkTeal],
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -90,79 +93,111 @@ class AppDrawer extends StatelessWidget {
                           color: Colors.white,
                           shape: BoxShape.circle,
                           boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 6,
-                            ),
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 6),
                           ],
                         ),
                         child: Image.asset(
                           'assets/logo-polyclinique-arij.png',
                           fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(CupertinoIcons.plus_square_fill, size: 18, color: AppTheme.primary),
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            CupertinoIcons.plus_square_fill,
+                            size: 18,
+                            color: AppTheme.evergreen,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
-                        'Polyclinique El Arij',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.3,
+                      const Expanded(
+                        child: Text(
+                          'El ArijFlow',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 18),
-                  // Profil & Badge
-                  Row(
-                    children: [
-                      AvatarWidget(
-                        avatarUrl: avatarUrl,
-                        name: fullName,
-                        role: role,
-                        radius: 28,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              fullName.isNotEmpty ? fullName : 'Soignant Arij',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.22),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                AppTheme.getRoleLabel(role),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                  // Profil & Badge (Cliquable pour ouvrir le profil connecté)
+                  InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      Navigator.pop(context);
+                      onOpenProfile();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          AvatarWidget(
+                            avatarUrl: avatarUrl,
+                            name: fullName,
+                            role: role,
+                            radius: 28,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  fullName.isNotEmpty ? fullName : 'Soignant Arij',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 9,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.22),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          AppTheme.getRoleLabel(role),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Icon(
+                                      CupertinoIcons.pencil_circle_fill,
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                      size: 15,
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          Icon(
+                            CupertinoIcons.chevron_right,
+                            color: Colors.white.withValues(alpha: 0.7),
+                            size: 16,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 14),
                   // Cartouche info CIN & Service bien aérée avec séparateur
@@ -171,10 +206,7 @@ class AppDrawer extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        width: 0.8,
-                      ),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 0.8),
                     ),
                     child: Row(
                       children: [
@@ -225,17 +257,19 @@ class AppDrawer extends StatelessWidget {
 
                   _drawerCardItem(
                     context,
-                    icon: CupertinoIcons.sparkles,
-                    iconColor: const Color(0xFF00A896),
-                    iconBg: const Color(0xFF00A896).withValues(alpha: 0.14),
-                    title: 'Briefing IA du Jour',
-                    subtitle: 'Synthèse intelligente & priorités de garde',
+                    icon: CupertinoIcons.calendar,
+                    iconColor: isDark ? AppTheme.darkPrimary : AppTheme.evergreen,
+                    iconBg: (isDark ? AppTheme.darkPrimary : AppTheme.evergreen).withValues(
+                      alpha: 0.12,
+                    ),
+                    title: 'Calendrier Clinique',
+                    subtitle: 'Planning interventions, blocs & gardes',
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => DailyBriefingScreen(onLogout: onLogout),
+                        CupertinoPageRoute(
+                          builder: (_) => ClinicalCalendarScreen(onLogout: onLogout),
                         ),
                       );
                     },
@@ -244,9 +278,30 @@ class AppDrawer extends StatelessWidget {
 
                   _drawerCardItem(
                     context,
+                    icon: CupertinoIcons.sparkles,
+                    iconColor: isDark ? AppTheme.darkPrimary : AppTheme.evergreen,
+                    iconBg: (isDark ? AppTheme.darkPrimary : AppTheme.evergreen).withValues(
+                      alpha: 0.12,
+                    ),
+                    title: 'Briefing IA du Jour',
+                    subtitle: 'Synthèse intelligente & priorités de garde',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => DailyBriefingScreen(onLogout: onLogout)),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
+                  _drawerCardItem(
+                    context,
                     icon: CupertinoIcons.bed_double_fill,
-                    iconColor: const Color(0xFF007EA7),
-                    iconBg: const Color(0xFF007EA7).withValues(alpha: 0.14),
+                    iconColor: isDark ? AppTheme.darkPrimary : AppTheme.evergreen,
+                    iconBg: (isDark ? AppTheme.darkPrimary : AppTheme.evergreen).withValues(
+                      alpha: 0.12,
+                    ),
                     title: 'Chambres & Lits',
                     subtitle: 'Plan d’occupation & lits disponibles',
                     onTap: () {
@@ -261,14 +316,30 @@ class AppDrawer extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (_) => Scaffold(
                               appBar: AppBar(
-                                title: const Text('Occupation Chambres & Lits', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                                backgroundColor: AppTheme.surfaceColor(context),
+                                title: const Text(
+                                  'Occupation Chambres & Lits',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                backgroundColor: isDark ? AppTheme.darkTopBar : AppTheme.evergreen,
                                 elevation: 0,
-                                iconTheme: IconThemeData(color: AppTheme.textColor(context)),
+                                iconTheme: const IconThemeData(color: Colors.white),
+                                flexibleSpace: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: isDark
+                                          ? [AppTheme.darkTopBar, AppTheme.darkTopBar]
+                                          : [AppTheme.evergreen, AppTheme.darkTeal],
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              body: const DarkAmbientBackground(
-                                child: RoomsAndBedsView(),
-                              ),
+                              body: const DarkAmbientBackground(child: RoomsAndBedsView()),
                             ),
                           ),
                         );
@@ -280,15 +351,19 @@ class AppDrawer extends StatelessWidget {
                   _drawerCardItem(
                     context,
                     icon: CupertinoIcons.chat_bubble_2_fill,
-                    iconColor: const Color(0xFF38BDF8),
-                    iconBg: const Color(0xFF38BDF8).withValues(alpha: 0.14),
+                    iconColor: isDark ? AppTheme.darkPrimary : AppTheme.evergreen,
+                    iconBg: (isDark ? AppTheme.darkPrimary : AppTheme.evergreen).withValues(
+                      alpha: 0.12,
+                    ),
                     title: 'Messagerie & Appels',
                     subtitle: 'Canaux d’urgences, staff & appels HD',
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        CupertinoPageRoute(builder: (_) => StaffMessengerScreen(onLogout: onLogout)),
+                        CupertinoPageRoute(
+                          builder: (_) => StaffMessengerScreen(onLogout: onLogout),
+                        ),
                       );
                     },
                   ),
@@ -297,8 +372,10 @@ class AppDrawer extends StatelessWidget {
                   _drawerCardItem(
                     context,
                     icon: CupertinoIcons.person_crop_circle_fill,
-                    iconColor: const Color(0xFF818CF8),
-                    iconBg: const Color(0xFF818CF8).withValues(alpha: 0.14),
+                    iconColor: isDark ? AppTheme.darkPrimary : AppTheme.evergreen,
+                    iconBg: (isDark ? AppTheme.darkPrimary : AppTheme.evergreen).withValues(
+                      alpha: 0.12,
+                    ),
                     title: 'Mon Profil & Garde',
                     subtitle: 'Coordonnées, statut & disponibilité',
                     onTap: () {
@@ -310,53 +387,65 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-            // ── Pied de tiroir : Bouton Déconnexion iOS ──
+            // ── Pied de tiroir : Bouton Déconnexion Moderne ──
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? const Color(0xFF1E293B) : AppTheme.border,
+                    color: isDark ? AppTheme.darkSurface : AppTheme.border,
                     width: 0.8,
                   ),
                 ),
               ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  Navigator.pop(context);
-                  onLogout();
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.danger.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(CupertinoIcons.square_arrow_right, color: AppTheme.danger, size: 18),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Session soignante',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppTheme.darkTextTertiary : AppTheme.evergreen,
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Déconnexion',
-                        style: TextStyle(
-                          color: AppTheme.danger,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14.5,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        CupertinoIcons.chevron_right,
-                        size: 16,
-                        color: AppTheme.danger.withValues(alpha: 0.6),
-                      ),
-                    ],
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () {
+                      Navigator.pop(context);
+                      onLogout();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.alertRed.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppTheme.alertRed.withValues(alpha: 0.3),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(CupertinoIcons.power, color: AppTheme.alertRed, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'Déconnexion',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.alertRed,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -391,65 +480,86 @@ class AppDrawer extends StatelessWidget {
   }) {
     final isDark = AppTheme.isDarkMode(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161F2E) : Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDark ? const Color(0xFF243042) : Colors.grey.shade200,
-              width: 0.8,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? AppTheme.darkBorder : const Color(0xFFE5ECE8),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: iconColor.withValues(alpha: isDark ? 0.15 : 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(10),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: iconColor.withValues(alpha: 0.25), width: 1),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
                 ),
-                child: Icon(icon, color: iconColor, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : AppTheme.textMain,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : AppTheme.textMain,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: isDark ? const Color(0xFF8E9BAE) : AppTheme.textMuted,
-                        fontSize: 11,
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: isDark ? const Color(0xFF9EACA3) : const Color(0xFF6B7E72),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                CupertinoIcons.chevron_right,
-                size: 15,
-                color: isDark ? const Color(0xFF64748B) : Colors.grey.shade400,
-              ),
-            ],
+                const SizedBox(width: 8),
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppTheme.darkElevated : const Color(0xFFF1F5F3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.chevron_right,
+                    size: 13,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.evergreen,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -7,6 +7,7 @@ export type DoctorDocument = Doctor & Document;
 @Schema({ _id: false })
 export class ScheduleSlot {
   @Prop({
+    type: String,
     required: true,
     enum: [
       'Lundi',

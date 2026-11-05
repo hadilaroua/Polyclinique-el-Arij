@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../utils/theme.dart';
-import 'avatar_widget.dart';
 
 /// Premium iOS-style app header — matches Mediterranean Clinical Precision design
 class FigmaHeader extends StatelessWidget {
@@ -14,6 +15,8 @@ class FigmaHeader extends StatelessWidget {
   final String? profileImageUrl;
   final String? userName;
   final String? subtitle;
+  final VoidCallback? onProfilePressed;
+  final VoidCallback? onCalendarPressed;
 
   const FigmaHeader({
     super.key,
@@ -26,226 +29,219 @@ class FigmaHeader extends StatelessWidget {
     this.profileImageUrl,
     this.userName,
     this.subtitle,
+    this.onProfilePressed,
+    this.onCalendarPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = AppTheme.isDarkMode(context);
-    final iconColor = isDark ? Colors.white : AppTheme.primary;
-    final surfaceBg = isDark ? const Color(0xFF121E2E) : Colors.white;
+    final surfaceBg = isDark ? AppTheme.darkTopBar : AppTheme.evergreen;
+    final topPadding = MediaQuery.of(context).padding.top;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: surfaceBg.withValues(alpha: isDark ? 0.85 : 0.92),
-        border: Border(
-          bottom: BorderSide(
-            color: AppTheme.borderColor(context).withValues(alpha: isDark ? 0.4 : 0.7),
-            width: 0.8,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          // ── Menu Button ──────────────────────────────────────────
-          GestureDetector(
-            onTap: onMenuPressed,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1B293C) : AppTheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.menu_rounded, size: 22, color: iconColor),
+      child: Container(
+        decoration: BoxDecoration(
+          color: surfaceBg,
+          gradient: LinearGradient(
+            colors: isDark
+                ? [AppTheme.darkTopBar, AppTheme.darkTopBar]
+                : [AppTheme.evergreen, AppTheme.darkTeal],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          border: Border(
+            bottom: BorderSide(
+              color: isDark ? AppTheme.darkBorder : AppTheme.evergreen.withValues(alpha: 0.4),
+              width: 1.5,
             ),
           ),
-
-          const SizedBox(width: 10),
-
-          // ── Center Brand & Role/Service ─────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Polyclinique El Arij',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textColor(context),
-                        letterSpacing: -0.3,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.fromLTRB(16, topPadding > 0 ? topPadding + 4 : 10, 16, 10),
+        child: Row(
+          children: [
+            // ── Clinic Logo (Clic pour ouvrir le Menu) ──────────────────────
+            GestureDetector(
+              onTap: onMenuPressed,
+              child: Container(
+                width: 42,
+                height: 42,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                const SizedBox(height: 1),
-                Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: roleColor,
-                        shape: BoxShape.circle,
-                      ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(9),
+                  child: Image.asset(
+                    'assets/logo-polyclinique-arij.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.local_hospital_rounded,
+                      color: AppTheme.evergreen,
+                      size: 24,
                     ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        (subtitle != null && subtitle!.isNotEmpty) ? subtitle! : roleName,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppTheme.darkSecondary : AppTheme.secondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // ── Right: Theme Toggle Circle + Bell + Avatar ───────────
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Circular iOS Dark / Light Toggle Switch ──
-              if (onThemeToggle != null) ...[
-                GestureDetector(
-                  onTap: onThemeToggle,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.12),
-                        width: 1.2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(
-                        isDark ? CupertinoIcons.sun_max_fill : CupertinoIcons.moon_fill,
-                        size: 15,
-                        color: isDark ? const Color(0xFFFBBF24) : const Color(0xFF0B2545),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-
-              // Notification bell with pulse badge
-              GestureDetector(
-                onTap: onNotificationsPressed,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1B293C) : AppTheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Icon(
-                        unreadNotifications > 0
-                            ? CupertinoIcons.bell_fill
-                            : CupertinoIcons.bell,
-                        size: 19,
-                        color: unreadNotifications > 0
-                            ? AppTheme.vitalEmergency
-                            : iconColor,
-                      ),
-                      if (unreadNotifications > 0)
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: AppTheme.vitalEmergency,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: surfaceBg,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
                   ),
                 ),
               ),
+            ),
 
-              const SizedBox(width: 8),
+            const SizedBox(width: 12),
 
-              // Avatar with live presence badge ("De garde")
-              Stack(
+            // ── Center Brand & Role/Service ─────────────────────────
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(1.5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: roleColor.withValues(alpha: 0.6),
-                        width: 1.8,
-                      ),
+                  const Text(
+                    'El ArijFlow',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
                     ),
-                    child: AvatarWidget(
-                      avatarUrl: profileImageUrl,
-                      name: userName ?? 'User',
-                      radius: 16,
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 9,
-                      height: 9,
-                      decoration: BoxDecoration(
-                        color: AppTheme.vitalDischarged,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: surfaceBg,
-                          width: 1.5,
+                  const SizedBox(height: 1),
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.vitalDischarged,
+                          shape: BoxShape.circle,
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          (subtitle != null && subtitle!.isNotEmpty) ? subtitle! : roleName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.95),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ],
+            ),
+
+            // ── Right: Calendar & Notification icons ───────────
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── Bouton Changement de Thème Dark / Light ───────────────
+                ValueListenableBuilder<ThemeMode>(
+                  valueListenable: AppTheme.themeModeNotifier,
+                  builder: (context, themeMode, _) {
+                    final isDarkActive = AppTheme.isDarkMode(context);
+                    return GestureDetector(
+                      onTap: () async {
+                        HapticFeedback.selectionClick();
+                        if (onThemeToggle != null) {
+                          onThemeToggle!();
+                        } else {
+                          await AppTheme.toggleTheme();
+                        }
+                      },
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          isDarkActive
+                              ? CupertinoIcons.sun_max_fill
+                              : CupertinoIcons.moon_stars_fill,
+                          size: 19,
+                          color: isDarkActive ? const Color(0xFFFFD60A) : Colors.white,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+
+                if (onCalendarPressed != null) ...[
+                  GestureDetector(
+                    onTap: onCalendarPressed,
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(CupertinoIcons.calendar, size: 20, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                GestureDetector(
+                  onTap: onNotificationsPressed,
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(CupertinoIcons.bell_fill, size: 20, color: Colors.white),
+                        if (unreadNotifications > 0)
+                          Positioned(
+                            right: 7,
+                            top: 7,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: AppTheme.cayenneRed,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: surfaceBg, width: 1.5),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-

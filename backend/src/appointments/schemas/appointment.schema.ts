@@ -21,6 +21,7 @@ export class Appointment {
   timeSlot: string; // Ex: '10:00'
 
   @Prop({
+    type: String,
     required: true,
     enum: AppointmentStatus,
     default: AppointmentStatus.PENDING,

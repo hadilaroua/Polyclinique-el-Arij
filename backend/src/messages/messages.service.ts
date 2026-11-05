@@ -23,6 +23,10 @@ export class MessagesService {
     if (!dto.recipientId && !dto.groupId) {
       throw new BadRequestException('Veuillez spécifier un destinataire ou un groupe.');
     }
+    
+    if (!Types.ObjectId.isValid(senderId)) {
+      throw new BadRequestException('ID expéditeur invalide');
+    }
 
     const senderObjId = new Types.ObjectId(senderId);
     const recipientObjId = dto.recipientId && Types.ObjectId.isValid(dto.recipientId)
@@ -115,9 +119,7 @@ export class MessagesService {
       staffList,
       conversations,
       groups: [
-        { id: 'GARDE_URGENCES', name: '🚨 Garde & Urgences Clinique', description: 'Canal d\'urgence pour l\'équipe de garde' },
-        { id: 'LABO_RADIO', name: '🩻 Plateau Technique & Labo', description: 'Demandes de résultats et bilans' },
-        { id: 'CORPS_MEDICAL', name: '🩺 Corps Médical & Soignants', description: 'Discussions cliniques et avis médicaux' },
+        { id: 'GENERAL_CLINIQUE', name: '🏥 Général Clinique', description: 'Discussion générale de la clinique' },
       ],
     };
   }
@@ -137,8 +139,8 @@ export class MessagesService {
         .exec();
     }
 
-    if (!Types.ObjectId.isValid(targetId)) {
-      throw new BadRequestException('ID destinataire invalide');
+    if (!Types.ObjectId.isValid(targetId) || !Types.ObjectId.isValid(userId)) {
+      return [];
     }
 
     const targetObjId = new Types.ObjectId(targetId);

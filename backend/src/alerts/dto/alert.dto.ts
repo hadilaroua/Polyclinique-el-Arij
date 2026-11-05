@@ -13,7 +13,7 @@ import { Role } from '../../common/enums/role.enum';
 export class CreateAlertDto {
   @ApiPropertyOptional({ example: '60c72b2f9b1d8b2bad8e9a12' })
   @IsOptional()
-  @IsMongoId()
+  @IsString()
   patientId?: string;
 
   @ApiProperty({ enum: AlertLevel, example: AlertLevel.WARNING })
@@ -52,6 +52,6 @@ export class CreateAlertDto {
     description: 'ID du médecin destinataire spécifique',
   })
   @IsOptional()
-  @IsMongoId()
+  @IsString()
   targetDoctorId?: string;
 }

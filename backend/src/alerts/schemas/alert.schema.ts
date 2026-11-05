@@ -13,6 +13,7 @@ export class Alert {
   patientId?: Types.ObjectId;
 
   @Prop({
+    type: String,
     required: true,
     enum: AlertLevel,
     default: AlertLevel.INFO,

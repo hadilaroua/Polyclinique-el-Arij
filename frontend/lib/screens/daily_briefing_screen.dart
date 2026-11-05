@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../utils/app_logger.dart';
 import '../utils/theme.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/figma_header.dart';
 import 'ai_briefing_screen.dart';
 import 'briefing_detail_screen.dart';
 import 'profile_screen.dart';
@@ -34,6 +36,11 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
   @override
   void initState() {
     super.initState();
+    AppLogger.logInterface(
+      'Briefing Quotidien & IA Clinique',
+      fileName: 'daily_briefing_screen.dart',
+      details: 'Consultation du briefing médical du jour',
+    );
     _loadBriefing();
   }
 
@@ -60,61 +67,54 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
 
   Map<String, dynamic> _getDefaultBriefingData() {
     final user = _api.currentUser;
-    final lastName = user?['lastName'] ?? 'Aroua';
+    final role = (user?['role'] ?? 'DOCTOR').toString().toUpperCase();
+    final lastName = user?['lastName'] ?? 'Trabelsi';
+    final firstName = user?['firstName'] ?? '';
+    final nameStr = '$firstName $lastName'.trim();
+
     return {
       'date': 'Lundi 26 mai 2025',
       'rawDate': '2025-05-26',
-      'greeting': 'Bonjour, Dr $lastName 👋',
+      'greeting': 'Bonjour, $nameStr',
       'subGreeting': 'Voici votre briefing du jour',
-      'serviceName': user?['service'] ?? 'Service Médecine Interne',
+      'serviceName': user?['service'] ?? 'Service Médecine & Chirurgie',
       'weather': {
         'temp': '26°C',
         'city': 'Djerba',
         'condition': 'Ensoleillé',
       },
       'metrics': {
-        'consultationsCount': 7,
+        'consultationsCount': 6,
         'urgentConsultationsCount': 2,
-        'hospitalizedCount': 3,
+        'hospitalizedCount': 4,
         'toMonitorHospitalizedCount': 1,
-        'pendingExamsCount': 2,
-        'tasksCount': 4,
+        'pendingExamsCount': 3,
+        'tasksCount': 2,
         'urgentTasksCount': 1,
       },
       'nextAppointment': {
         'time': '09:30',
-        'title': 'Consultation - Médecine Interne',
-        'room': 'Salle 3 • Dr $lastName',
-        'doctor': 'Dr $lastName',
-        'patientName': 'Ahmed Ben Salah',
+        'title': 'Consultation - Suivi Post-Opératoire',
+        'room': 'Cabinet 2 • Polyclinique El Arij',
+        'doctor': nameStr,
+        'patientName': 'Amine Khelifi',
       },
-      'aiSummary':
-          "Aujourd'hui, vous avez 7 consultations planifiées. 3 patients hospitalisés nécessitent une surveillance régulière. 2 examens sont en attente de résultat et 4 tâches importantes sont à finaliser. Une attention particulière est requise pour le patient en chambre 407.",
-      'aiSummaryPreview':
-          "Vous avez 7 consultations planifiées aujourd'hui. 2 examens sont en attente de résultat et 3 patients hospitalisés nécessitent un suivi particulier.",
+      'aiSummary': "Bonjour $nameStr. Votre service en cours à la Polyclinique El Arij comprend 6 consultations programmées, 4 patients hospitalisés sous surveillance et 3 bilans biologiques & radiologiques en attente. Une vigilance particulière est recommandée sur les constantes de M. Amine Khelifi.",
+      'aiSummaryPreview': "6 consultations et 4 patients hospitalisés sous surveillance. Vigilance prioritaire sur Amine Khelifi.",
       'consultationsList': [
-        {'time': '09:30', 'title': 'Consultation - Médecine Interne', 'room': 'Salle 3', 'specialty': 'Médecine Interne', 'isUrgent': true, 'patientName': 'Ahmed Ben Salah'},
-        {'time': '11:00', 'title': 'Consultation - Cardiologie', 'room': 'Salle 1', 'specialty': 'Cardiologie', 'isUrgent': false, 'patientName': 'Fatma Triki'},
-        {'time': '14:00', 'title': 'Consultation - Pneumologie', 'room': 'Salle 2', 'specialty': 'Pneumologie', 'isUrgent': true, 'patientName': 'Moncef Trabelsi'},
-        {'time': '15:15', 'title': 'Consultation - Contrôle diabète', 'room': 'Salle 3', 'specialty': 'Médecine Interne', 'isUrgent': false, 'patientName': 'Samia Mabrouk'},
-        {'time': '16:00', 'title': 'Consultation - Suivi cardiologique', 'room': 'Salle 1', 'specialty': 'Cardiologie', 'isUrgent': false, 'patientName': 'Kamel Dridi'},
-        {'time': '16:45', 'title': 'Consultation - Bilan biologique', 'room': 'Salle 3', 'specialty': 'Médecine Interne', 'isUrgent': false, 'patientName': 'Rim Ben Salem'},
-        {'time': '17:30', 'title': 'Consultation - Avis pneumologique', 'room': 'Salle 2', 'specialty': 'Pneumologie', 'isUrgent': false, 'patientName': 'Hédi Zouari'},
+        {'time': '09:30', 'title': 'Consultation - Suivi Post-Opératoire', 'room': 'Cabinet 2', 'patientName': 'Amine Khelifi', 'isUrgent': true},
+        {'time': '10:15', 'title': 'Consultation - Bilan Général', 'room': 'Cabinet 2', 'patientName': 'Sonia Mansour', 'isUrgent': false},
       ],
       'hospitalizedList': [
-        {'room': 'Chambre 204', 'service': 'Médecine Interne', 'status': 'Stable', 'statusColor': 'green', 'patientName': 'Yassine Khelil'},
-        {'room': 'Chambre 312', 'service': 'Cardiologie', 'status': 'En cours', 'statusColor': 'blue', 'patientName': 'Leila Bouaziz'},
-        {'room': 'Chambre 407', 'service': 'Pneumologie', 'status': 'À surveiller', 'statusColor': 'orange', 'patientName': 'Salem Ghrissi'},
+        {'room': 'Chambre 201 (Lit 1)', 'service': 'Médecine Interne', 'status': 'À surveiller', 'patientName': 'Mourad Ben Ali'},
+        {'room': 'Chambre 204 (Lit 2)', 'service': 'Chirurgie', 'status': 'Stable', 'patientName': 'Fatma Trabelsi'},
       ],
       'pendingExamsList': [
-        {'title': 'Scanner thoracique', 'patientName': 'Patient (S. Ghrissi)', 'department': 'Radiologie', 'status': 'En attente'},
-        {'title': 'Bilan biologique', 'patientName': 'Patient (Y. Khelil)', 'department': 'Laboratoire', 'status': 'En attente'},
+        {'title': 'Bilan sanguin complet', 'patientName': 'Amine Khelifi', 'department': 'Laboratoire', 'status': 'En attente', 'isUrgent': true},
+        {'title': 'Scanner Thoracique', 'patientName': 'Mourad Ben Ali', 'department': 'Radiologie', 'status': 'En attente', 'isUrgent': false},
       ],
       'tasksList': [
-        {'id': 't1', 'title': 'Rendre compte de la visite', 'location': 'Chambre 204', 'time': '10:30', 'isCompleted': false, 'isPriority': true},
-        {'id': 't2', 'title': 'Vérifier résultats biologiques', 'location': 'Laboratoire', 'time': '11:00', 'isCompleted': false, 'isPriority': false},
-        {'id': 't3', 'title': 'Valider ordonnance de sortie', 'location': 'Chambre 312', 'time': '15:00', 'isCompleted': false, 'isPriority': false},
-        {'id': 't4', 'title': 'Contrôle tensionnel post-perfusion', 'location': 'Salle de soins', 'time': '16:30', 'isCompleted': false, 'isPriority': false},
+        {'id': 't1', 'title': 'Valider le scanner de contrôle', 'location': 'Chambre 201', 'time': '10:30', 'isCompleted': false, 'isPriority': true},
       ],
     };
   }
@@ -185,7 +185,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.background,
       drawer: AppDrawer(
         onSelectTab: (idx) {
           if (widget.onNavigateTab != null) {
@@ -195,21 +195,31 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
         onOpenProfile: _openProfile,
         onLogout: widget.onLogout,
       ),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: _loadBriefing,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Top Header (Brand, Service, Notification, Avatar) ──
-                      _buildHeader(serviceName, user, fullName),
-
-                      const SizedBox(height: 18),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                FigmaHeader(
+                    roleName: 'SYNTHÈSE CLINIQUE',
+                    roleColor: AppTheme.evergreen,
+                    onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                    onThemeToggle: AppTheme.toggleTheme,
+                    onNotificationsPressed: () => _openDetail(section: 'tasks'),
+                    unreadNotifications: 1,
+                    profileImageUrl: user?['avatarUrl'],
+                    userName: fullName,
+                    onProfilePressed: _openProfile,
+                  ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _loadBriefing,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 6),
 
                       // ── Greeting & Weather Row ──────────────────────────────
                       _buildGreetingRow(greeting, subGreeting),
@@ -249,7 +259,9 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                   ),
                 ),
               ),
-      ),
+            ),
+          ],
+        ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -271,11 +283,11 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF),
+            color: const Color(0xFFEDF2EA),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFBFDBFE)),
+            border: Border.all(color: const Color(0xFFEDF2EA)),
           ),
-          child: const Icon(Icons.local_hospital_rounded, color: Color(0xFF2563EB), size: 18),
+          child: const Icon(Icons.local_hospital_rounded, color: AppTheme.evergreen, size: 18),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -298,7 +310,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B),
+                  color: Color(0xFF6B7E72),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -322,7 +334,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                 width: 16,
                 height: 16,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFEF4444),
+                  color: AppTheme.alertRed,
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
@@ -351,67 +363,25 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
   // ── Greeting & Weather Row ────────────────────────────────────────────────
   Widget _buildGreetingRow(String greeting, String subGreeting) {
     final isDark = AppTheme.isDarkMode(context);
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                greeting,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textColor(context),
-                  letterSpacing: -0.4,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subGreeting,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-            ],
+        Text(
+          greeting,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textColor(context),
+            letterSpacing: -0.4,
           ),
         ),
-        // Weather widget
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.borderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.wb_sunny_rounded, color: Color(0xFFF59E0B), size: 18),
-              SizedBox(width: 6),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '26°C',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                  ),
-                  Text(
-                    'Djerba',
-                    style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ],
+        const SizedBox(height: 3),
+        Text(
+          subGreeting,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF6B7E72),
           ),
         ),
       ],
@@ -424,21 +394,21 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.calendar_today_rounded, size: 13, color: Color(0xFF64748B)),
+          const Icon(Icons.calendar_today_rounded, size: 13, color: Color(0xFF6B7E72)),
           const SizedBox(width: 7),
           Text(
             dateStr,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+              color: isDark ? AppTheme.dustGrey : AppTheme.darkElevated,
             ),
           ),
         ],
@@ -460,8 +430,8 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
             Expanded(
               child: _buildMetricCard(
                 icon: Icons.calendar_month_rounded,
-                iconBg: const Color(0xFFF3E8FF),
-                iconColor: const Color(0xFF9333EA),
+                iconBg: const Color(0xFFEDF2EA),
+                iconColor: AppTheme.evergreen,
                 count: '$consultationsCount',
                 label: 'Consultations prévues',
                 onTap: () => _openDetail(section: 'consultations'),
@@ -471,8 +441,8 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
             Expanded(
               child: _buildMetricCard(
                 icon: Icons.hotel_rounded,
-                iconBg: const Color(0xFFCCFBF1),
-                iconColor: const Color(0xFF0D9488),
+                iconBg: const Color(0xFFEFF3EC),
+                iconColor: AppTheme.evergreen,
                 count: '$hospitalizedCount',
                 label: 'Patients hospitalisés suivis',
                 onTap: () => _openDetail(section: 'hospitalized'),
@@ -486,8 +456,8 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
             Expanded(
               child: _buildMetricCard(
                 icon: Icons.science_rounded,
-                iconBg: const Color(0xFFFFEDD5),
-                iconColor: const Color(0xFFEA580C),
+                iconBg: const Color(0xFFF2F4EF),
+                iconColor: AppTheme.drySage,
                 count: '$pendingExamsCount',
                 label: 'Examens en attente',
                 onTap: () => _openDetail(section: 'exams'),
@@ -497,8 +467,8 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
             Expanded(
               child: _buildMetricCard(
                 icon: Icons.check_circle_outline_rounded,
-                iconBg: const Color(0xFFDBEAFE),
-                iconColor: const Color(0xFF2563EB),
+                iconBg: const Color(0xFFFDF6EC),
+                iconColor: AppTheme.pastelOrange,
                 count: '$tasksCount',
                 label: 'Tâches à finaliser',
                 onTap: () => _openDetail(section: 'tasks'),
@@ -526,7 +496,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
         height: 120,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: isDark ? AppTheme.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppTheme.borderColor(context)),
           boxShadow: [
@@ -563,7 +533,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                   ),
                 ),
                 const Spacer(),
-                Icon(Icons.chevron_right_rounded, size: 18, color: const Color(0xFF94A3B8)),
+                Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.drySage),
               ],
             ),
             Text(
@@ -571,7 +541,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
               style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF64748B),
+                color: Color(0xFF6B7E72),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -596,7 +566,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
           border: Border.all(color: const Color(0xFFE9D5FF).withValues(alpha: isDark ? 0.3 : 0.8)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF7047EB).withValues(alpha: isDark ? 0.15 : 0.05),
+              color: AppTheme.evergreen.withValues(alpha: isDark ? 0.15 : 0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -607,7 +577,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.auto_awesome, color: Color(0xFF7047EB), size: 18),
+                const Icon(Icons.auto_awesome, color: AppTheme.evergreen, size: 18),
                 const SizedBox(width: 8),
                 Text(
                   'Résumé de la journée',
@@ -621,7 +591,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7047EB),
+                    color: AppTheme.evergreen,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
@@ -634,7 +604,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.chevron_right_rounded, color: Color(0xFF7047EB), size: 20),
+                const Icon(Icons.chevron_right_rounded, color: AppTheme.evergreen, size: 20),
               ],
             ),
             const SizedBox(height: 10),
@@ -644,7 +614,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                 fontSize: 13,
                 height: 1.45,
                 fontWeight: FontWeight.w500,
-                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                color: isDark ? AppTheme.dustGrey : AppTheme.darkElevated,
               ),
             ),
           ],
@@ -666,7 +636,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: isDark ? AppTheme.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppTheme.borderColor(context)),
           boxShadow: [
@@ -682,14 +652,14 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
           children: [
             const Row(
               children: [
-                Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF64748B)),
+                Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF6B7E72)),
                 SizedBox(width: 6),
                 Text(
                   'Prochain rendez-vous',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: Color(0xFF6B7E72),
                   ),
                 ),
               ],
@@ -700,7 +670,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3E8FF),
+                    color: const Color(0xFFEDF2EA),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -708,7 +678,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF7047EB),
+                      color: AppTheme.evergreen,
                     ),
                   ),
                 ),
@@ -733,7 +703,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
+                          color: Color(0xFF6B7E72),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -741,7 +711,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 18),
+                const Icon(Icons.chevron_right_rounded, color: AppTheme.drySage, size: 18),
               ],
             ),
           ],
@@ -756,6 +726,11 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
+          AppLogger.logInterface(
+            'Planning Complet IA',
+            fileName: 'daily_briefing_screen.dart',
+            details: 'Ouverture du planning complet avec résumé intelligent',
+          );
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -768,7 +743,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7047EB),
+          backgroundColor: AppTheme.evergreen,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -794,16 +769,25 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
 
   // ── Bottom Navigation Bar ─────────────────────────────────────────────────
   Widget _buildBottomNav() {
-    final isDark = AppTheme.isDarkMode(context);
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        border: Border(top: BorderSide(color: AppTheme.borderColor(context))),
+        color: AppTheme.evergreen,
+        gradient: const LinearGradient(
+          colors: [AppTheme.evergreen, AppTheme.darkTeal],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.15),
+            width: 0.8,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, -3),
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -828,13 +812,19 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
 
   Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label, {int? badgeCount}) {
     final isSelected = _currentBottomNavIndex == index;
-    final primaryActive = AppTheme.tropicalTeal;
+    final primaryActive = AppTheme.evergreen;
     final isDark = AppTheme.isDarkMode(context);
-    final inactiveColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    const inactiveColor = Colors.white70;
 
     return InkWell(
       onTap: () {
         setState(() => _currentBottomNavIndex = index);
+        final navNames = ['Accueil Briefing', 'Dossiers Patients', 'Plateau Technique', 'Messagerie Soignants', 'Menu'];
+        AppLogger.logInterface(
+          'Navigation: ${navNames[index]}',
+          fileName: 'daily_briefing_screen.dart',
+          details: 'Onglet briefing sélectionné: $label',
+        );
         if (index == 3) {
           _openMessenger();
         } else if (index == 4) {
@@ -877,7 +867,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444),
+                        color: AppTheme.alertRed,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 1.5),
                       ),

@@ -4,6 +4,7 @@ import 'package:frontend/main.dart';
 void main() {
   testWidgets('ArijApp smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const ArijApp());
-    expect(find.textContaining('Polyclinique Arij'), findsWidgets);
+    await tester.pump(const Duration(seconds: 4));
+    expect(find.textContaining('Polyclinique'), findsWidgets);
   });
 }

@@ -39,7 +39,7 @@ class ArjUi {
     Color? selectedColor,
     BuildContext? context,
   }) {
-    final selColor = selectedColor ?? AppTheme.purple;
+    final selColor = selectedColor ?? AppTheme.evergreen;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -49,7 +49,7 @@ class ArjUi {
           color: isSelected ? selColor : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? selColor : AppTheme.border,
+            color: isSelected ? selColor : AppTheme.dustGrey,
             width: 1.5,
           ),
         ),
@@ -58,7 +58,7 @@ class ArjUi {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppTheme.textMuted,
+            color: isSelected ? Colors.white : (context != null ? AppTheme.subtextColor(context) : AppTheme.evergreen),
           ),
         ),
       ),
@@ -72,6 +72,7 @@ class ArjUi {
     String? action,
     VoidCallback? onAction,
   }) {
+    final isDark = AppTheme.isDarkMode(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -80,7 +81,7 @@ class ArjUi {
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textColor(context),
+            color: isDark ? AppTheme.darkTextPrimary : AppTheme.evergreen,
             letterSpacing: -0.3,
           ),
         ),
@@ -92,7 +93,7 @@ class ArjUi {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.purpleColor(context),
+                color: isDark ? AppTheme.drySage : AppTheme.evergreen,
               ),
             ),
           ),
@@ -112,8 +113,9 @@ class ArjUi {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkElevated : const Color(0xFFF0F2F5),
+        color: isDark ? AppTheme.darkElevated : AppTheme.background,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? AppTheme.darkBorder : AppTheme.dustGrey),
       ),
       child: Row(
         children: [
@@ -165,10 +167,10 @@ class ArjUi {
         padding: padding ?? const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppTheme.cardColor(context),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           border: hasBorder
               ? Border.all(
-                  color: isDark ? AppTheme.darkBorder : AppTheme.border,
+                  color: isDark ? AppTheme.darkBorder : AppTheme.dustGrey,
                   width: 1,
                 )
               : null,
@@ -177,8 +179,8 @@ class ArjUi {
               : [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
         ),
@@ -197,7 +199,7 @@ class ArjUi {
     bool isLoading = false,
     bool fullWidth = true,
   }) {
-    final bg = color ?? AppTheme.purpleColor(context);
+    final bg = color ?? AppTheme.evergreen;
     Widget content = isLoading
         ? const SizedBox(
             width: 20,
@@ -246,13 +248,14 @@ class ArjUi {
 
   // ── Drag handle ───────────────────────────────────────────────────────────
   static Widget dragHandle(BuildContext context) {
+    final isDark = AppTheme.isDarkMode(context);
     return Center(
       child: Container(
-        width: 40,
-        height: 4,
+        width: 44,
+        height: 4.5,
         decoration: BoxDecoration(
-          color: AppTheme.subtextColor(context).withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(2),
+          color: isDark ? AppTheme.darkTextTertiary : AppTheme.dustGrey,
+          borderRadius: BorderRadius.circular(2.5),
         ),
       ),
     );

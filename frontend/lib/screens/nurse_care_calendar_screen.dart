@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_logger.dart';
 import '../utils/theme.dart';
 
 class NurseCareCalendarScreen extends StatefulWidget {
@@ -10,6 +11,16 @@ class NurseCareCalendarScreen extends StatefulWidget {
 
 class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
   DateTime _selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    AppLogger.logInterface(
+      'Planning des Soins de Nuit',
+      fileName: 'nurse_care_calendar_screen.dart',
+      details: 'Tournée soignante',
+    );
+  }
   
   // Dummy data for the calendar
   final List<Map<String, dynamic>> _events = [
@@ -44,7 +55,7 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        backgroundColor: Color(0xFFDC2626),
+        backgroundColor: AppTheme.alertRed,
         content: Text('Soin supprimé du calendrier'),
       ),
     );
@@ -63,39 +74,35 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
     final todayEvents = _events.where((e) => isSameDay(e['date'] as DateTime, _selectedDate)).toList();
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.background,
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.evergreen,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textColor(context), size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'Journal & Planning des Soins',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textColor(context),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppTheme.tropicalTeal),
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
             onPressed: _addEvent,
           )
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: AppTheme.borderColor(context)),
-        ),
       ),
       body: Column(
         children: [
           // Basic horizontal date picker (1 week)
           Container(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppTheme.darkSurface : Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: SizedBox(
               height: 70,
@@ -113,7 +120,7 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
                       width: 55,
                       margin: const EdgeInsets.only(right: 12),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppTheme.tropicalTeal : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                        color: isSelected ? AppTheme.evergreen : (isDark ? AppTheme.darkElevated : AppTheme.background),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
@@ -123,7 +130,7 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
                             _getShortWeekday(date.weekday),
                             style: TextStyle(
                               fontSize: 12,
-                              color: isSelected ? Colors.white70 : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                              color: isSelected ? Colors.white70 : (isDark ? AppTheme.drySage : const Color(0xFF6B7E72)),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -151,11 +158,11 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.event_available_rounded, size: 64, color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                        Icon(Icons.event_available_rounded, size: 64, color: isDark ? AppTheme.darkElevated : AppTheme.dustGrey),
                         const SizedBox(height: 16),
                         Text(
                           'Aucun soin planifié pour cette date',
-                          style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                          style: TextStyle(color: isDark ? AppTheme.drySage : const Color(0xFF6B7E72)),
                         ),
                       ],
                     ),
@@ -171,8 +178,10 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
           ),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppTheme.tropicalTeal,
+        heroTag: 'nurse_care_fab',
+        backgroundColor: AppTheme.pastelOrange,
         onPressed: _addEvent,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -183,10 +192,24 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
     final isDark = AppTheme.isDarkMode(context);
     final isVitals = event['type'] == 'Vitals';
     
-    return Container(
+    return Dismissible(
+      key: Key(event['id']),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: AppTheme.alertRed,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.delete_forever, color: Colors.white, size: 28),
+      ),
+      onDismissed: (_) => _deleteEvent(event['id']),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppTheme.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
@@ -207,7 +230,7 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isVitals ? const Color(0xFFEFF6FF) : const Color(0xFFFDF4FF),
+                    color: isVitals ? AppTheme.background : const Color(0xFFFDF4FF),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -215,23 +238,16 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: isVitals ? const Color(0xFF2563EB) : const Color(0xFFC026D3),
+                      color: isVitals ? AppTheme.evergreen : const Color(0xFFC026D3),
                     ),
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF64748B)),
+                  icon: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF6B7E72)),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: () => _editEvent(event),
-                ),
-                const SizedBox(width: 12),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: () => _deleteEvent(event['id']),
                 ),
               ],
             ),
@@ -247,18 +263,19 @@ class _NurseCareCalendarScreenState extends State<NurseCareCalendarScreen> {
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF64748B)),
+                const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF6B7E72)),
                 const SizedBox(width: 4),
                 Text(
                   event['patient'],
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF64748B),
+                    color: Color(0xFF6B7E72),
                   ),
                 ),
               ],
             ),
           ],
+        ),
         ),
       ),
     );

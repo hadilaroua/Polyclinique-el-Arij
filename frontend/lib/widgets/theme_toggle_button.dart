@@ -99,14 +99,14 @@ class ThemeSettingsRow extends StatelessWidget {
                       height: 40,
                       decoration: BoxDecoration(
                         color: isDark
-                            ? AppTheme.tropicalTeal.withValues(alpha: 0.18)
+                            ? AppTheme.evergreen.withValues(alpha: 0.18)
                             : const Color(0xFFFEF3C7),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         isDark ? CupertinoIcons.moon_fill : CupertinoIcons.sun_max_fill,
                         size: 20,
-                        color: isDark ? AppTheme.tropicalTeal : const Color(0xFFD97706),
+                        color: isDark ? AppTheme.evergreen : const Color(0xFFD97706),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -135,7 +135,7 @@ class ThemeSettingsRow extends StatelessWidget {
                     ),
                     CupertinoSwitch(
                       value: isDark,
-                      activeTrackColor: AppTheme.tropicalTeal,
+                      activeTrackColor: AppTheme.evergreen,
                       onChanged: (_) => AppTheme.toggleTheme(),
                     ),
                   ],

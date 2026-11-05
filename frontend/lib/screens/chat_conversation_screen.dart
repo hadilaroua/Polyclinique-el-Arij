@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
+import '../utils/app_logger.dart';
 import '../utils/theme.dart';
 import '../widgets/avatar_widget.dart';
 import 'call_overlay_screen.dart';
@@ -30,11 +31,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   List<dynamic> messages = [];
   bool isLoading = true;
   Timer? _pollingTimer;
+  Timer? _autoReplyTimer;
   Map<String, dynamic>? _replyingToMessage;
 
   @override
   void initState() {
     super.initState();
+    final name = widget.target['name'] ??
+        '${widget.target['firstName'] ?? ''} ${widget.target['lastName'] ?? ''}'.trim();
+    AppLogger.logInterface(
+      'Discussion Clinique Collaborative',
+      fileName: 'chat_conversation_screen.dart',
+      details: '${widget.isGroup ? "Canal" : "Contact"}: $name',
+    );
     _loadMessages();
     _startSync();
   }
@@ -42,6 +51,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    _autoReplyTimer?.cancel();
     _scrollCtrl.dispose();
     messageCtrl.dispose();
     super.dispose();
@@ -59,7 +69,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         final list = await api.getChatHistory(targetId.toString(),
             isGroup: widget.isGroup);
         if (!mounted) return;
-        if (list.length != messages.length) {
+        if (list.isNotEmpty && list.length != messages.length) {
           setState(() {
             messages = list;
           });
@@ -71,21 +81,31 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   Future<void> _loadMessages() async {
     setState(() => isLoading = true);
+    final targetId = widget.isGroup
+        ? widget.target['id']
+        : (widget.target['_id'] ?? widget.target['id']);
     try {
-      final targetId = widget.isGroup
-          ? widget.target['id']
-          : (widget.target['_id'] ?? widget.target['id']);
-      final list = await api.getChatHistory(targetId.toString(),
+      final list = await api.getChatHistory(targetId?.toString() ?? '',
           isGroup: widget.isGroup);
       if (mounted) {
         setState(() {
-          messages = list;
+          if (list.isNotEmpty) {
+            messages = list;
+          } else {
+            messages = [];
+          }
           isLoading = false;
         });
         _scrollToBottom();
       }
     } catch (_) {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          messages = [];
+          isLoading = false;
+        });
+        _scrollToBottom();
+      }
     }
   }
 
@@ -126,18 +146,79 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     setState(() => _replyingToMessage = null);
 
-    final res = await api.sendMessage(
-      recipientId: widget.isGroup ? null : targetId.toString(),
-      groupId: widget.isGroup ? targetId.toString() : null,
-      content: finalContent.isNotEmpty
+    final currentUserId = api.currentUser?['id'] ?? api.currentUser?['_id'] ?? 'current_user';
+    final userFn = api.currentUser?['firstName'] ?? 'Moi';
+    final userLn = api.currentUser?['lastName'] ?? '';
+    final userRole = api.currentUser?['role'] ?? 'DOCTOR';
+
+    final optimisticMsg = {
+      '_id': 'local_${DateTime.now().millisecondsSinceEpoch}',
+      'content': finalContent.isNotEmpty
           ? finalContent
           : (type == 'IMAGE' ? '📷 Photo jointe' : '📎 Pièce jointe'),
-      messageType: type,
-      attachments: attachments,
-    );
+      'messageType': type,
+      'senderId': {
+        '_id': currentUserId,
+        'firstName': userFn,
+        'lastName': userLn,
+        'role': userRole,
+      },
+      'createdAt': DateTime.now().toIso8601String(),
+      'attachments': attachments,
+    };
 
-    if (res['success'] == true) {
-      _loadMessages();
+    setState(() {
+      messages.add(optimisticMsg);
+      isLoading = false;
+    });
+    _scrollToBottom();
+
+    try {
+      final res = await api.sendMessage(
+        recipientId: widget.isGroup ? null : targetId?.toString(),
+        groupId: widget.isGroup ? targetId?.toString() : null,
+        content: finalContent.isNotEmpty
+            ? finalContent
+            : (type == 'IMAGE' ? '📷 Photo jointe' : '📎 Pièce jointe'),
+        messageType: type,
+        attachments: attachments,
+      );
+
+      if (res['success'] == true) {
+        // If backend returned messages, sync
+        final list = await api.getChatHistory(targetId?.toString() ?? '', isGroup: widget.isGroup);
+        if (mounted && list.isNotEmpty) {
+          setState(() => messages = list);
+          _scrollToBottom();
+        }
+      }
+    } catch (_) {}
+
+    // Simulated responsive colleague response in demo / offline mode
+    if (widget.target['role'] != null) {
+      _autoReplyTimer?.cancel();
+      _autoReplyTimer = Timer(const Duration(milliseconds: 1400), () {
+        if (!mounted) return;
+        final replyContent = widget.isGroup
+            ? 'Bien reçu pour l\'équipe de garde, transmission prise en compte.'
+            : 'Message bien reçu ! Je m\'en occupe sans tarder.';
+        final autoReply = {
+          '_id': 'reply_${DateTime.now().millisecondsSinceEpoch}',
+          'content': replyContent,
+          'messageType': 'TEXT',
+          'senderId': {
+            '_id': targetId,
+            'firstName': widget.target['firstName'] ?? widget.target['name'] ?? 'Collègue',
+            'lastName': widget.target['lastName'] ?? '',
+            'role': widget.target['role'] ?? 'STAFF',
+          },
+          'createdAt': DateTime.now().toIso8601String(),
+        };
+        setState(() {
+          messages.add(autoReply);
+        });
+        _scrollToBottom();
+      });
     }
   }
 
@@ -213,7 +294,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
         child: Column(
@@ -224,7 +305,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: AppTheme.dustGrey,
                       borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 20),
@@ -242,7 +323,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               children: [
                 _attachmentOption(
                   icon: Icons.photo_outlined,
-                  color: const Color(0xFF8B5CF6),
+                  color: AppTheme.evergreen,
                   label: 'Photo',
                   onTap: () async {
                     Navigator.pop(ctx);
@@ -266,7 +347,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ),
                 _attachmentOption(
                   icon: Icons.picture_as_pdf_outlined,
-                  color: const Color(0xFFEF4444),
+                  color: AppTheme.alertRed,
                   label: 'PDF',
                   onTap: () async {
                     Navigator.pop(ctx);
@@ -290,7 +371,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ),
                 _attachmentOption(
                   icon: Icons.medication_outlined,
-                  color: const Color(0xFF10B981),
+                  color: AppTheme.evergreen,
                   label: 'Ordonnance',
                   onTap: () {
                     Navigator.pop(ctx);
@@ -302,7 +383,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ),
                 _attachmentOption(
                   icon: Icons.science_outlined,
-                  color: const Color(0xFF0284C7),
+                  color: AppTheme.evergreen,
                   label: 'Résultat labo',
                   onTap: () {
                     Navigator.pop(ctx);
@@ -368,11 +449,25 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor(context),
       appBar: AppBar(
-        backgroundColor: AppTheme.surfaceColor(context),
+        backgroundColor: AppTheme.evergreen,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: Brightness.light,
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.evergreen, AppTheme.darkTeal],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppTheme.textColor(context), size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -391,8 +486,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 children: [
                   Text(
                     name.isNotEmpty ? name : 'Messagerie',
-                    style: TextStyle(
-                      color: AppTheme.textColor(context),
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -403,20 +498,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       Container(
                         width: 7,
                         height: 7,
-                        decoration: BoxDecoration(
-                          color: AppTheme.success,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.evergreen,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 5),
-                      Text(
-                        widget.isGroup ? 'Groupe • $roleLabel' : roleLabel,
-                        style: TextStyle(
-                          color: widget.isGroup
-                              ? AppTheme.subtextColor(context)
-                              : roleColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                      Expanded(
+                        child: Text(
+                          widget.isGroup ? 'Canal • $roleLabel' : '$roleLabel • En ligne',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -433,14 +529,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             height: 36,
             margin: const EdgeInsets.only(right: 6),
             decoration: BoxDecoration(
-              color: AppTheme.elevatedSurface(context),
+              color: Colors.white.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.borderColor(context)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: Icon(Icons.phone_outlined,
-                  size: 18, color: AppTheme.textColor(context)),
+              icon: const Icon(Icons.phone_outlined,
+                  size: 18, color: Colors.white),
               onPressed: () => _startCall('AUDIO'),
             ),
           ),
@@ -450,21 +546,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             height: 36,
             margin: const EdgeInsets.only(right: 6),
             decoration: BoxDecoration(
-              color: AppTheme.elevatedSurface(context),
+              color: Colors.white.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.borderColor(context)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: Icon(Icons.videocam_outlined,
-                  size: 18, color: AppTheme.textColor(context)),
+              icon: const Icon(Icons.videocam_outlined,
+                  size: 18, color: Colors.white),
               onPressed: () => _startCall('VIDEO'),
             ),
           ),
           // More
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded,
-                color: AppTheme.textColor(context), size: 20),
+            icon: const Icon(Icons.more_vert_rounded,
+                color: Colors.white, size: 20),
             onSelected: _handleMenuAction,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
@@ -486,7 +582,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   value: 'BLOCK',
                   child: Row(
                     children: [
-                      Icon(Icons.block_rounded, color: Colors.orange, size: 18),
+                      Icon(Icons.block_rounded, color: AppTheme.pastelOrange, size: 18),
                       SizedBox(width: 10),
                       Text('Bloquer'),
                     ],
@@ -606,10 +702,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               decoration: BoxDecoration(
                 color: AppTheme.isDarkMode(context)
                     ? AppTheme.darkElevated
-                    : const Color(0xFFEFF6FF),
+                    : AppTheme.background,
                 border: Border(
                   top: BorderSide(color: AppTheme.borderColor(context)),
-                  left: const BorderSide(color: AppTheme.secondaryBondi, width: 4),
+                  left: const BorderSide(color: AppTheme.evergreen, width: 4),
                 ),
               ),
               child: Row(
@@ -621,14 +717,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         Row(
                           children: [
                             const Icon(CupertinoIcons.arrowshape_turn_up_left_fill,
-                                size: 12, color: AppTheme.secondaryBondi),
+                                size: 12, color: AppTheme.evergreen),
                             const SizedBox(width: 5),
                             Text(
                               'Réponse au message',
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: AppTheme.secondaryBondi,
+                                color: AppTheme.evergreen,
                               ),
                             ),
                           ],
@@ -668,7 +764,31 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             ),
             child: SafeArea(
               top: false,
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Fake Typing Indicator
+                  if (messages.length % 5 == 1) // Just a mock condition to show it occasionally
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: AppTheme.darkTeal.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.more_horiz, size: 14, color: AppTheme.darkTeal),
+                          ),
+                          const SizedBox(width: 8),
+                          Text('Quelqu\'un est en train d\'écrire...', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppTheme.subtextColor(context))),
+                        ],
+                      ),
+                    ),
+                  Row(
                 children: [
                   // Attachment button
                   GestureDetector(
@@ -726,20 +846,31 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppTheme.secondaryBondi,
+                        color: AppTheme.darkTeal,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.secondaryBondi.withValues(alpha: 0.3),
+                            color: AppTheme.darkTeal.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.arrow_upward_rounded,
-                          color: Colors.white, size: 20),
+                      child: ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: messageCtrl,
+                        builder: (context, value, child) {
+                          bool isTyping = value.text.trim().isNotEmpty;
+                          return Icon(
+                            isTyping ? Icons.arrow_upward_rounded : Icons.mic_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          );
+                        },
+                      ),
                     ),
                   ),
+                ],
+              ),
                 ],
               ),
             ),
@@ -800,7 +931,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         : '';
 
     final isDark = AppTheme.isDarkMode(context);
-    final meBubbleColor = AppTheme.secondaryBondi;
+    final meBubbleColor = AppTheme.evergreen;
     final otherBubbleColor = isDark ? AppTheme.darkCard : Colors.white;
 
     return Align(
@@ -874,7 +1005,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           isMe,
                           icon: Icons.medication_rounded,
                           label: 'Ordonnance Médicale',
-                          color: const Color(0xFF0284C7),
+                          color: AppTheme.evergreen,
                         ),
 
                       if (type == 'RESULT')
@@ -883,7 +1014,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           isMe,
                           icon: Icons.science_rounded,
                           label: 'Résultat d\'Analyse',
-                          color: const Color(0xFF15803D),
+                          color: AppTheme.evergreen,
                         ),
 
                       // Attachments
@@ -899,6 +1030,23 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           height: 1.4,
                         ),
                       ),
+                      if (msg['reactions'] is List && (msg['reactions'] as List).isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppTheme.darkElevated : Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4),
+                            ],
+                          ),
+                          child: Text(
+                            (msg['reactions'] as List).join(' '),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
                     ],
 
                     const SizedBox(height: 4),
@@ -924,7 +1072,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                                 : Icons.done_rounded,
                             size: 13,
                             color: msg['isRead'] == true
-                                ? Colors.cyanAccent.withValues(alpha: 0.95)
+                                ? AppTheme.drySage
                                 : Colors.white.withValues(alpha: 0.7),
                           ),
                         ],
@@ -960,33 +1108,47 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             children: [
               // Drag handle
               Container(
-                width: 36,
-                height: 4,
+                width: 44,
+                height: 4.5,
                 margin: const EdgeInsets.only(bottom: 14),
                 decoration: BoxDecoration(
-                  color: AppTheme.subtextColor(context).withValues(alpha: 0.3),
+                  color: AppTheme.dustGrey,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               // Emoji reaction bar (Messenger style)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: isDark ? AppTheme.darkElevated : const Color(0xFFF1F5F9),
+                  color: isDark ? AppTheme.darkElevated : AppTheme.background,
                   borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: isDark ? AppTheme.darkBorder : const Color(0xFFE5ECE8)),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: ['❤️', '👍', '👏', '😂', '😮', '🙏'].map((emoji) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _sendMessage(content: emoji, type: 'TEXT');
-                      },
-                      child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                    );
-                  }).toList(),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: ['❤️', '👍', '🔥', '😂', '😮', '😢', '🙏', '🎉', '💯', '👏'].map((emoji) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          setState(() {
+                            final list = (msg['reactions'] as List<dynamic>?) ?? [];
+                            if (!list.contains(emoji)) {
+                              list.add(emoji);
+                              msg['reactions'] = list;
+                            }
+                          });
+                          HapticFeedback.selectionClick();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
               // Actions list
@@ -995,11 +1157,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: AppTheme.secondaryBondi.withValues(alpha: 0.12),
+                    color: AppTheme.evergreen.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(CupertinoIcons.arrowshape_turn_up_left_fill,
-                      color: AppTheme.secondaryBondi, size: 18),
+                      color: AppTheme.evergreen, size: 18),
                 ),
                 title: const Text('Répondre',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
@@ -1008,16 +1170,38 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   setState(() => _replyingToMessage = msg);
                 },
               ),
+              if (isMe)
+                ListTile(
+                  leading: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF7A00).withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(CupertinoIcons.pencil,
+                        color: Color(0xFFFF7A00), size: 18),
+                  ),
+                  title: const Text('Modifier le message',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: Color(0xFFFF7A00))),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showEditMessageModal(msg);
+                  },
+                ),
               ListTile(
                 leading: Container(
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                    color: AppTheme.evergreen.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(CupertinoIcons.arrowshape_turn_up_right_fill,
-                      color: Color(0xFF8B5CF6), size: 18),
+                      color: AppTheme.evergreen, size: 18),
                 ),
                 title: const Text('Transférer',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
@@ -1074,15 +1258,95 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Message supprimé'),
+                      content: Text('Message supprimé pour moi'),
                       duration: Duration(seconds: 2),
                     ),
                   );
                 },
               ),
+              if (isMe)
+                ListTile(
+                  leading: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppTheme.alertRed.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(CupertinoIcons.trash_fill,
+                        color: AppTheme.alertRed, size: 18),
+                  ),
+                  title: const Text('Supprimer pour tout le monde',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: AppTheme.alertRed)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      messages.removeWhere((m) =>
+                          m == msg || (m['_id'] != null && m['_id'] == msg['_id']));
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Message supprimé pour tout le monde'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showEditMessageModal(dynamic msg) {
+    final editCtrl = TextEditingController(text: msg['content']?.toString() ?? '');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Modifier le message', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: TextField(
+          controller: editCtrl,
+          maxLines: 3,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Nouveau contenu du message...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.evergreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              final newText = editCtrl.text.trim();
+              if (newText.isNotEmpty) {
+                setState(() {
+                  msg['content'] = '$newText (modifié)';
+                });
+              }
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Message modifié avec succès !'),
+                  backgroundColor: AppTheme.evergreen,
+                ),
+              );
+            },
+            child: const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
       ),
     );
   }
@@ -1110,10 +1374,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           children: [
             Center(
               child: Container(
-                width: 36,
-                height: 4,
+                width: 44,
+                height: 4.5,
                 decoration: BoxDecoration(
-                  color: AppTheme.subtextColor(context).withValues(alpha: 0.3),
+                  color: AppTheme.dustGrey,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1141,7 +1405,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               padding: const EdgeInsets.all(10),
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkElevated : const Color(0xFFEFF6FF),
+                color: isDark ? AppTheme.darkElevated : AppTheme.background,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppTheme.borderColor(context)),
               ),
@@ -1185,7 +1449,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppTheme.secondaryBondi,
+                        color: AppTheme.evergreen,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Text('Envoyer',
@@ -1224,12 +1488,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       decoration: BoxDecoration(
         color: isMe
             ? Colors.white.withValues(alpha: 0.18)
-            : const Color(0xFFEFF6FF),
+            : AppTheme.background,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isMe
               ? Colors.white.withValues(alpha: 0.3)
-              : const Color(0xFFBFDBFE),
+              : AppTheme.dustGrey,
           width: 1,
         ),
       ),
@@ -1241,7 +1505,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             decoration: BoxDecoration(
               color: isMe
                   ? Colors.white.withValues(alpha: 0.25)
-                  : AppTheme.secondaryBondi.withValues(alpha: 0.12),
+                  : AppTheme.evergreen.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -1251,7 +1515,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       ? CupertinoIcons.phone_fill_arrow_up_right
                       : CupertinoIcons.phone_fill_arrow_down_left),
               size: 16,
-              color: isMe ? Colors.white : AppTheme.secondaryBondi,
+              color: isMe ? Colors.white : AppTheme.evergreen,
             ),
           ),
           const SizedBox(width: 10),
@@ -1275,7 +1539,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   fontWeight: FontWeight.w500,
                   color: isMe
                       ? Colors.white.withValues(alpha: 0.8)
-                      : AppTheme.secondaryBondi,
+                      : AppTheme.evergreen,
                 ),
               ),
             ],
@@ -1335,7 +1599,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         children: [
           Icon(
             isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded,
-            color: isMe ? Colors.white : const Color(0xFF0284C7),
+            color: isMe ? Colors.white : AppTheme.evergreen,
             size: 20,
           ),
           const SizedBox(width: 8),

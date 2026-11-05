@@ -39,3 +39,8 @@ build/
 # Storage & Temp
 *.tmp
 *.bak
+
+# Presentation & Docs
+Presentation de Stage-2.pdf
+presentation/
+rapport_latex/

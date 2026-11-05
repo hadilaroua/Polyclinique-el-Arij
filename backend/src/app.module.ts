@@ -31,6 +31,7 @@ import { TechniciansModule } from './technicians/technicians.module';
 import { UsersModule } from './users/users.module';
 import { VitalSignsModule } from './vital-signs/vital-signs.module';
 import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
+import { ClinicalEventsModule } from './clinical-events/clinical-events.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
     MessagesModule,
     DatabaseModule,
     AiAssistantModule,
+    ClinicalEventsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -21,7 +21,7 @@ export class Specialty {
   @Prop({ required: true, unique: true, trim: true })
   name: string;
 
-  @Prop({ required: true, enum: SpecialtyType })
+  @Prop({ type: String, required: true, enum: SpecialtyType })
   type: SpecialtyType;
 
   @Prop({ default: '', trim: true })

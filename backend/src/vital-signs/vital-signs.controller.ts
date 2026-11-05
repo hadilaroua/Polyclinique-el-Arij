@@ -81,8 +81,8 @@ export class VitalSignsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Supprimer un enregistrement de constantes vitales (Admin)' })
+  @Roles(Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.MIDWIFE)
+  @ApiOperation({ summary: 'Supprimer un enregistrement de constantes vitales' })
   remove(@Param('id') id: string) {
     return this.vitalSignsService.remove(id);
   }

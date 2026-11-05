@@ -11,6 +11,7 @@ export class AuthorizedStaff {
   cin: string; // Numéro de pièce / carte d'identité nationale
 
   @Prop({
+    type: String,
     required: true,
     enum: [Role.DOCTOR, Role.NURSE, Role.MIDWIFE, Role.TECHNICIAN, Role.ADMIN],
   })
